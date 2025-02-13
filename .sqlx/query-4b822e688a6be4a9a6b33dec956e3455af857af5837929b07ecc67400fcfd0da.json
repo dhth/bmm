@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\nDELETE FROM\n    tags\nWHERE\n    id NOT IN (\n        SELECT\n            tag_id\n        FROM\n            bookmark_tags\n    )\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "4b822e688a6be4a9a6b33dec956e3455af857af5837929b07ecc67400fcfd0da"
+}

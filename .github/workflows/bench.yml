@@ -1,0 +1,29 @@
+name: bench
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+  SQLX_OFFLINE: true
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install hyperfine
+        uses: jaxxstorm/action-install-gh-release@cd6b2b78ad38bdd294341cda064ec0692b06215b # v1.14.0
+        with:
+          repo: sharkdp/hyperfine
+      - name: Install buku
+        run: uv tool install buku
+      - name: Install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install bmm
+        run: cargo install --path .
+      - name: Run benchmarks
+        run: ./bench

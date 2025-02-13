@@ -1,0 +1,56 @@
+#!/usr/bin/env -S uv run --script
+
+import json
+import random
+import sys
+
+SEED = 42
+
+
+def generate_entries(num_entries, tags, output_file):
+    random.seed(SEED)
+
+    entries = []
+    for i in range(num_entries):
+        entry_tags = [random.choice(tags)]
+        if random.random() < 0.3:
+            additional_tag = random.choice(tags)
+            if additional_tag not in entry_tags:
+                entry_tags.append(additional_tag)
+        if random.random() < 0.2:
+            additional_tag = random.choice(tags)
+            if additional_tag not in entry_tags:
+                entry_tags.append(additional_tag)
+        uri = f"https://example-title-{i}.blah.com/{i}"
+        title = f"example-title-{i}.com"
+        entry = {
+            "tags": ",".join(entry_tags),
+            "title": title,
+            "uri": uri,
+        }
+        entries.append(entry)
+
+    try:
+        with open(output_file, "w") as f:
+            f.write('<!DOCTYPE NETSCAPE-Bookmark-file-1>\n')
+            f.write('<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n')
+            f.write('<TITLE>Bookmarks</TITLE>\n')
+            f.write('<H1>Bookmarks</H1>\n')
+            f.write('<DL><p>\n')
+            for entry in entries:
+                f.write(f'    <DT><A HREF="{entry["uri"]}" TAGS="{entry["tags"]}">{entry["title"]}</A>\n')
+            f.write('</DL><p>\n')
+    except IOError as e:
+        print(f"Error writing to {output_file}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: ./generate-data <num_entries> <tags> <output_file>")
+        sys.exit(1)
+
+    num_entries = int(sys.argv[1])
+    tags = sys.argv[2].split(",")
+    output_file = sys.argv[3]
+
+    generate_entries(num_entries, tags, output_file)

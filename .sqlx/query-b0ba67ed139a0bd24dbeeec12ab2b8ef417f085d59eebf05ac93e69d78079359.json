@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\nSELECT\n    id\nFROM\n    bookmarks\nWHERE\n    uri = ?\nLIMIT 1\n",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b0ba67ed139a0bd24dbeeec12ab2b8ef417f085d59eebf05ac93e69d78079359"
+}

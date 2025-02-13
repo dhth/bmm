@@ -26,4 +26,6 @@ jobs:
       - name: Install bmm
         run: cargo install --path .
       - name: Run benchmarks
-        run: ./bench
+        run: |
+          cd bench
+          ./bench.sh

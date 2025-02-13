@@ -56,7 +56,7 @@ cat <<EOF
 # --------------------------- #
 EOF
 
-XDG_DATA_HOME=${temp_dir} buku --np -f 10 --nc -n 500 -s 1000.com >/var/tmp/buku.txt
+XDG_DATA_HOME=${temp_dir} buku --nostdin --np -f 10 --nc -n 500 -s 1000.com >/var/tmp/buku.txt
 bmm --db-path=${temp_dir}/bmm.db search -f plain -l 500 1000.com >/var/tmp/bmm.txt
 
 git --no-pager diff --no-index /var/tmp/buku.txt /var/tmp/bmm.txt || {
@@ -64,7 +64,7 @@ git --no-pager diff --no-index /var/tmp/buku.txt /var/tmp/bmm.txt || {
     exit 1
 }
 
-BUKU_COMMAND="XDG_DATA_HOME=${temp_dir} buku --np -f 10 --nc -n 500 -s 1000.com"
+BUKU_COMMAND="XDG_DATA_HOME=${temp_dir} buku --nostdin --np -f 10 --nc -n 500 -s 1000.com"
 BMM_COMMAND="bmm --db-path=${temp_dir}/bmm.db search -f plain -l 500 1000.com"
 
 cat <<EOF
@@ -84,7 +84,7 @@ cat <<EOF
 # --------------------- #
 EOF
 
-XDG_DATA_HOME=${temp_dir} buku --np -f 10 --nc -n 1000 --stag tag1 >buku.txt
+XDG_DATA_HOME=${temp_dir} buku --nostdin --np -f 10 --nc -n 1000 --stag tag1 > buku.txt
 bmm --db-path=${temp_dir}/bmm.db list -f plain -l 1000 -t tag1 >bmm.txt
 
 git --no-pager diff --no-index /var/tmp/buku.txt /var/tmp/bmm.txt || {
@@ -92,7 +92,7 @@ git --no-pager diff --no-index /var/tmp/buku.txt /var/tmp/bmm.txt || {
     exit 1
 }
 
-BUKU_COMMAND="XDG_DATA_HOME=${temp_dir} buku --np -f 10 --nc -n 1000 --stag tag1"
+BUKU_COMMAND="XDG_DATA_HOME=${temp_dir} buku --nostdin --np -f 10 --nc -n 1000 --stag tag1"
 BMM_COMMAND="bmm --db-path=${temp_dir}/bmm.db list -f plain -l 1000 -t tag1"
 
 cat <<EOF

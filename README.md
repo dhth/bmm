@@ -1,9 +1,7 @@
 # bmm
 
-[![Build Workflow Status](https://img.shields.io/github/actions/workflow/status/dhth/bmm/build.yml?style=flat-square)](https://github.com/dhth/bmm/actions/workflows/build.yml)
-[![Tests Workflow Status](https://img.shields.io/github/actions/workflow/status/dhth/bmm/test.yml?style=flat-square&label=tests)](https://github.com/dhth/bmm/actions/workflows/test.yml)
-
-`bmm` (stands for "bookmark manager") lets you get to your bookmarks in a flash.
+`bmm` (stands for "bookmarks manager") lets you get to your bookmarks in a
+flash.
 
 > [!NOTE]
 > `bmm` is alpha software, and is under active development. Its API might

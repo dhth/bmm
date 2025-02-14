@@ -7,7 +7,7 @@ use sqlx::{Pool, Sqlite};
 pub enum ShowBookmarkError {
     #[error("couldn't get bookmark from db: {0}")]
     CouldntGetBookmarkFromDB(#[from] DBError),
-    #[error("bookmark doesn't exit")]
+    #[error("bookmark doesn't exist")]
     BookmarkDoesntExist,
 }
 

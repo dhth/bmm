@@ -59,4 +59,7 @@ bmm show https://github.com/dhth/bmm
 bmm tags list \
     --format json \
     --show-stats
+
+# delete bookmarks
+bmm delete --yes https://github.com/dhth/bmm https://github.com/dhth/omm
 ```

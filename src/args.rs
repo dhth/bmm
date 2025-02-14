@@ -40,13 +40,13 @@ pub enum BmmCommand {
     },
     /// List bookmarks based on several kinds of queries
     List {
-        /// Query to match bookmark uris on
+        /// Pattern to match bookmark URIs on
         #[arg(short = 'u', long = "uri", value_name = "URI")]
         uri: Option<String>,
-        /// Query to match bookmark titles on
+        /// Pattern to match bookmark titles on
         #[arg(short = 'd', long = "title", value_name = "STRING")]
         title: Option<String>,
-        /// Query to match bookmark tags on
+        /// Tags to match (exactly)
         #[arg(
             short = 't',
             long = "tags",
@@ -90,13 +90,13 @@ pub enum BmmCommand {
         /// Provide details via a text editor
         #[arg(short = 'e', long = "editor")]
         use_editor: bool,
-        /// Fail if uri already saved (bmm will update the existing entry by default)
+        /// Fail if URI already saved (bmm will update the existing entry by default)
         #[arg(short = 'f', long = "fail-if-already-saved", value_name = "STRING")]
         fail_if_uri_already_saved: bool,
     },
     /// Search bookmarks based on a singular query
     Search {
-        /// Query to match bookmarks where any attribute of the bookmark (uri, title, tags) matches the query
+        /// Pattern to match any attribute of a bookmark (URI, title, tags)
         #[arg(value_name = "QUERY")]
         query: String,
         /// Format to output in
@@ -118,7 +118,7 @@ pub enum BmmCommand {
     },
     /// Show bookmark details
     Show {
-        /// Query to match bookmarks where any attribute of the bookmark (uri, title, tags) matches the query
+        /// URI of the bookmark
         #[arg(value_name = "URI")]
         uri: String,
     },
@@ -180,7 +180,7 @@ impl std::fmt::Display for Args {
             } => format!(
                 r#"
 command           : Delete bookmark(s)
-uris              : {}
+URIs              : {}
 skip confirmation : {}
 "#,
                 uris.join(", "),
@@ -195,7 +195,7 @@ skip confirmation : {}
             } => format!(
                 r#"
 command           : List bookmark(s)
-uri query         : {}
+URI query         : {}
 title query       : {}
 tags              : {:?}
 format            : {}
@@ -224,11 +224,11 @@ dry_run : {}
             } => format!(
                 r#"
 command                   : Save bookmark
-uri                       : {}
+URI                       : {}
 title                     : {}
 tags                      : {}
 use editor                : {}
-fail if uri already saved : {}
+fail if URI already saved : {}
 "#,
                 uri,
                 title.as_deref().unwrap_or(NOT_PROVIDED),
@@ -252,7 +252,7 @@ limit       : {}
             BmmCommand::Show { uri } => format!(
                 r#"
 command     : Show bookmarks
-uri         : {}
+URI         : {}
 "#,
                 uri
             ),

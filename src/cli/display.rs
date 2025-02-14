@@ -45,15 +45,13 @@ pub fn display_bookmarks(
 
 pub fn display_bookmark_details(bookmark: &SavedBookmark) {
     println!(
-        r#"
-Bookmark details
+        r#"Bookmark details
 ---
 
 ID   : {}
 Title: {}
 URI  : {}
-Tags : {}
-"#,
+Tags : {}"#,
         bookmark.id,
         bookmark.title.as_deref().unwrap_or(NOT_SET),
         bookmark.uri,

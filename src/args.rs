@@ -29,6 +29,15 @@ pub enum BmmCommand {
         #[arg(short = 'd', long = "dry-run")]
         dry_run: bool,
     },
+    /// Delete bookmarks
+    Delete {
+        /// URIs to delete (will be matched exactly)
+        #[arg(value_name = "URI")]
+        uris: Vec<String>,
+        /// Whether to skip confirmation
+        #[arg(short = 'y', long = "yes")]
+        skip_confirmation: bool,
+    },
     /// List bookmarks based on several kinds of queries
     List {
         /// Query to match bookmark uris on
@@ -165,6 +174,18 @@ impl std::fmt::Display for OutputFormat {
 impl std::fmt::Display for Args {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let output = match &self.command {
+            BmmCommand::Delete {
+                uris,
+                skip_confirmation,
+            } => format!(
+                r#"
+command           : Delete bookmark(s)
+uris              : {}
+skip confirmation : {}
+"#,
+                uris.join(", "),
+                skip_confirmation,
+            ),
             BmmCommand::List {
                 uri,
                 title,

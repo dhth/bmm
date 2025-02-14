@@ -1,6 +1,6 @@
 use crate::cli::{
-    CouldntGetDetailsViaEditorError, ImportError, ListBookmarksError, ListTagsError,
-    ParsingTempFileContentError, SaveBookmarkError, ShowBookmarkError,
+    CouldntGetDetailsViaEditorError, DeleteBookmarksError, ImportError, ListBookmarksError,
+    ListTagsError, ParsingTempFileContentError, SaveBookmarkError, ShowBookmarkError,
 };
 use crate::persistence::DBError;
 use std::io::Error as IOError;
@@ -26,6 +26,8 @@ pub enum AppError {
     CouldntSaveBookmark(#[from] SaveBookmarkError),
     #[error("couldn't show bookmark details: {0}")]
     CouldntShowBookmark(#[from] ShowBookmarkError),
+    #[error("couldn't delete bookmarks: {0}")]
+    CouldntDeleteBookmarks(#[from] DeleteBookmarksError),
 
     // tags related
     #[error("couldn't list tags: {0}")]
@@ -84,6 +86,11 @@ impl AppError {
             AppError::CouldntListTags(e) => match e {
                 ListTagsError::CouldntGetTagsFromDB(_) => Some(700),
                 ListTagsError::CouldntDisplayResults(_) => Some(701),
+            },
+            AppError::CouldntDeleteBookmarks(e) => match e {
+                DeleteBookmarksError::CouldntDeleteBookmarksInDB(_) => Some(800),
+                DeleteBookmarksError::CouldntFlushStdout(_) => Some(801),
+                DeleteBookmarksError::CouldntReadUserInput(_) => Some(802),
             },
         }
     }

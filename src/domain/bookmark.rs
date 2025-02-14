@@ -8,12 +8,11 @@ const TAG_TITLE_MAX_LENGTH: usize = 500;
 
 #[derive(Debug, Serialize)]
 pub struct DraftBookmark {
-    uri: Url,
+    uri: String,
     title: Option<String>,
     tags: Vec<String>,
 }
 
-#[allow(unused)]
 #[derive(Debug, Deserialize)]
 pub struct PotentialBookmark {
     pub uri: String,
@@ -37,7 +36,7 @@ impl TryFrom<(&str, Option<&str>, Vec<&str>)> for DraftBookmark {
     fn try_from(value: (&str, Option<&str>, Vec<&str>)) -> Result<Self, Self::Error> {
         let (uri, title, tags) = value;
 
-        let uri = Url::parse(uri).map_err(DraftBookmarkError::CouldntParseUri)?;
+        Url::parse(uri).map_err(DraftBookmarkError::CouldntParseUri)?;
 
         if let Some(t) = title {
             let title_len = t.len();
@@ -79,7 +78,7 @@ impl TryFrom<(&str, Option<&str>, Vec<&str>)> for DraftBookmark {
         tags_to_save.dedup();
 
         Ok(Self {
-            uri,
+            uri: uri.to_string(),
             title: title_to_save,
             tags: tags_to_save,
         })

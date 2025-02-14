@@ -34,20 +34,19 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
     let pool = get_db_pool(db_path).await?;
 
     match args.command {
+        BmmCommand::Delete {
+            uris,
+            skip_confirmation,
+        } => {
+            delete_bookmarks(&pool, uris, skip_confirmation).await?;
+        }
+
         BmmCommand::Import { file, dry_run } => {
             let result = import_bookmarks(&pool, &file, dry_run).await?;
             if let Some(stats) = result {
                 println!("imported {} bookmarks", stats.num_bookmarks_imported);
             }
         }
-
-        BmmCommand::Save {
-            uri,
-            title,
-            tags,
-            use_editor,
-            fail_if_uri_already_saved: fail_if_uri_saved,
-        } => save_bookmark(&pool, uri, title, tags, use_editor, fail_if_uri_saved).await?,
 
         BmmCommand::List {
             uri,
@@ -64,6 +63,14 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
         } => search_bookmarks(&pool, &query, format, limit)
             .await
             .map_err(AppError::CouldntListBookmarks)?,
+
+        BmmCommand::Save {
+            uri,
+            title,
+            tags,
+            use_editor,
+            fail_if_uri_already_saved: fail_if_uri_saved,
+        } => save_bookmark(&pool, uri, title, tags, use_editor, fail_if_uri_saved).await?,
 
         BmmCommand::Show { uri } => show_bookmark(&pool, uri).await?,
 

@@ -145,6 +145,15 @@ pub enum TagsCommand {
         #[arg(short = 's', long = "show-stats")]
         show_stats: bool,
     },
+    /// Rename a tag
+    Rename {
+        /// Original tag
+        #[arg(value_name = "ORIGINAL")]
+        original_tag: String,
+        /// New tag
+        #[arg(value_name = "NEW")]
+        new_tag: String,
+    },
 }
 
 #[derive(Clone, Debug, ValueEnum)]
@@ -260,10 +269,21 @@ URI         : {}
                 TagsCommand::List { format, show_stats } => format!(
                     r#"
 command      : List Tags
-format       : {:?}
+format       : {}
 show stats   : {}
 "#,
                     format, show_stats
+                ),
+                TagsCommand::Rename {
+                    original_tag,
+                    new_tag,
+                } => format!(
+                    r#"
+command      : Rename Tag
+original tag : {}
+new tag      : {}
+"#,
+                    original_tag, new_tag,
                 ),
             },
         };

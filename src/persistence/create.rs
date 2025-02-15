@@ -316,28 +316,15 @@ mod tests {
     use super::super::get::{
         get_bookmark_tags, get_bookmark_with_exact_uri, get_num_bookmarks, get_tags,
     };
-    use super::super::init::get_in_memory_db_pool;
+    use super::super::test_fixtures::DBPoolFixture;
     use super::*;
     use pretty_assertions::assert_eq;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    struct Fixture {
-        pool: Pool<Sqlite>,
-    }
-
-    impl Fixture {
-        async fn new() -> Self {
-            let pool = get_in_memory_db_pool()
-                .await
-                .expect("in memory connection pool should've been created");
-            Self { pool }
-        }
-    }
-
     #[tokio::test]
     async fn creating_a_bookmark_with_all_attributes_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
@@ -379,7 +366,7 @@ mod tests {
     #[tokio::test]
     async fn creating_a_bookmark_without_a_title_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let draft_bookmark = DraftBookmark::try_from((uri, None, tags))
@@ -420,7 +407,7 @@ mod tests {
     #[tokio::test]
     async fn creating_a_bookmark_without_tags_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
         let draft_bookmark = DraftBookmark::try_from((uri, Some(title), vec![]))
@@ -453,7 +440,7 @@ mod tests {
     #[tokio::test]
     async fn updating_a_bookmark_overwrites_previous_data() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
@@ -519,7 +506,7 @@ mod tests {
     #[tokio::test]
     async fn removing_title_from_a_saved_bookmark_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
         let draft_bookmark_old = DraftBookmark::try_from((uri, Some(title_old), vec![]))
@@ -556,7 +543,7 @@ mod tests {
     #[tokio::test]
     async fn removing_tags_from_a_saved_bookmark_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
@@ -607,7 +594,7 @@ mod tests {
     #[tokio::test]
     async fn updating_bookmark_cleans_up_unused_tags() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";

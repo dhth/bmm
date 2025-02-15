@@ -67,26 +67,12 @@ WHERE
 
 #[cfg(test)]
 mod tests {
-    use super::super::init::get_in_memory_db_pool;
+    use super::super::test_fixtures::DBPoolFixture;
     use super::super::{create_or_update_bookmark, get_num_bookmarks, get_tags};
     use super::*;
     use crate::domain::DraftBookmark;
     use pretty_assertions::assert_eq;
     use std::time::{SystemTime, UNIX_EPOCH};
-
-    struct Fixture {
-        pool: Pool<Sqlite>,
-    }
-
-    impl Fixture {
-        async fn new() -> Self {
-            let pool = get_in_memory_db_pool()
-                .await
-                .expect("in-memory sqlite pool should've been created");
-
-            Self { pool }
-        }
-    }
 
     //-------------//
     //  SUCCESSES  //
@@ -95,7 +81,7 @@ mod tests {
     #[tokio::test]
     async fn deleting_uris_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -131,7 +117,7 @@ mod tests {
     #[tokio::test]
     async fn deleting_uris_works_when_uris_dont_exist() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -164,7 +150,7 @@ mod tests {
     #[tokio::test]
     async fn deleting_uris_cleans_up_unused_tags() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;

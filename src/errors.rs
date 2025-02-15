@@ -1,6 +1,7 @@
 use crate::cli::{
     CouldntGetDetailsViaEditorError, DeleteBookmarksError, ImportError, ListBookmarksError,
-    ListTagsError, ParsingTempFileContentError, SaveBookmarkError, ShowBookmarkError,
+    ListTagsError, ParsingTempFileContentError, RenameTagError, SaveBookmarkError,
+    ShowBookmarkError,
 };
 use crate::persistence::DBError;
 use std::io::Error as IOError;
@@ -32,6 +33,8 @@ pub enum AppError {
     // tags related
     #[error("couldn't list tags: {0}")]
     CouldntListTags(#[from] ListTagsError),
+    #[error("couldn't rename tag: {0}")]
+    CouldntRenameTag(#[from] RenameTagError),
 }
 
 impl AppError {
@@ -91,6 +94,12 @@ impl AppError {
                 DeleteBookmarksError::CouldntDeleteBookmarksInDB(_) => Some(800),
                 DeleteBookmarksError::CouldntFlushStdout(_) => Some(801),
                 DeleteBookmarksError::CouldntReadUserInput(_) => Some(802),
+            },
+            AppError::CouldntRenameTag(e) => match e {
+                RenameTagError::NewTagNotDifferent => None,
+                RenameTagError::NoSuchTag => None,
+                RenameTagError::CouldntRenameTag(_) => Some(900),
+                RenameTagError::TagIsInvalid => None,
             },
         }
     }

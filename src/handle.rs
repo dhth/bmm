@@ -78,6 +78,10 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             TagsCommand::List { format, show_stats } => {
                 list_tags(&pool, format, show_stats).await?
             }
+            TagsCommand::Rename {
+                original_tag,
+                new_tag,
+            } => rename_tag(&pool, original_tag, new_tag).await?,
         },
     }
 

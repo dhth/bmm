@@ -62,4 +62,7 @@ bmm tags list \
 
 # delete bookmarks
 bmm delete --yes https://github.com/dhth/bmm https://github.com/dhth/omm
+
+# rename tag
+bmm tags rename old-tag new-tag
 ```

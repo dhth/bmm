@@ -1,16 +1,14 @@
-use once_cell::sync::Lazy;
-use regex::Regex;
+use super::tags::{Tag, TAG_REGEX_STR};
 use serde::{Deserialize, Serialize};
 use url::{ParseError, Url};
 
-const TAG_REGEX_STR: &str = r"^[a-zA-Z0-9_-]{1,30}$";
 const TAG_TITLE_MAX_LENGTH: usize = 500;
 
 #[derive(Debug, Serialize)]
 pub struct DraftBookmark {
     uri: String,
     title: Option<String>,
-    tags: Vec<String>,
+    tags: Vec<Tag>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -54,20 +52,16 @@ impl TryFrom<(&str, Option<&str>, Vec<&str>)> for DraftBookmark {
             }
         });
 
-        static RE: Lazy<Regex> = Lazy::new(|| Regex::new(TAG_REGEX_STR).expect("regex is invalid"));
-
         let mut tags_to_save = Vec::with_capacity(tags.len());
         let mut invalid_tags = Vec::new();
         for tag in tags {
-            let trimmed_tag = tag.trim();
-            if trimmed_tag.is_empty() {
+            if tag.is_empty() {
                 continue;
             }
 
-            if !RE.is_match(trimmed_tag) {
-                invalid_tags.push(trimmed_tag.to_string());
-            } else {
-                tags_to_save.push(trimmed_tag.to_lowercase().to_string());
+            match Tag::try_from(tag) {
+                Ok(t) => tags_to_save.push(t),
+                Err(_) => invalid_tags.push(tag.to_string()),
             }
         }
         if !invalid_tags.is_empty() {
@@ -156,7 +150,7 @@ impl DraftBookmark {
     }
 
     pub fn tags(&self) -> Vec<&str> {
-        self.tags.iter().map(|t| t.as_str()).collect()
+        self.tags.iter().map(|t| t.value()).collect()
     }
 }
 
@@ -194,18 +188,18 @@ mod tests {
     }
 
     #[test]
-    fn tags_get_cleaned_up_when_creating_a_draft_bookmark() {
+    fn empty_tags_get_skipped_over_while_creating_a_draft_bookmark() {
         // GIVEN
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
-        let tags = vec![" sql ", "rUsT", "database-LIBrary"];
+        let tags = vec!["sql", "", "database-library", ""];
 
         // WHEN
         let result = DraftBookmark::try_from((uri, Some(title), tags))
             .expect("draft bookmark should've been created");
 
         // THEN
-        assert_eq!(result.tags, vec!["database-library", "rust", "sql"]);
+        assert_eq!(result.tags(), vec!["database-library", "sql"]);
     }
 
     //------------//

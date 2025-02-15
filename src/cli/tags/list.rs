@@ -1,5 +1,5 @@
-use super::display::{display_tags, display_tags_with_stats};
-use super::DisplayError;
+use super::super::display::{display_tags, display_tags_with_stats};
+use super::super::DisplayError;
 use crate::args::OutputFormat;
 use crate::persistence::DBError;
 use crate::persistence::{get_tags, get_tags_with_stats};

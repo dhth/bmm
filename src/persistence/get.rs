@@ -551,30 +551,16 @@ FROM
 #[cfg(test)]
 mod tests {
     use super::super::create_or_update_bookmark;
-    use super::super::init::get_in_memory_db_pool;
+    use super::super::test_fixtures::DBPoolFixture;
     use super::*;
     use crate::domain::DraftBookmark;
     use pretty_assertions::assert_eq;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    struct Fixture {
-        pool: Pool<Sqlite>,
-    }
-
-    impl Fixture {
-        async fn new() -> Self {
-            let pool = get_in_memory_db_pool()
-                .await
-                .expect("in-memory sqlite pool should've been created");
-
-            Self { pool }
-        }
-    }
-
     #[tokio::test]
     async fn get_bookmark_from_id_returns_none_if_bookmark_doesnt_exist() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
 
         // WHEN
         let maybe_bookmark = get_bookmark_by_id(&fixture.pool, 10).await.unwrap();
@@ -586,7 +572,7 @@ mod tests {
     #[tokio::test]
     async fn get_bookmark_from_id_returns_bookmark_when_present() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title = Some("sqlx's github page");
         let draft_bookmark = DraftBookmark::try_from((uri, title, Vec::new()))
@@ -614,7 +600,7 @@ mod tests {
     #[tokio::test]
     async fn get_bookmark_with_uri_returns_none_if_bookmark_doesnt_exist() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
 
         // WHEN
         let maybe_bookmark = get_bookmark_with_exact_uri(&fixture.pool, "https://blah.com")
@@ -628,7 +614,7 @@ mod tests {
     #[tokio::test]
     async fn get_bookmark_with_uri_returns_bookmark_when_present() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title = Some("sqlx's github page");
         let draft_bookmark = DraftBookmark::try_from((uri, title, Vec::new()))
@@ -654,7 +640,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_uri_only_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             "https://github.com/launchbadge/sqlx",
             "https://github.com/serde-rs/serde",
@@ -687,7 +673,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_title_only_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             (
                 "https://github.com/launchbadge/sqlx",
@@ -730,7 +716,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_a_tag_only_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             (
                 "https://github.com/launchbadge/sqlx",
@@ -786,7 +772,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_multiple_tags_only_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             (
                 "https://github.com/launchbadge/sqlx",
@@ -842,7 +828,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_both_uri_and_title_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             (
                 "https://github.com/launchbadge/sqlx",
@@ -897,7 +883,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_both_uri_and_tags_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             (
                 "https://github.com/launchbadge/sqlx",
@@ -937,7 +923,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_both_title_and_title_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             (
                 "https://github.com/launchbadge/sqlx",
@@ -996,7 +982,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_all_three_attributes_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             (
                 "https://github.com/launchbadge/sqlx",
@@ -1056,7 +1042,7 @@ mod tests {
     #[tokio::test]
     async fn limiting_search_results_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             "https://github.com/launchbadge/sqlx",
             "https://github.com/serde-rs/serde",
@@ -1089,7 +1075,7 @@ mod tests {
     #[tokio::test]
     async fn getting_returns_results_in_order_of_last_update() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
 
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
@@ -1155,7 +1141,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_query_works() {
         // GIVEN
-        let fixture = Fixture::new().await;
+        let fixture = DBPoolFixture::new().await;
         let uris = [
             (
                 "https://uri-one-keyword1-keyword3.com",

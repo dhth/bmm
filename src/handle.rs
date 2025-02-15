@@ -54,13 +54,15 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             tags,
             format,
             limit,
-        } => list_bookmarks(&pool, uri, title, tags, format, limit).await?,
+            tui,
+        } => list_bookmarks(&pool, uri, title, tags, format, limit, tui).await?,
 
         BmmCommand::Search {
             query,
             format,
             limit,
-        } => search_bookmarks(&pool, &query, format, limit)
+            tui,
+        } => search_bookmarks(&pool, &query, format, limit, tui)
             .await
             .map_err(AppError::CouldntListBookmarks)?,
 

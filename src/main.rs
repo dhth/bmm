@@ -5,6 +5,7 @@ mod domain;
 mod errors;
 mod handle;
 mod persistence;
+mod tui;
 
 use args::Args;
 use clap::Parser;

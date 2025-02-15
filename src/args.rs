@@ -70,6 +70,9 @@ pub enum BmmCommand {
             default_value_t = 500
         )]
         limit: u16,
+        /// whether to show results in bmm's TUI
+        #[arg(long = "tui")]
+        tui: bool,
     },
     /// Saves a bookmark.
     Save {
@@ -115,6 +118,9 @@ pub enum BmmCommand {
             default_value_t = 500
         )]
         limit: u16,
+        /// whether to show results in bmm's TUI
+        #[arg(long = "tui")]
+        tui: bool,
     },
     /// Show bookmark details
     Show {
@@ -201,6 +207,7 @@ skip confirmation : {}
                 tags,
                 format,
                 limit,
+                tui,
             } => format!(
                 r#"
 command           : List bookmark(s)
@@ -209,12 +216,14 @@ title query       : {}
 tags              : {:?}
 format            : {}
 limit             : {}
+tui               : {}
 "#,
                 uri.as_deref().unwrap_or(NOT_PROVIDED),
                 title.as_deref().unwrap_or(NOT_PROVIDED),
                 tags,
                 format,
-                limit
+                limit,
+                tui,
             ),
             BmmCommand::Import { file, dry_run } => format!(
                 r#"
@@ -249,14 +258,16 @@ fail if URI already saved : {}
                 query: uri,
                 format,
                 limit,
+                tui,
             } => format!(
                 r#"
 command     : Search bookmarks
 query       : {}
 format      : {}
 limit       : {}
+tui         : {}
 "#,
-                uri, format, limit
+                uri, format, limit, tui
             ),
             BmmCommand::Show { uri } => format!(
                 r#"

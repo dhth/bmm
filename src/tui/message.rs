@@ -1,13 +1,26 @@
-use super::common::View;
+use super::common::ActivePane;
+use crate::domain::SavedBookmark;
+use crate::persistence::DBError;
+use ratatui::crossterm::event::Event;
+use std::io::Error as IOError;
 
-#[derive(PartialEq)]
-pub(crate) enum Message {
-    TerminalResize(w, h),
+pub enum Message {
+    TerminalResize(u16, u16),
+    ClearUserMsg,
     GoToNextItem,
-    GoToPreviousPreview,
+    GoToPreviousItem,
     GoToFirstItem,
     GoToLastItem,
     OpenInBrowser,
-    ShowView(View),
-    Quit,
+    UrlsOpenedInBrowser(UrlsOpenedResult),
+    SearchFinished(Result<Vec<SavedBookmark>, DBError>),
+    ShowView(ActivePane),
+    SearchInputGotEvent(Event),
+    SubmitSearch,
+    GoBackOrQuit,
+}
+
+pub enum UrlsOpenedResult {
+    Success,
+    Failure(IOError),
 }

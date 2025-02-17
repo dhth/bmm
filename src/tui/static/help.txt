@@ -1,15 +1,10 @@
 Keymaps
 ---
 
-J                    move item one position below
-K                    move item one position above
-Enter                move item/selection to the start of the list
+s                    start searching
+Enter                submit input query
 j / Down             go down
 k / Up               go up
-[1-9]                move current item to index in list
-g                    go to the start of the list
-G                    go to the end of the list
-w                    write to file
-space / s            select/unselect item
+o                    open uri in browser
 ?                    show/hide help view
-Esc / q              go back/reset selection/exit
+Esc / q              go back/reset input/exit

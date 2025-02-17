@@ -133,6 +133,8 @@ pub enum BmmCommand {
         #[command(subcommand)]
         tags_command: TagsCommand,
     },
+    /// Open bmm's TUI
+    Tui,
 }
 
 #[derive(Subcommand, Debug)]
@@ -297,6 +299,10 @@ new tag      : {}
                     original_tag, new_tag,
                 ),
             },
+            BmmCommand::Tui => r#"
+command      : Open TUI
+"#
+            .to_string(),
         };
 
         f.write_str(&output)

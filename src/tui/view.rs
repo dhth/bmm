@@ -1,25 +1,197 @@
-#![allow(unused)]
-
 use super::common::*;
-use super::model::Model;
+use super::model::TerminalDimensions;
+use super::model::{Model, UserMessage};
 use ratatui::{
-    layout::{Alignment, Constraint, Layout},
+    layout::{Alignment, Constraint, Layout, Rect},
     style::{Style, Stylize},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListDirection, ListItem, Padding, Paragraph},
+    widgets::{Block, List, ListDirection, ListItem, Padding, Paragraph},
     Frame,
 };
 
 const HELP_CONTENTS: &str = include_str!("static/help.txt");
 
 pub(crate) fn view(model: &mut Model, frame: &mut Frame) {
-    match model.view {
-        View::List => render_list_view(model, frame),
-        View::Help => render_help_view(frame),
+    if model.terminal_too_small {
+        render_terminal_too_small_view(&model.terminal_dimensions, frame);
+        return;
+    }
+
+    match model.active_pane {
+        ActivePane::List => {
+            if model.initial {
+                render_initial_view(model, frame, false);
+            } else {
+                render_list_view(model, frame, false);
+            }
+        }
+        ActivePane::Help => render_help_view(model, frame),
+        ActivePane::SearchInput => {
+            if model.initial {
+                render_initial_view(model, frame, true);
+            } else {
+                render_list_view(model, frame, true);
+            }
+        }
     }
 }
 
-fn render_list_view(model: &mut Model, frame: &mut Frame) {
+fn render_terminal_too_small_view(dimensions: &TerminalDimensions, frame: &mut Frame) {
+    let message = match dimensions {
+        TerminalDimensions::Unknown => format!(
+            r#"
+Terminal size too small
+
+Minimum dimensions needed:
+  Width = {} Height = {}
+
+Press (q/<ctrl+c>/<esc> to exit)
+"#,
+            MIN_TERMINAL_WIDTH, MIN_TERMINAL_HEIGHT
+        ),
+        TerminalDimensions::Known(w, h) => format!(
+            r#"
+Terminal size too small:
+  Width = {} Height = {}
+
+Minimum dimensions needed:
+  Width = {} Height = {}
+
+Press (q/<ctrl+c>/<esc> to exit)
+"#,
+            w, h, MIN_TERMINAL_WIDTH, MIN_TERMINAL_HEIGHT
+        ),
+    };
+
+    let p = Paragraph::new(message)
+        .block(Block::bordered())
+        .style(Style::new().fg(PRIMARY_COLOR))
+        .alignment(Alignment::Center);
+
+    frame.render_widget(p, frame.area());
+}
+
+fn render_banner(frame: &mut Frame, chunk: Rect) {
+    let banner = r#"
+
+
+
+
+bbbbbbb                                                                
+b:::::b                                                                
+b:::::b                                                                
+b:::::b                                                                
+b:::::b                                                                
+b:::::bbbbbbbbb         mmmmmmm    mmmmmmm        mmmmmmm    mmmmmmm   
+b::::::::::::::bb     mm:::::::m  m:::::::mm    mm:::::::m  m:::::::mm 
+b::::::::::::::::b   m::::::::::mm::::::::::m  m::::::::::mm::::::::::m
+b:::::bbbbb:::::::b  m::::::::::::::::::::::m  m::::::::::::::::::::::m
+b:::::b    b::::::b  m:::::mmm::::::mmm:::::m  m:::::mmm::::::mmm:::::m
+b:::::b     b:::::b  m::::m   m::::m   m::::m  m::::m   m::::m   m::::m
+b:::::b     b:::::b  m::::m   m::::m   m::::m  m::::m   m::::m   m::::m
+b:::::b     b:::::b  m::::m   m::::m   m::::m  m::::m   m::::m   m::::m
+b:::::bbbbbb::::::b  m::::m   m::::m   m::::m  m::::m   m::::m   m::::m
+b::::::::::::::::b   m::::m   m::::m   m::::m  m::::m   m::::m   m::::m
+b:::::::::::::::b    m::::m   m::::m   m::::m  m::::m   m::::m   m::::m
+bbbbbbbbbbbbbbbb     mmmmmm   mmmmmm   mmmmmm  mmmmmm   mmmmmm   mmmmmm
+
+
+         start typing your search query
+"#;
+
+    let p = Paragraph::new(banner)
+        .style(Style::new().fg(PRIMARY_COLOR))
+        .alignment(Alignment::Center);
+
+    frame.render_widget(p, chunk);
+}
+
+fn render_header(model: &Model, frame: &mut Frame, chunk: Rect) {
+    let mut header_components = vec![Span::from(" ")];
+
+    match model.active_pane {
+        ActivePane::List | ActivePane::SearchInput => {
+            if model.bookmark_items.items.is_empty() {
+                header_components.push(Span::styled(
+                    " no bookmarks ",
+                    Style::new().bold().bg(PRIMARY_COLOR).fg(FG_COLOR),
+                ));
+            } else {
+                header_components.push(Span::styled(
+                    " bookmarks ",
+                    Style::new().bold().bg(PRIMARY_COLOR).fg(FG_COLOR),
+                ));
+                header_components.push(Span::from(" "));
+                header_components.push(Span::styled(
+                    format!("({})", model.bookmark_items.items.len()),
+                    Style::new().fg(COLOR_THREE),
+                ));
+            }
+        }
+        ActivePane::Help => {
+            header_components.push(Span::styled(
+                " help ",
+                Style::new().bold().bg(HELP_COLOR).fg(FG_COLOR),
+            ));
+        }
+    }
+
+    let header_text = Line::from(header_components);
+
+    let header = Paragraph::new(header_text).block(Block::default());
+
+    frame.render_widget(&header, chunk);
+}
+
+fn render_status_line(model: &Model, frame: &mut Frame, chunk: Rect) {
+    let mut status_bar_lines = vec![Span::styled(
+        TITLE,
+        Style::new().bold().bg(PRIMARY_COLOR).fg(FG_COLOR),
+    )];
+
+    if model.debug {
+        status_bar_lines.push(Span::from(format!(
+            " [render counter: {}]",
+            model.render_counter
+        )));
+        status_bar_lines.push(Span::from(format!(
+            " [event counter: {}]",
+            model.event_counter
+        )));
+    }
+
+    if let Some(msg) = &model.user_message {
+        let span = match msg {
+            UserMessage::Info(m, _) => {
+                Span::styled(format!(" {}", m), Style::new().fg(INFO_MESSAGE_COLOR))
+            }
+            UserMessage::Error(m, _) => {
+                Span::styled(format!(" {}", m), Style::new().fg(ERROR_MESSAGE_COLOR))
+            }
+        };
+
+        status_bar_lines.push(span);
+    }
+
+    let status_bar_text = Line::from(status_bar_lines);
+
+    let status_bar = Paragraph::new(status_bar_text).block(Block::default());
+
+    frame.render_widget(&status_bar, chunk);
+}
+
+fn render_search_input(model: &Model, frame: &mut Frame, chunk: Rect) {
+    let input = Paragraph::new(model.search_input.value())
+        .style(Style::default().fg(COLOR_THREE))
+        .block(
+            Block::bordered()
+                .title(" search query? ")
+                .title_style(Style::new().bold().bg(COLOR_THREE).fg(FG_COLOR)),
+        );
+    frame.render_widget(input, chunk);
+}
+
+fn render_bookmarks_list(model: &mut Model, frame: &mut Frame, chunk: Rect) {
     let items: Vec<ListItem> = model
         .bookmark_items
         .items
@@ -27,32 +199,20 @@ fn render_list_view(model: &mut Model, frame: &mut Frame) {
         .map(ListItem::from)
         .collect();
 
-    let title_style = Style::new().bold().bg(PRIMARY_COLOR).fg(FG_COLOR);
     let list = List::new(items)
-        .block(
-            Block::bordered()
-                .border_style(Style::default().fg(PRIMARY_COLOR))
-                .title("bookmarks")
-                //.title_style(title_style)
-                .padding(Padding::new(1, 0, 1, 1)),
-        )
+        .block(Block::new().padding(Padding::new(0, 0, 1, 1)))
         .style(Style::new().white())
+        .highlight_symbol("> ")
         .repeat_highlight_symbol(true)
         .highlight_style(Style::new().fg(PRIMARY_COLOR))
         .direction(ListDirection::TopToBottom);
 
-    let layout = Layout::default()
-        .direction(ratatui::layout::Direction::Vertical)
-        .constraints(vec![
-            Constraint::Min(2),
-            Constraint::Max(7),
-            Constraint::Max(1),
-        ])
-        .split(frame.area());
+    frame.render_stateful_widget(&list, chunk, &mut model.bookmark_items.state);
+}
 
-    frame.render_stateful_widget(&list, layout[0], &mut model.bookmark_items.state);
-
+fn render_bookmarks_details(model: &Model, frame: &mut Frame, chunk: Rect) {
     let maybe_selected = model.bookmark_items.state.selected();
+
     if let Some(selected) = maybe_selected {
         let maybe_bookmark_item = model.bookmark_items.items.get(selected);
         if let Some(bookmark_item) = maybe_bookmark_item {
@@ -76,44 +236,138 @@ Tags : {}
             let details = Paragraph::new(details)
                 .block(
                     Block::bordered()
-                        .border_style(Style::default().fg(SECONDARY_COLOR))
-                        //.title_style(Style::new().bold().bg(SECONDARY_COLOR).fg(FG_COLOR))
-                        .title("details")
+                        .border_style(Style::default().fg(COLOR_TWO))
+                        .title_style(Style::new().bold().bg(COLOR_TWO).fg(FG_COLOR))
+                        .title(" details ")
                         .padding(Padding::new(1, 0, 1, 0)),
                 )
                 .style(Style::new().white().on_black())
                 .alignment(Alignment::Left);
-            //.wrap(ratatui::widgets::Wrap { trim: true });
 
-            frame.render_widget(&details, layout[1]);
+            frame.render_widget(&details, chunk);
         };
     }
-
-    let status_bar_text = vec![Line::from(vec![
-        Span::styled(TITLE, Style::new().bold().bg(PRIMARY_COLOR).fg(FG_COLOR)),
-        Span::raw(" status bar"),
-        ".".into(),
-    ])];
-
-    let status_bar = Paragraph::new(status_bar_text).block(Block::default());
-
-    frame.render_widget(&status_bar, layout[2]);
 }
 
-fn render_help_view(frame: &mut Frame) {
-    let title_style = Style::new().bold().bg(PRIMARY_COLOR).fg(FG_COLOR);
+fn render_initial_view(model: &mut Model, frame: &mut Frame, search: bool) {
+    match search {
+        true => {
+            let layout = Layout::default()
+                .direction(ratatui::layout::Direction::Vertical)
+                .constraints(vec![
+                    Constraint::Min(26),
+                    Constraint::Max(3),
+                    Constraint::Max(1),
+                ])
+                .split(frame.area());
 
-    let block = Block::default()
-        .title(" help ")
-        .padding(Padding::new(2, 0, 1, 0))
-        .title_style(title_style);
+            render_banner(frame, layout[0]);
+            render_search_input(model, frame, layout[1]);
+            render_status_line(model, frame, layout[2]);
+        }
+        false => {
+            let layout = Layout::default()
+                .direction(ratatui::layout::Direction::Vertical)
+                .constraints(vec![Constraint::Min(26), Constraint::Max(1)])
+                .split(frame.area());
 
+            render_banner(frame, layout[0]);
+            render_status_line(model, frame, layout[1]);
+        }
+    }
+}
+
+fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
+    match model.bookmark_items.items.len() {
+        0 => match search {
+            true => {
+                let layout = Layout::default()
+                    .direction(ratatui::layout::Direction::Vertical)
+                    .constraints(vec![
+                        Constraint::Max(1),
+                        Constraint::Min(21),
+                        Constraint::Max(7),
+                        Constraint::Max(1),
+                    ])
+                    .split(frame.area());
+
+                render_header(model, frame, layout[0]);
+                render_bookmarks_list(model, frame, layout[1]);
+                render_search_input(model, frame, layout[2]);
+                render_status_line(model, frame, layout[3]);
+            }
+            false => {
+                let layout = Layout::default()
+                    .direction(ratatui::layout::Direction::Vertical)
+                    .constraints(vec![
+                        Constraint::Max(1),
+                        Constraint::Min(2),
+                        Constraint::Max(1),
+                    ])
+                    .split(frame.area());
+
+                render_header(model, frame, layout[0]);
+                render_bookmarks_list(model, frame, layout[1]);
+                render_status_line(model, frame, layout[2]);
+            }
+        },
+        _ => match search {
+            true => {
+                let layout = Layout::default()
+                    .direction(ratatui::layout::Direction::Vertical)
+                    .constraints(vec![
+                        Constraint::Max(1),
+                        Constraint::Min(18),
+                        Constraint::Max(7),
+                        Constraint::Max(3),
+                        Constraint::Max(1),
+                    ])
+                    .split(frame.area());
+
+                render_header(model, frame, layout[0]);
+                render_bookmarks_list(model, frame, layout[1]);
+                render_bookmarks_details(model, frame, layout[2]);
+                render_search_input(model, frame, layout[3]);
+                render_status_line(model, frame, layout[4]);
+            }
+            false => {
+                let layout = Layout::default()
+                    .direction(ratatui::layout::Direction::Vertical)
+                    .constraints(vec![
+                        Constraint::Max(1),
+                        Constraint::Min(21),
+                        Constraint::Max(7),
+                        Constraint::Max(1),
+                    ])
+                    .split(frame.area());
+
+                render_header(model, frame, layout[0]);
+                render_bookmarks_list(model, frame, layout[1]);
+                render_bookmarks_details(model, frame, layout[2]);
+                render_status_line(model, frame, layout[3]);
+            }
+        },
+    }
+}
+
+fn render_help_view(model: &mut Model, frame: &mut Frame) {
+    let layout = Layout::default()
+        .direction(ratatui::layout::Direction::Vertical)
+        .constraints(vec![
+            Constraint::Max(1),
+            Constraint::Min(28),
+            Constraint::Max(1),
+        ])
+        .split(frame.area());
+
+    render_header(model, frame, layout[0]);
     let lines: Vec<Line<'_>> = HELP_CONTENTS.lines().map(Line::from).collect();
 
     let p = Paragraph::new(lines)
-        .block(block)
+        .block(Block::new().padding(Padding::new(2, 0, 1, 0)))
         .style(Style::new().white())
         .alignment(Alignment::Left);
 
-    frame.render_widget(p, frame.area())
+    frame.render_widget(p, layout[1]);
+    render_status_line(model, frame, layout[2]);
 }

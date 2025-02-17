@@ -1,0 +1,35 @@
+use super::commands::Command;
+use super::message::{Message, UrlsOpenedResult};
+use crate::common::DEFAULT_LIMIT;
+use crate::persistence::get_bookmarks_by_query;
+use sqlx::{Pool, Sqlite};
+use tokio::sync::mpsc::Sender;
+
+pub(super) async fn handle_command(
+    pool: &Pool<Sqlite>,
+    command: Command,
+    event_tx: Sender<Message>,
+) {
+    match command {
+        Command::OpenInBrowser(url) => {
+            tokio::spawn(async move {
+                let message = match open::that(url) {
+                    Ok(_) => Message::UrlsOpenedInBrowser(UrlsOpenedResult::Success),
+                    Err(e) => Message::UrlsOpenedInBrowser(UrlsOpenedResult::Failure(e)),
+                };
+
+                // TODO: handle this error
+                let _ = event_tx.try_send(message);
+            });
+        }
+        Command::SearchBookmarks(search_query) => {
+            let pool = pool.clone();
+            tokio::spawn(async move {
+                let result = get_bookmarks_by_query(&pool, &search_query, DEFAULT_LIMIT).await;
+                let message = Message::SearchFinished(result);
+                // TODO: handle this error
+                let _ = event_tx.try_send(message);
+            });
+        }
+    }
+}

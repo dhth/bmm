@@ -1,8 +1,9 @@
+mod app;
+mod commands;
 mod common;
+mod handle;
 mod message;
 mod model;
-mod run;
-mod update;
 mod view;
 
-pub use run::*;
+pub use app::{run_tui, AppTuiError};

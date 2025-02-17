@@ -2,6 +2,7 @@ use crate::args::{Args, BmmCommand, TagsCommand};
 use crate::cli::*;
 use crate::errors::AppError;
 use crate::persistence::get_db_pool;
+use crate::tui::run_tui;
 use dirs::data_dir;
 use std::fs;
 use std::path::PathBuf;
@@ -85,6 +86,7 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
                 new_tag,
             } => rename_tag(&pool, original_tag, new_tag).await?,
         },
+        BmmCommand::Tui => run_tui(&pool, vec![]).await?,
     }
 
     Ok(())

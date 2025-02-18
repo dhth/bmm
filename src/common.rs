@@ -3,3 +3,4 @@ pub const JSON: &str = "json";
 pub const MARKDOWN: &str = "md";
 pub const TXT: &str = "txt";
 pub const IMPORT_FILE_FORMATS: [&str; 4] = [HTML, JSON, MARKDOWN, TXT];
+pub const DEFAULT_LIMIT: u16 = 10000;

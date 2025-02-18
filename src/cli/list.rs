@@ -3,6 +3,8 @@ use super::DisplayError;
 use crate::args::OutputFormat;
 use crate::persistence::DBError;
 use crate::persistence::{get_bookmarks, get_bookmarks_by_query};
+use crate::tui::run_tui;
+use crate::tui::{AppTuiError, TuiContext};
 use sqlx::{Pool, Sqlite};
 
 #[derive(thiserror::Error, Debug)]
@@ -11,6 +13,8 @@ pub enum ListBookmarksError {
     CouldntGetBookmarksFromDB(DBError),
     #[error("couldn't display results: {0}")]
     CouldntDisplayResults(DisplayError),
+    #[error(transparent)]
+    CouldntRunTui(#[from] AppTuiError),
 }
 
 pub async fn list_bookmarks(
@@ -24,6 +28,11 @@ pub async fn list_bookmarks(
     let bookmarks = get_bookmarks(pool, uri, title, tags, limit)
         .await
         .map_err(ListBookmarksError::CouldntGetBookmarksFromDB)?;
+
+    if bookmarks.is_empty() {
+        return Ok(());
+    }
+
     display_bookmarks(&bookmarks, &format).map_err(ListBookmarksError::CouldntDisplayResults)?;
 
     Ok(())
@@ -34,10 +43,21 @@ pub async fn search_bookmarks(
     query: &str,
     format: OutputFormat,
     limit: u16,
+    tui: bool,
 ) -> Result<(), ListBookmarksError> {
+    if tui {
+        run_tui(pool, TuiContext::Search(query.into())).await?;
+        return Ok(());
+    }
+
     let bookmarks = get_bookmarks_by_query(pool, query, limit)
         .await
         .map_err(ListBookmarksError::CouldntGetBookmarksFromDB)?;
+
+    if bookmarks.is_empty() {
+        return Ok(());
+    }
+
     display_bookmarks(&bookmarks, &format).map_err(ListBookmarksError::CouldntDisplayResults)?;
 
     Ok(())

@@ -23,7 +23,11 @@ pub async fn delete_bookmarks(
     }
 
     if !skip_confirmation {
-        println!("Are you sure? [y/n]");
+        if uris.len() == 1 {
+            println!("Deleting 1 bookmark; enter \"y\" to confirm.");
+        } else {
+            println!("Deleting {} bookmarks; enter \"y\" to confirm.", uris.len());
+        }
 
         std::io::stdout()
             .flush()

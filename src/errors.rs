@@ -4,6 +4,7 @@ use crate::cli::{
     ShowBookmarkError,
 };
 use crate::persistence::DBError;
+use crate::tui::AppTuiError;
 use std::io::Error as IOError;
 
 #[derive(thiserror::Error, Debug)]
@@ -35,6 +36,10 @@ pub enum AppError {
     CouldntListTags(#[from] ListTagsError),
     #[error("couldn't rename tag: {0}")]
     CouldntRenameTag(#[from] RenameTagError),
+
+    // tui related
+    #[error("couldn't run bmm's TUI: {0}")]
+    CouldntRunTui(#[from] AppTuiError),
 }
 
 impl AppError {
@@ -60,6 +65,7 @@ impl AppError {
             AppError::CouldntListBookmarks(e) => match e {
                 ListBookmarksError::CouldntGetBookmarksFromDB(_) => Some(400),
                 ListBookmarksError::CouldntDisplayResults(_) => Some(401),
+                ListBookmarksError::CouldntRunTui(e) => Some(e.code()),
             },
             AppError::CouldntSaveBookmark(e) => match e {
                 SaveBookmarkError::CouldntCheckIfBookmarkExists(_) => Some(500),
@@ -89,6 +95,7 @@ impl AppError {
             AppError::CouldntListTags(e) => match e {
                 ListTagsError::CouldntGetTagsFromDB(_) => Some(700),
                 ListTagsError::CouldntDisplayResults(_) => Some(701),
+                ListTagsError::CouldntRunTui(e) => Some(e.code()),
             },
             AppError::CouldntDeleteBookmarks(e) => match e {
                 DeleteBookmarksError::CouldntDeleteBookmarksInDB(_) => Some(800),
@@ -101,6 +108,7 @@ impl AppError {
                 RenameTagError::CouldntRenameTag(_) => Some(900),
                 RenameTagError::TagIsInvalid => None,
             },
+            AppError::CouldntRunTui(e) => Some(e.code()),
         }
     }
 }

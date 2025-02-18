@@ -71,7 +71,7 @@ pub enum BmmCommand {
         )]
         limit: u16,
     },
-    /// Saves a bookmark.
+    /// Save/update a bookmark
     Save {
         /// Uri of the bookmark
         #[arg(value_name = "URI")]
@@ -115,6 +115,9 @@ pub enum BmmCommand {
             default_value_t = 500
         )]
         limit: u16,
+        /// whether to show results in bmm's TUI
+        #[arg(long = "tui")]
+        tui: bool,
     },
     /// Show bookmark details
     Show {
@@ -127,6 +130,8 @@ pub enum BmmCommand {
         #[command(subcommand)]
         tags_command: TagsCommand,
     },
+    /// Open bmm's TUI
+    Tui,
 }
 
 #[derive(Subcommand, Debug)]
@@ -144,6 +149,9 @@ pub enum TagsCommand {
         /// whether to show tag stats
         #[arg(short = 's', long = "show-stats")]
         show_stats: bool,
+        /// whether to show results in bmm's TUI
+        #[arg(long = "tui")]
+        tui: bool,
     },
     /// Rename a tag
     Rename {
@@ -214,7 +222,7 @@ limit             : {}
                 title.as_deref().unwrap_or(NOT_PROVIDED),
                 tags,
                 format,
-                limit
+                limit,
             ),
             BmmCommand::Import { file, dry_run } => format!(
                 r#"
@@ -249,14 +257,16 @@ fail if URI already saved : {}
                 query: uri,
                 format,
                 limit,
+                tui,
             } => format!(
                 r#"
 command     : Search bookmarks
 query       : {}
 format      : {}
 limit       : {}
+tui         : {}
 "#,
-                uri, format, limit
+                uri, format, limit, tui
             ),
             BmmCommand::Show { uri } => format!(
                 r#"
@@ -266,13 +276,18 @@ URI         : {}
                 uri
             ),
             BmmCommand::Tags { tags_command } => match tags_command {
-                TagsCommand::List { format, show_stats } => format!(
+                TagsCommand::List {
+                    format,
+                    show_stats,
+                    tui,
+                } => format!(
                     r#"
 command      : List Tags
 format       : {}
 show stats   : {}
+run tui      : {}
 "#,
-                    format, show_stats
+                    format, show_stats, tui,
                 ),
                 TagsCommand::Rename {
                     original_tag,
@@ -286,6 +301,10 @@ new tag      : {}
                     original_tag, new_tag,
                 ),
             },
+            BmmCommand::Tui => r#"
+command      : Open TUI
+"#
+            .to_string(),
         };
 
         f.write_str(&output)

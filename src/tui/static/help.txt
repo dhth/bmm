@@ -1,10 +1,26 @@
+Views
+---
+
+bmm has four views.
+
+- Initial View
+- Bookmarks List View
+- Tags List View
+- Help View (this one)
+
 Keymaps
 ---
 
-s                    start searching
-Enter                submit input query
-j / Down             go down
-k / Up               go up
-o                    open uri in browser
-?                    show/hide help view
-Esc / q              go back/reset input/exit
+General
+    ?                    show/hide help view
+    Esc / q              go back/reset input/exit
+    j / Down             go down in a list
+    k / Up               go up in a list
+
+Initial View / Bookmarks List View
+    s                    show search input
+    Enter                submit search query
+    t                    show Tags List View (when search is not active)
+
+Bookmarks List View
+    o                    open uri in browser

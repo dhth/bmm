@@ -70,11 +70,8 @@ pub enum BmmCommand {
             default_value_t = 500
         )]
         limit: u16,
-        /// whether to show results in bmm's TUI
-        #[arg(long = "tui")]
-        tui: bool,
     },
-    /// Saves a bookmark.
+    /// Save/update a bookmark
     Save {
         /// Uri of the bookmark
         #[arg(value_name = "URI")]
@@ -152,6 +149,9 @@ pub enum TagsCommand {
         /// whether to show tag stats
         #[arg(short = 's', long = "show-stats")]
         show_stats: bool,
+        /// whether to show results in bmm's TUI
+        #[arg(long = "tui")]
+        tui: bool,
     },
     /// Rename a tag
     Rename {
@@ -209,7 +209,6 @@ skip confirmation : {}
                 tags,
                 format,
                 limit,
-                tui,
             } => format!(
                 r#"
 command           : List bookmark(s)
@@ -218,14 +217,12 @@ title query       : {}
 tags              : {:?}
 format            : {}
 limit             : {}
-tui               : {}
 "#,
                 uri.as_deref().unwrap_or(NOT_PROVIDED),
                 title.as_deref().unwrap_or(NOT_PROVIDED),
                 tags,
                 format,
                 limit,
-                tui,
             ),
             BmmCommand::Import { file, dry_run } => format!(
                 r#"
@@ -279,13 +276,18 @@ URI         : {}
                 uri
             ),
             BmmCommand::Tags { tags_command } => match tags_command {
-                TagsCommand::List { format, show_stats } => format!(
+                TagsCommand::List {
+                    format,
+                    show_stats,
+                    tui,
+                } => format!(
                     r#"
 command      : List Tags
 format       : {}
 show stats   : {}
+run tui      : {}
 "#,
-                    format, show_stats
+                    format, show_stats, tui,
                 ),
                 TagsCommand::Rename {
                     original_tag,

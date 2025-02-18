@@ -95,6 +95,7 @@ impl AppError {
             AppError::CouldntListTags(e) => match e {
                 ListTagsError::CouldntGetTagsFromDB(_) => Some(700),
                 ListTagsError::CouldntDisplayResults(_) => Some(701),
+                ListTagsError::CouldntRunTui(e) => Some(e.code()),
             },
             AppError::CouldntDeleteBookmarks(e) => match e {
                 DeleteBookmarksError::CouldntDeleteBookmarksInDB(_) => Some(800),

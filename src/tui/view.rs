@@ -33,6 +33,7 @@ pub(crate) fn view(model: &mut Model, frame: &mut Frame) {
                 render_list_view(model, frame, true);
             }
         }
+        ActivePane::TagsList => render_tag_list_view(model, frame),
     }
 }
 
@@ -96,7 +97,7 @@ b:::::::::::::::b    m::::m   m::::m   m::::m  m::::m   m::::m   m::::m
 bbbbbbbbbbbbbbbb     mmmmmm   mmmmmm   mmmmmm  mmmmmm   mmmmmm   mmmmmm
 
 
-         start typing your search query
+type your search query and press enter
 "#;
 
     let p = Paragraph::new(banner)
@@ -107,7 +108,7 @@ bbbbbbbbbbbbbbbb     mmmmmm   mmmmmm   mmmmmm  mmmmmm   mmmmmm   mmmmmm
 }
 
 fn render_header(model: &Model, frame: &mut Frame, chunk: Rect) {
-    let mut header_components = vec![Span::from(" ")];
+    let mut header_components = Vec::new();
 
     match model.active_pane {
         ActivePane::List | ActivePane::SearchInput => {
@@ -134,11 +135,30 @@ fn render_header(model: &Model, frame: &mut Frame, chunk: Rect) {
                 Style::new().bold().bg(HELP_COLOR).fg(FG_COLOR),
             ));
         }
+        ActivePane::TagsList => {
+            if model.tag_items.items.is_empty() {
+                header_components.push(Span::styled(
+                    " no tags ",
+                    Style::new().bold().bg(TAGS_COLOR).fg(FG_COLOR),
+                ));
+            } else {
+                header_components.push(Span::styled(
+                    " tags ",
+                    Style::new().bold().bg(TAGS_COLOR).fg(FG_COLOR),
+                ));
+                header_components.push(Span::from(" "));
+                header_components.push(Span::styled(
+                    format!("({})", model.tag_items.items.len()),
+                    Style::new().fg(COLOR_THREE),
+                ));
+            }
+        }
     }
 
     let header_text = Line::from(header_components);
 
-    let header = Paragraph::new(header_text).block(Block::default());
+    let header =
+        Paragraph::new(header_text).block(Block::default().padding(Padding::new(2, 0, 1, 0)));
 
     frame.render_widget(&header, chunk);
 }
@@ -210,6 +230,20 @@ fn render_bookmarks_list(model: &mut Model, frame: &mut Frame, chunk: Rect) {
     frame.render_stateful_widget(&list, chunk, &mut model.bookmark_items.state);
 }
 
+fn render_tag_list(model: &mut Model, frame: &mut Frame, chunk: Rect) {
+    let items: Vec<ListItem> = model.tag_items.items.iter().map(ListItem::from).collect();
+
+    let list = List::new(items)
+        .block(Block::new().padding(Padding::new(0, 0, 1, 1)))
+        .style(Style::new().white())
+        .highlight_symbol("> ")
+        .repeat_highlight_symbol(true)
+        .highlight_style(Style::new().fg(TAGS_COLOR))
+        .direction(ListDirection::TopToBottom);
+
+    frame.render_stateful_widget(&list, chunk, &mut model.tag_items.state);
+}
+
 fn render_bookmarks_details(model: &Model, frame: &mut Frame, chunk: Rect) {
     let maybe_selected = model.bookmark_items.state.selected();
 
@@ -217,9 +251,9 @@ fn render_bookmarks_details(model: &Model, frame: &mut Frame, chunk: Rect) {
         let maybe_bookmark_item = model.bookmark_items.items.get(selected);
         if let Some(bookmark_item) = maybe_bookmark_item {
             let details = format!(
-                r#"URI  : {}
-Title: {}
-Tags : {}
+                r#"URI   : {}
+Title : {}
+Tags  : {}
 "#,
                 bookmark_item.bookmark.uri,
                 bookmark_item
@@ -240,6 +274,29 @@ Tags : {}
                         .title_style(Style::new().bold().bg(COLOR_TWO).fg(FG_COLOR))
                         .title(" details ")
                         .padding(Padding::new(1, 0, 1, 0)),
+                )
+                .style(Style::new().white().on_black())
+                .alignment(Alignment::Left);
+
+            frame.render_widget(&details, chunk);
+        };
+    }
+}
+
+fn render_tag_details(model: &Model, frame: &mut Frame, chunk: Rect) {
+    let maybe_selected = model.tag_items.state.selected();
+
+    if let Some(selected) = maybe_selected {
+        let maybe_tag_item = model.tag_items.items.get(selected);
+        if let Some(tag_with_stats) = maybe_tag_item {
+            let details = format!(r#"Number of bookmarks : {}"#, tag_with_stats.num_bookmarks);
+            let details = Paragraph::new(details)
+                .block(
+                    Block::bordered()
+                        .border_style(Style::default().fg(COLOR_TWO))
+                        .title_style(Style::new().bold().bg(COLOR_TWO).fg(FG_COLOR))
+                        .title(" details ")
+                        .padding(Padding::new(1, 0, 1, 1)),
                 )
                 .style(Style::new().white().on_black())
                 .alignment(Alignment::Left);
@@ -284,9 +341,9 @@ fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
                 let layout = Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        Constraint::Max(1),
-                        Constraint::Min(21),
-                        Constraint::Max(7),
+                        Constraint::Max(2),
+                        Constraint::Min(24),
+                        Constraint::Max(3),
                         Constraint::Max(1),
                     ])
                     .split(frame.area());
@@ -300,7 +357,7 @@ fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
                 let layout = Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        Constraint::Max(1),
+                        Constraint::Max(2),
                         Constraint::Min(2),
                         Constraint::Max(1),
                     ])
@@ -316,8 +373,8 @@ fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
                 let layout = Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        Constraint::Max(1),
-                        Constraint::Min(18),
+                        Constraint::Max(2),
+                        Constraint::Min(17),
                         Constraint::Max(7),
                         Constraint::Max(3),
                         Constraint::Max(1),
@@ -334,8 +391,8 @@ fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
                 let layout = Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        Constraint::Max(1),
-                        Constraint::Min(21),
+                        Constraint::Max(2),
+                        Constraint::Min(20),
                         Constraint::Max(7),
                         Constraint::Max(1),
                     ])
@@ -350,12 +407,29 @@ fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
     }
 }
 
+fn render_tag_list_view(model: &mut Model, frame: &mut Frame) {
+    let layout = Layout::default()
+        .direction(ratatui::layout::Direction::Vertical)
+        .constraints(vec![
+            Constraint::Max(2),
+            Constraint::Min(22),
+            Constraint::Max(5),
+            Constraint::Max(1),
+        ])
+        .split(frame.area());
+
+    render_header(model, frame, layout[0]);
+    render_tag_list(model, frame, layout[1]);
+    render_tag_details(model, frame, layout[2]);
+    render_status_line(model, frame, layout[3]);
+}
+
 fn render_help_view(model: &mut Model, frame: &mut Frame) {
     let layout = Layout::default()
         .direction(ratatui::layout::Direction::Vertical)
         .constraints(vec![
-            Constraint::Max(1),
-            Constraint::Min(28),
+            Constraint::Max(2),
+            Constraint::Min(27),
             Constraint::Max(1),
         ])
         .split(frame.area());

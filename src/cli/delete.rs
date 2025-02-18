@@ -24,10 +24,10 @@ pub async fn delete_bookmarks(
 
     if !skip_confirmation {
         if uris.len() == 1 {
-            println!("Deleting 1 bookmark; submit \"y\" to confirm.");
+            println!("Deleting 1 bookmark; enter \"y\" to confirm.");
         } else {
             println!(
-                "Deleting {} bookmarks; submit \"y\" to confirm.",
+                "Deleting {} bookmarks; enter \"y\" to confirm.",
                 uris.len()
             );
         }

@@ -2,7 +2,7 @@ use crate::args::{Args, BmmCommand, TagsCommand};
 use crate::cli::*;
 use crate::errors::AppError;
 use crate::persistence::get_db_pool;
-use crate::tui::run_tui;
+use crate::tui::{run_tui, TuiContext};
 use dirs::data_dir;
 use std::fs;
 use std::path::PathBuf;
@@ -55,8 +55,7 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             tags,
             format,
             limit,
-            tui,
-        } => list_bookmarks(&pool, uri, title, tags, format, limit, tui).await?,
+        } => list_bookmarks(&pool, uri, title, tags, format, limit).await?,
 
         BmmCommand::Search {
             query,
@@ -78,15 +77,17 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
         BmmCommand::Show { uri } => show_bookmark(&pool, uri).await?,
 
         BmmCommand::Tags { tags_command } => match tags_command {
-            TagsCommand::List { format, show_stats } => {
-                list_tags(&pool, format, show_stats).await?
-            }
+            TagsCommand::List {
+                format,
+                show_stats,
+                tui,
+            } => list_tags(&pool, format, show_stats, tui).await?,
             TagsCommand::Rename {
                 original_tag,
                 new_tag,
             } => rename_tag(&pool, original_tag, new_tag).await?,
         },
-        BmmCommand::Tui => run_tui(&pool, vec![]).await?,
+        BmmCommand::Tui => run_tui(&pool, TuiContext::Initial).await?,
     }
 
     Ok(())

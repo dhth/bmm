@@ -4,7 +4,6 @@ use super::handle::handle_command;
 use super::message::*;
 use super::model::*;
 use super::view::view;
-use crate::domain::SavedBookmark;
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::Terminal;
@@ -34,11 +33,8 @@ pub enum AppTuiError {
     ReadEvent(IOError),
 }
 
-pub async fn run_tui(
-    pool: &Pool<Sqlite>,
-    bookmarks: Vec<SavedBookmark>,
-) -> Result<(), AppTuiError> {
-    let mut tui = AppTui::new(pool, bookmarks)?;
+pub async fn run_tui(pool: &Pool<Sqlite>, context: TuiContext) -> Result<(), AppTuiError> {
+    let mut tui = AppTui::new(pool, context)?;
     tui.run().await?;
 
     Ok(())
@@ -64,18 +60,32 @@ struct AppTui {
     pub(super) event_tx: Sender<Message>,
     pub(super) event_rx: Receiver<Message>,
     pub(super) model: Model,
+    pub(super) initial_commands: Vec<Command>,
 }
 
 impl AppTui {
-    pub fn new(pool: &Pool<Sqlite>, bookmarks: Vec<SavedBookmark>) -> Result<Self, AppTuiError> {
+    pub fn new(pool: &Pool<Sqlite>, context: TuiContext) -> Result<Self, AppTuiError> {
         let terminal = ratatui::try_init().map_err(AppTuiError::InitializeTerminal)?;
         let (event_tx, event_rx) = mpsc::channel(10);
-        let model = Model::default(pool, bookmarks);
+        let mut initial_commands = Vec::new();
+        match &context {
+            TuiContext::Initial => {}
+            TuiContext::Search(q) => {
+                initial_commands.push(Command::SearchBookmarks(q.into()));
+            }
+            TuiContext::Tags => {
+                initial_commands.push(Command::FetchTags);
+            }
+        }
+
+        let model = Model::default(pool, context);
+
         Ok(Self {
             terminal,
             event_tx,
             event_rx,
             model,
+            initial_commands,
         })
     }
 
@@ -83,6 +93,10 @@ impl AppTui {
         let message_clear_duration = Duration::from_secs(CLEAR_USER_MESSAGE_LOOP_INTERVAL_SECS);
         let mut message_clear_interval = tokio::time::interval(message_clear_duration);
         let _ = self.terminal.clear();
+
+        for cmd in &self.initial_commands {
+            handle_command(&self.model.pool, cmd.clone(), self.event_tx.clone()).await;
+        }
 
         // first render
         self.model.render_counter += 1;
@@ -140,12 +154,15 @@ impl AppTui {
                 false => match key_event.kind {
                     KeyEventKind::Press => match self.model.active_pane {
                         ActivePane::List => match key_event.code {
-                            KeyCode::Char('j') | KeyCode::Down => Some(Message::GoToNextItem),
-                            KeyCode::Char('k') | KeyCode::Up => Some(Message::GoToPreviousItem),
-                            KeyCode::Char('g') => Some(Message::GoToFirstItem),
-                            KeyCode::Char('G') => Some(Message::GoToLastItem),
+                            KeyCode::Char('j') | KeyCode::Down => Some(Message::GoToNextListItem),
+                            KeyCode::Char('k') | KeyCode::Up => Some(Message::GoToPreviousListItem),
+                            KeyCode::Char('g') => Some(Message::GoToFirstListItem),
+                            KeyCode::Char('G') => Some(Message::GoToLastListItem),
                             KeyCode::Char('o') => Some(Message::OpenInBrowser),
                             KeyCode::Char('s') => Some(Message::ShowView(ActivePane::SearchInput)),
+                            KeyCode::Char('t') | KeyCode::Tab => {
+                                Some(Message::ShowView(ActivePane::TagsList))
+                            }
                             KeyCode::Esc | KeyCode::Char('q') => Some(Message::GoBackOrQuit),
                             KeyCode::Char('?') => Some(Message::ShowView(ActivePane::Help)),
                             _ => None,
@@ -158,9 +175,18 @@ impl AppTui {
                         ActivePane::SearchInput => match key_event.code {
                             KeyCode::Esc => Some(Message::GoBackOrQuit),
                             KeyCode::Enter => Some(Message::SubmitSearch),
-                            KeyCode::Down => Some(Message::GoToNextItem),
-                            KeyCode::Up => Some(Message::GoToPreviousItem),
+                            KeyCode::Down => Some(Message::GoToNextListItem),
+                            KeyCode::Up => Some(Message::GoToPreviousListItem),
                             _ => Some(Message::SearchInputGotEvent(event)),
+                        },
+                        ActivePane::TagsList => match key_event.code {
+                            KeyCode::Char('j') | KeyCode::Down => Some(Message::GoToNextListItem),
+                            KeyCode::Char('k') | KeyCode::Up => Some(Message::GoToPreviousListItem),
+                            KeyCode::Char('g') => Some(Message::GoToFirstListItem),
+                            KeyCode::Char('G') => Some(Message::GoToLastListItem),
+                            KeyCode::Enter => Some(Message::ShowBookmarksForTag),
+                            KeyCode::Esc | KeyCode::Char('q') => Some(Message::GoBackOrQuit),
+                            _ => None,
                         },
                     },
                     _ => None,
@@ -175,8 +201,8 @@ impl AppTui {
     pub(super) async fn update(&mut self, msg: Message) -> Vec<Command> {
         let mut cmds = Vec::new();
         match msg {
-            Message::GoToNextItem => self.model.select_next(),
-            Message::GoToPreviousItem => self.model.select_previous(),
+            Message::GoToNextListItem => self.model.select_next_list_item(),
+            Message::GoToPreviousListItem => self.model.select_previous_list_item(),
             Message::OpenInBrowser => {
                 if let Some(c) = self.model.get_cmd_to_open_selection_in_browser() {
                     cmds.push(c)
@@ -184,7 +210,7 @@ impl AppTui {
             }
             Message::UrlsOpenedInBrowser(result) => {
                 let message = match result {
-                    UrlsOpenedResult::Success => UserMessage::info("urls opened!"),
+                    UrlsOpenedResult::Success => UserMessage::info("url opened"),
                     UrlsOpenedResult::Failure(e) => {
                         UserMessage::error(&format!("urls couldn't be opened: {}", e))
                     }
@@ -192,9 +218,13 @@ impl AppTui {
                 self.model.user_message = Some(message);
             }
             Message::GoBackOrQuit => self.model.go_back_or_quit(),
-            Message::ShowView(view) => self.model.show_view(view),
-            Message::GoToFirstItem => self.model.select_first(),
-            Message::GoToLastItem => self.model.select_last(),
+            Message::ShowView(view) => {
+                if let Some(c) = self.model.show_view(view) {
+                    cmds.push(c);
+                }
+            }
+            Message::GoToFirstListItem => self.model.select_first_list_item(),
+            Message::GoToLastListItem => self.model.select_last_list_item(),
             Message::SearchFinished(result) => match result {
                 Ok(bookmarks) => {
                     if bookmarks.is_empty() {
@@ -202,12 +232,6 @@ impl AppTui {
                             Some(UserMessage::info("no bookmarks found for query"));
                         self.model.bookmark_items = BookmarkItems::from(vec![]);
                     } else {
-                        let message = if bookmarks.len() == 1 {
-                            "1 bookmark found".to_string()
-                        } else {
-                            format!("{} bookmarks found", bookmarks.len())
-                        };
-                        self.model.user_message = Some(UserMessage::info(&message));
                         let bookmarks_len = bookmarks.len();
                         if let Some(current_index) = self.model.bookmark_items.state.selected() {
                             if current_index < bookmarks_len {
@@ -221,6 +245,13 @@ impl AppTui {
                             self.model.bookmark_items = BookmarkItems::from(bookmarks);
                         }
                     }
+                }
+                Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
+            },
+            Message::TagsFetched(result) => match result {
+                Ok(t) => {
+                    self.model.tag_items = TagItems::from(t);
+                    self.model.active_pane = ActivePane::TagsList;
                 }
                 Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
             },
@@ -269,6 +300,20 @@ impl AppTui {
                 self.model.terminal_dimensions = TerminalDimensions::Known(w, h);
                 self.model.terminal_too_small = w < MIN_TERMINAL_WIDTH || h < MIN_TERMINAL_HEIGHT;
             }
+            Message::ShowBookmarksForTag => {
+                if let Some(current_tag_index) = self.model.tag_items.state.selected() {
+                    if let Some(selected_tag) = self.model.tag_items.items.get(current_tag_index) {
+                        cmds.push(Command::FetchBookmarksForTag(selected_tag.name.to_string()));
+                    }
+                }
+            }
+            Message::BookmarksForTagFetched(result) => match result {
+                Ok(bookmarks) => {
+                    self.model.bookmark_items = BookmarkItems::from(bookmarks);
+                    self.model.active_pane = ActivePane::List;
+                }
+                Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
+            },
         }
 
         cmds

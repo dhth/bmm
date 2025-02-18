@@ -1,7 +1,7 @@
 use super::commands::Command;
 use super::message::{Message, UrlsOpenedResult};
 use crate::common::DEFAULT_LIMIT;
-use crate::persistence::get_bookmarks_by_query;
+use crate::persistence::{get_bookmarks, get_bookmarks_by_query, get_tags_with_stats};
 use sqlx::{Pool, Sqlite};
 use tokio::sync::mpsc::Sender;
 
@@ -27,6 +27,24 @@ pub(super) async fn handle_command(
             tokio::spawn(async move {
                 let result = get_bookmarks_by_query(&pool, &search_query, DEFAULT_LIMIT).await;
                 let message = Message::SearchFinished(result);
+                // TODO: handle this error
+                let _ = event_tx.try_send(message);
+            });
+        }
+        Command::FetchTags => {
+            let pool = pool.clone();
+            tokio::spawn(async move {
+                let result = get_tags_with_stats(&pool).await;
+                let message = Message::TagsFetched(result);
+                // TODO: handle this error
+                let _ = event_tx.try_send(message);
+            });
+        }
+        Command::FetchBookmarksForTag(tag) => {
+            let pool = pool.clone();
+            tokio::spawn(async move {
+                let result = get_bookmarks(&pool, None, None, vec![tag], DEFAULT_LIMIT).await;
+                let message = Message::BookmarksForTagFetched(result);
                 // TODO: handle this error
                 let _ = event_tx.try_send(message);
             });

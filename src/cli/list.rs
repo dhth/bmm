@@ -4,7 +4,7 @@ use crate::args::OutputFormat;
 use crate::persistence::DBError;
 use crate::persistence::{get_bookmarks, get_bookmarks_by_query};
 use crate::tui::run_tui;
-use crate::tui::AppTuiError;
+use crate::tui::{AppTuiError, TuiContext};
 use sqlx::{Pool, Sqlite};
 
 #[derive(thiserror::Error, Debug)]
@@ -24,7 +24,6 @@ pub async fn list_bookmarks(
     tags: Vec<String>,
     format: OutputFormat,
     limit: u16,
-    tui: bool,
 ) -> Result<(), ListBookmarksError> {
     let bookmarks = get_bookmarks(pool, uri, title, tags, limit)
         .await
@@ -34,11 +33,7 @@ pub async fn list_bookmarks(
         return Ok(());
     }
 
-    match tui {
-        true => run_tui(pool, bookmarks).await?,
-        false => display_bookmarks(&bookmarks, &format)
-            .map_err(ListBookmarksError::CouldntDisplayResults)?,
-    }
+    display_bookmarks(&bookmarks, &format).map_err(ListBookmarksError::CouldntDisplayResults)?;
 
     Ok(())
 }
@@ -50,6 +45,11 @@ pub async fn search_bookmarks(
     limit: u16,
     tui: bool,
 ) -> Result<(), ListBookmarksError> {
+    if tui {
+        run_tui(pool, TuiContext::Search(query.into())).await?;
+        return Ok(());
+    }
+
     let bookmarks = get_bookmarks_by_query(pool, query, limit)
         .await
         .map_err(ListBookmarksError::CouldntGetBookmarksFromDB)?;
@@ -58,11 +58,7 @@ pub async fn search_bookmarks(
         return Ok(());
     }
 
-    match tui {
-        true => run_tui(pool, bookmarks).await?,
-        false => display_bookmarks(&bookmarks, &format)
-            .map_err(ListBookmarksError::CouldntDisplayResults)?,
-    }
+    display_bookmarks(&bookmarks, &format).map_err(ListBookmarksError::CouldntDisplayResults)?;
 
     Ok(())
 }

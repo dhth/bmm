@@ -4,7 +4,7 @@
 flash.
 
 > [!NOTE]
-> `bmm` is alpha software, and is under active development. Its API might
+> `bmm` is alpha software, and is under active development. Its interface might
 > change till it's stable.
 
 Usage

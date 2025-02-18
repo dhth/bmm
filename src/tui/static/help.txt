@@ -1,9 +1,8 @@
 Views
 ---
 
-bmm has four views.
+bmm has three views.
 
-- Initial View
 - Bookmarks List View
 - Tags List View
 - Help View (this one)
@@ -17,10 +16,11 @@ General
     j / Down             go down in a list
     k / Up               go up in a list
 
-Initial View / Bookmarks List View
+Bookmarks List View
     s                    show search input
     Enter                submit search query
     t                    show Tags List View (when search is not active)
-
-Bookmarks List View
     o                    open uri in browser
+
+Tags List View
+    Enter                show bookmarks that are tagged with the one under cursor

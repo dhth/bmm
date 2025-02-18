@@ -1,7 +1,7 @@
 use super::commands::Command;
 use super::common::*;
 use super::handle::handle_command;
-use super::message::*;
+use super::message::{Message, UrlsOpenedResult};
 use super::model::*;
 use super::view::view;
 use ratatui::backend::CrosstermBackend;
@@ -21,6 +21,8 @@ const EVENT_POLL_DURATION_MS: u64 = 16;
 pub enum AppTuiError {
     #[error("couldn't initialize bmm's TUI: {0}")]
     InitializeTerminal(IOError),
+    #[error("couldn't determine terminal size: {0}")]
+    DetermineTerminalSize(IOError),
     #[error("couldn't restore terminal to its original state: {0}")]
     RestoreTerminal(IOError),
     #[error("couldn't send a message to internal async queue: {0}")]
@@ -43,12 +45,13 @@ pub async fn run_tui(pool: &Pool<Sqlite>, context: TuiContext) -> Result<(), App
 impl AppTuiError {
     pub fn code(&self) -> u16 {
         match self {
-            AppTuiError::InitializeTerminal(_) => 5000,
-            AppTuiError::RestoreTerminal(_) => 5001,
-            AppTuiError::SendMsg(_) => 5002,
-            AppTuiError::DrawFrame(_) => 5003,
-            AppTuiError::PollForEvents(_) => 5004,
-            AppTuiError::ReadEvent(_) => 5005,
+            AppTuiError::DetermineTerminalSize(_) => 5000,
+            AppTuiError::InitializeTerminal(_) => 5001,
+            AppTuiError::RestoreTerminal(_) => 5002,
+            AppTuiError::SendMsg(_) => 5003,
+            AppTuiError::DrawFrame(_) => 5004,
+            AppTuiError::PollForEvents(_) => 5005,
+            AppTuiError::ReadEvent(_) => 5006,
         }
     }
 }
@@ -68,6 +71,12 @@ impl AppTui {
         let terminal = ratatui::try_init().map_err(AppTuiError::InitializeTerminal)?;
         let (event_tx, event_rx) = mpsc::channel(10);
         let mut initial_commands = Vec::new();
+
+        let (width, height) =
+            ratatui::crossterm::terminal::size().map_err(AppTuiError::DetermineTerminalSize)?;
+
+        let terminal_dimensions = TerminalDimensions { width, height };
+
         match &context {
             TuiContext::Initial => {}
             TuiContext::Search(q) => {
@@ -78,7 +87,7 @@ impl AppTui {
             }
         }
 
-        let model = Model::default(pool, context);
+        let model = Model::default(pool, context, terminal_dimensions);
 
         Ok(Self {
             terminal,
@@ -150,7 +159,13 @@ impl AppTui {
     fn get_event_handling_msg(&self, event: Event) -> Option<Message> {
         match event {
             Event::Key(key_event) => match self.model.terminal_too_small {
-                true => None,
+                true => match key_event.kind {
+                    KeyEventKind::Press => match key_event.code {
+                        KeyCode::Esc | KeyCode::Char('q') => Some(Message::GoBackOrQuit),
+                        _ => None,
+                    },
+                    _ => None,
+                },
                 false => match key_event.kind {
                     KeyEventKind::Press => match self.model.active_pane {
                         ActivePane::List => match key_event.code {
@@ -192,7 +207,6 @@ impl AppTui {
                     _ => None,
                 },
             },
-
             Event::Resize(w, h) => Some(Message::TerminalResize(w, h)),
             _ => None,
         }
@@ -209,13 +223,12 @@ impl AppTui {
                 }
             }
             Message::UrlsOpenedInBrowser(result) => {
-                let message = match result {
-                    UrlsOpenedResult::Success => UserMessage::info("url opened"),
-                    UrlsOpenedResult::Failure(e) => {
-                        UserMessage::error(&format!("urls couldn't be opened: {}", e))
-                    }
-                };
-                self.model.user_message = Some(message);
+                if let UrlsOpenedResult::Failure(e) = result {
+                    self.model.user_message = Some(UserMessage::error(&format!(
+                        "urls couldn't be opened: {}",
+                        e
+                    )));
+                }
             }
             Message::GoBackOrQuit => self.model.go_back_or_quit(),
             Message::ShowView(view) => {
@@ -257,13 +270,6 @@ impl AppTui {
             },
             Message::SearchInputGotEvent(event) => {
                 self.model.search_input.handle_event(&event);
-                //let search_query = self.model.search_input.value();
-                //if !search_query.is_empty() && search_query.len() > 1 {
-                //    cmds.push(Command::SearchBookmarks(search_query.to_string()));
-                //    if self.model.initial {
-                //        self.model.initial = false;
-                //    }
-                //}
             }
             Message::SubmitSearch => {
                 let search_query = self.model.search_input.value();
@@ -296,9 +302,10 @@ impl AppTui {
                     self.model.user_message = None;
                 }
             }
-            Message::TerminalResize(w, h) => {
-                self.model.terminal_dimensions = TerminalDimensions::Known(w, h);
-                self.model.terminal_too_small = w < MIN_TERMINAL_WIDTH || h < MIN_TERMINAL_HEIGHT;
+            Message::TerminalResize(width, height) => {
+                self.model.terminal_dimensions = TerminalDimensions { width, height };
+                self.model.terminal_too_small =
+                    !(width >= MIN_TERMINAL_WIDTH && height >= MIN_TERMINAL_HEIGHT);
             }
             Message::ShowBookmarksForTag => {
                 if let Some(current_tag_index) = self.model.tag_items.state.selected() {

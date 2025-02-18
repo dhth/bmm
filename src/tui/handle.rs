@@ -11,6 +11,7 @@ pub(super) async fn handle_command(
     event_tx: Sender<Message>,
 ) {
     match command {
+        // TODO: handle errors here
         Command::OpenInBrowser(url) => {
             tokio::spawn(async move {
                 let message = match open::that(url) {
@@ -18,7 +19,6 @@ pub(super) async fn handle_command(
                     Err(e) => Message::UrlsOpenedInBrowser(UrlsOpenedResult::Failure(e)),
                 };
 
-                // TODO: handle this error
                 let _ = event_tx.try_send(message);
             });
         }
@@ -27,7 +27,6 @@ pub(super) async fn handle_command(
             tokio::spawn(async move {
                 let result = get_bookmarks_by_query(&pool, &search_query, DEFAULT_LIMIT).await;
                 let message = Message::SearchFinished(result);
-                // TODO: handle this error
                 let _ = event_tx.try_send(message);
             });
         }
@@ -36,7 +35,6 @@ pub(super) async fn handle_command(
             tokio::spawn(async move {
                 let result = get_tags_with_stats(&pool).await;
                 let message = Message::TagsFetched(result);
-                // TODO: handle this error
                 let _ = event_tx.try_send(message);
             });
         }
@@ -45,7 +43,6 @@ pub(super) async fn handle_command(
             tokio::spawn(async move {
                 let result = get_bookmarks(&pool, None, None, vec![tag], DEFAULT_LIMIT).await;
                 let message = Message::BookmarksForTagFetched(result);
-                // TODO: handle this error
                 let _ = event_tx.try_send(message);
             });
         }

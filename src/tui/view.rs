@@ -1,5 +1,4 @@
 use super::common::*;
-use super::model::TerminalDimensions;
 use super::model::{Model, UserMessage};
 use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
@@ -38,20 +37,8 @@ pub(crate) fn view(model: &mut Model, frame: &mut Frame) {
 }
 
 fn render_terminal_too_small_view(dimensions: &TerminalDimensions, frame: &mut Frame) {
-    let message = match dimensions {
-        TerminalDimensions::Unknown => format!(
-            r#"
-Terminal size too small
-
-Minimum dimensions needed:
-  Width = {} Height = {}
-
-Press (q/<ctrl+c>/<esc> to exit)
-"#,
-            MIN_TERMINAL_WIDTH, MIN_TERMINAL_HEIGHT
-        ),
-        TerminalDimensions::Known(w, h) => format!(
-            r#"
+    let message = format!(
+        r#"
 Terminal size too small:
   Width = {} Height = {}
 
@@ -60,9 +47,8 @@ Minimum dimensions needed:
 
 Press (q/<ctrl+c>/<esc> to exit)
 "#,
-            w, h, MIN_TERMINAL_WIDTH, MIN_TERMINAL_HEIGHT
-        ),
-    };
+        dimensions.width, dimensions.height, MIN_TERMINAL_WIDTH, MIN_TERMINAL_HEIGHT
+    );
 
     let p = Paragraph::new(message)
         .block(Block::bordered())
@@ -72,12 +58,8 @@ Press (q/<ctrl+c>/<esc> to exit)
     frame.render_widget(p, frame.area());
 }
 
-fn render_banner(frame: &mut Frame, chunk: Rect) {
+fn render_banner(terminal_height: u16, frame: &mut Frame, chunk: Rect) {
     let banner = r#"
-
-
-
-
 bbbbbbb                                                                
 b:::::b                                                                
 b:::::b                                                                
@@ -100,8 +82,15 @@ bbbbbbbbbbbbbbbb     mmmmmm   mmmmmm   mmmmmm  mmmmmm   mmmmmm   mmmmmm
 type your search query and press enter
 "#;
 
+    let top_padding = if terminal_height > 26 {
+        ((terminal_height - 22) / 2) - 2
+    } else {
+        0
+    };
+
     let p = Paragraph::new(banner)
         .style(Style::new().fg(PRIMARY_COLOR))
+        .block(Block::new().padding(Padding::new(0, 0, top_padding, 0)))
         .alignment(Alignment::Center);
 
     frame.render_widget(p, chunk);
@@ -177,6 +166,11 @@ fn render_status_line(model: &Model, frame: &mut Frame, chunk: Rect) {
         status_bar_lines.push(Span::from(format!(
             " [event counter: {}]",
             model.event_counter
+        )));
+
+        status_bar_lines.push(Span::from(format!(
+            " [dimensions: {}x{}] ",
+            model.terminal_dimensions.width, model.terminal_dimensions.height
         )));
     }
 
@@ -312,23 +306,23 @@ fn render_initial_view(model: &mut Model, frame: &mut Frame, search: bool) {
             let layout = Layout::default()
                 .direction(ratatui::layout::Direction::Vertical)
                 .constraints(vec![
-                    Constraint::Min(26),
-                    Constraint::Max(3),
-                    Constraint::Max(1),
+                    Constraint::Min(20),
+                    Constraint::Length(3),
+                    Constraint::Length(1),
                 ])
                 .split(frame.area());
 
-            render_banner(frame, layout[0]);
+            render_banner(model.terminal_dimensions.height, frame, layout[0]);
             render_search_input(model, frame, layout[1]);
             render_status_line(model, frame, layout[2]);
         }
         false => {
             let layout = Layout::default()
                 .direction(ratatui::layout::Direction::Vertical)
-                .constraints(vec![Constraint::Min(26), Constraint::Max(1)])
+                .constraints(vec![Constraint::Min(21), Constraint::Length(1)])
                 .split(frame.area());
 
-            render_banner(frame, layout[0]);
+            render_banner(model.terminal_dimensions.height, frame, layout[0]);
             render_status_line(model, frame, layout[1]);
         }
     }
@@ -341,10 +335,10 @@ fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
                 let layout = Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        Constraint::Max(2),
-                        Constraint::Min(24),
-                        Constraint::Max(3),
-                        Constraint::Max(1),
+                        Constraint::Length(2),
+                        Constraint::Min(18),
+                        Constraint::Length(3),
+                        Constraint::Length(1),
                     ])
                     .split(frame.area());
 
@@ -357,9 +351,9 @@ fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
                 let layout = Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        Constraint::Max(2),
-                        Constraint::Min(2),
-                        Constraint::Max(1),
+                        Constraint::Length(2),
+                        Constraint::Min(21),
+                        Constraint::Length(1),
                     ])
                     .split(frame.area());
 
@@ -373,11 +367,11 @@ fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
                 let layout = Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        Constraint::Max(2),
-                        Constraint::Min(17),
-                        Constraint::Max(7),
-                        Constraint::Max(3),
-                        Constraint::Max(1),
+                        Constraint::Length(2),
+                        Constraint::Min(11),
+                        Constraint::Length(7),
+                        Constraint::Length(3),
+                        Constraint::Length(1),
                     ])
                     .split(frame.area());
 
@@ -391,10 +385,10 @@ fn render_list_view(model: &mut Model, frame: &mut Frame, search: bool) {
                 let layout = Layout::default()
                     .direction(ratatui::layout::Direction::Vertical)
                     .constraints(vec![
-                        Constraint::Max(2),
-                        Constraint::Min(20),
-                        Constraint::Max(7),
-                        Constraint::Max(1),
+                        Constraint::Length(2),
+                        Constraint::Min(14),
+                        Constraint::Length(7),
+                        Constraint::Length(1),
                     ])
                     .split(frame.area());
 
@@ -411,10 +405,10 @@ fn render_tag_list_view(model: &mut Model, frame: &mut Frame) {
     let layout = Layout::default()
         .direction(ratatui::layout::Direction::Vertical)
         .constraints(vec![
-            Constraint::Max(2),
-            Constraint::Min(22),
-            Constraint::Max(5),
-            Constraint::Max(1),
+            Constraint::Length(2),
+            Constraint::Min(16),
+            Constraint::Length(5),
+            Constraint::Length(1),
         ])
         .split(frame.area());
 
@@ -428,9 +422,9 @@ fn render_help_view(model: &mut Model, frame: &mut Frame) {
     let layout = Layout::default()
         .direction(ratatui::layout::Direction::Vertical)
         .constraints(vec![
-            Constraint::Max(2),
-            Constraint::Min(27),
-            Constraint::Max(1),
+            Constraint::Length(2),
+            Constraint::Min(21),
+            Constraint::Length(1),
         ])
         .split(frame.area());
 

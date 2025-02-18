@@ -10,7 +10,7 @@ pub const INFO_MESSAGE_COLOR: Color = Color::from_u32(0x83a598);
 pub const ERROR_MESSAGE_COLOR: Color = Color::from_u32(0xfb4934);
 pub const TITLE: &str = " bmm ";
 pub const MIN_TERMINAL_WIDTH: u16 = 96;
-pub const MIN_TERMINAL_HEIGHT: u16 = 30;
+pub const MIN_TERMINAL_HEIGHT: u16 = 24;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub(crate) enum ActivePane {
@@ -18,4 +18,9 @@ pub(crate) enum ActivePane {
     TagsList,
     SearchInput,
     Help,
+}
+
+pub(super) struct TerminalDimensions {
+    pub(super) width: u16,
+    pub(super) height: u16,
 }

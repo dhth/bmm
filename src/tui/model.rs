@@ -1,7 +1,4 @@
-use super::{
-    commands::Command,
-    common::{ActivePane, COLOR_TWO},
-};
+use super::{commands::Command, common::*};
 use crate::domain::{SavedBookmark, TagStats};
 use ratatui::{
     style::Style,
@@ -50,11 +47,6 @@ impl UserMessage {
     pub(super) fn error(message: &str) -> Self {
         UserMessage::Error(message.to_string(), Instant::now())
     }
-}
-
-pub(super) enum TerminalDimensions {
-    Unknown,
-    Known(u16, u16),
 }
 
 pub enum TuiContext {
@@ -146,8 +138,8 @@ impl From<&TagStats> for ListItem<'_> {
 }
 
 pub(super) struct Model {
-    pub pool: Pool<Sqlite>,
-    pub active_pane: ActivePane,
+    pub(super) pool: Pool<Sqlite>,
+    pub(super) active_pane: ActivePane,
     pub(super) bookmark_items: BookmarkItems,
     pub(super) tag_items: TagItems,
     pub(super) running_state: RunningState,
@@ -162,7 +154,11 @@ pub(super) struct Model {
 }
 
 impl Model {
-    pub(crate) fn default(pool: &Pool<Sqlite>, context: TuiContext) -> Self {
+    pub(crate) fn default(
+        pool: &Pool<Sqlite>,
+        context: TuiContext,
+        terminal_dimensions: TerminalDimensions,
+    ) -> Self {
         let debug = std::env::var("BMM_DEBUG").unwrap_or_default().trim() == "1";
 
         let active_pane = match context {
@@ -172,6 +168,9 @@ impl Model {
         };
 
         let initial = matches!(context, TuiContext::Initial);
+
+        let terminal_too_small = terminal_dimensions.width < MIN_TERMINAL_WIDTH
+            || terminal_dimensions.height < MIN_TERMINAL_HEIGHT;
 
         Self {
             pool: pool.clone(),
@@ -184,8 +183,8 @@ impl Model {
             event_counter: 0,
             search_input: Input::default(),
             initial,
-            terminal_dimensions: TerminalDimensions::Unknown,
-            terminal_too_small: false,
+            terminal_dimensions,
+            terminal_too_small,
             debug,
         }
     }
@@ -248,6 +247,11 @@ impl Model {
     }
 
     pub(super) fn go_back_or_quit(&mut self) {
+        if self.terminal_too_small {
+            self.running_state = RunningState::Done;
+            return;
+        }
+
         match self.active_pane {
             ActivePane::List => self.running_state = RunningState::Done,
             ActivePane::Help => self.active_pane = ActivePane::List,

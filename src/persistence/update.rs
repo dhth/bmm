@@ -101,4 +101,3 @@ mod tests {
         assert_eq!(rows_affected, 0);
     }
 }
-

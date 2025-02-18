@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\nSELECT\n    t.name\nFROM\n    tags t\n",
+  "query": "\nSELECT\n    t.name\nFROM\n    tags t\nORDER BY name\n",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       false
     ]
   },
-  "hash": "709ad88260ac36f91f50615471c80af2e5b70e2fc826dba14b5d87d72fd42bad"
+  "hash": "ed6334a9d919257dce56e5f6d8c4345d1627ebb4936fa06d2da60157249c79e8"
 }

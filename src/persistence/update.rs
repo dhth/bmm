@@ -1,4 +1,4 @@
-use super::super::errors::DBError;
+use super::errors::DBError;
 use crate::domain::Tag;
 use sqlx::{Pool, Sqlite};
 
@@ -101,3 +101,4 @@ mod tests {
         assert_eq!(rows_affected, 0);
     }
 }
+

@@ -442,66 +442,6 @@ LIMIT
     })
 }
 
-pub async fn get_tags_with_stats(pool: &Pool<Sqlite>) -> Result<Vec<TagStats>, DBError> {
-    let tag_names = sqlx::query_as!(
-        TagStats,
-        "
-SELECT
-    t.name, count(bt.bookmark_id) as num_bookmarks
-FROM
-    tags t
-    LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id
-GROUP BY
-	t.id
-ORDER BY num_bookmarks DESC
-"
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(|e| DBError::CouldntExecuteQuery("fetch tags with stats".into(), e))?;
-
-    Ok(tag_names)
-}
-
-pub async fn get_tags(pool: &Pool<Sqlite>) -> Result<Vec<String>, DBError> {
-    let tag_names = sqlx::query!(
-        "
-SELECT
-    t.name
-FROM
-    tags t
-"
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(|e| DBError::CouldntExecuteQuery("fetch tags with stats".into(), e))?
-    .into_iter()
-    .map(|r| r.name)
-    .collect();
-
-    Ok(tag_names)
-}
-
-#[allow(unused)]
-pub async fn get_tag_id(pool: &Pool<Sqlite>, name: &str) -> Result<Option<i64>, DBError> {
-    let tag_id = sqlx::query!(
-        "
-SELECT
-    id
-FROM
-    tags
-WHERE name = ?
-",
-        name
-    )
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| DBError::CouldntExecuteQuery("fetch tag id".into(), e))?
-    .map(|r| r.id);
-
-    Ok(tag_id)
-}
-
 #[allow(unused)]
 pub(super) async fn get_bookmark_tags(
     pool: &Pool<Sqlite>,
@@ -546,6 +486,47 @@ FROM
     .fetch_one(pool)
     .await
     .map_err(|e| DBError::CouldntExecuteQuery("fetch number of bookmarks".into(), e))
+}
+
+pub async fn get_tags(pool: &Pool<Sqlite>) -> Result<Vec<String>, DBError> {
+    let tag_names = sqlx::query!(
+        "
+SELECT
+    t.name
+FROM
+    tags t
+ORDER BY name
+"
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| DBError::CouldntExecuteQuery("fetch tags with stats".into(), e))?
+    .into_iter()
+    .map(|r| r.name)
+    .collect();
+
+    Ok(tag_names)
+}
+
+pub async fn get_tags_with_stats(pool: &Pool<Sqlite>) -> Result<Vec<TagStats>, DBError> {
+    let tag_names = sqlx::query_as!(
+        TagStats,
+        "
+SELECT
+    t.name, count(bt.bookmark_id) as num_bookmarks
+FROM
+    tags t
+    LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id
+GROUP BY
+	t.id
+ORDER BY name
+"
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| DBError::CouldntExecuteQuery("fetch tags with stats".into(), e))?;
+
+    Ok(tag_names)
 }
 
 #[cfg(test)]
@@ -1166,12 +1147,13 @@ mod tests {
             ),
         ];
 
+        let start = SystemTime::now();
+        let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
+        let now = since_the_epoch.as_secs() as i64;
+
         for (uri, title, tags) in uris {
             let draft_bookmark = DraftBookmark::try_from((uri, title, tags))
                 .expect("draft bookmark should be initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
             create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
                 .await
                 .expect("bookmark should be saved in db");
@@ -1197,5 +1179,83 @@ mod tests {
             // THEN
             assert_eq!(bookmarks.len(), expected_num_bookmarks);
         }
+    }
+
+    #[tokio::test]
+    async fn getting_tags_works() {
+        // GIVEN
+        let fixture = DBPoolFixture::new().await;
+        let uris = [
+            ("https://uri-one.com", None, vec!["tag5", "tag2"]),
+            ("https://uri-two.com", None, vec!["tag2", "tag3"]),
+            ("https://uri-three.com", None, vec!["tag2", "tag3"]),
+            ("https://uri-four.com", None, vec!["tag1", "tag3"]),
+            ("https://uri-five.com", None, vec!["tag3", "tag4"]),
+        ];
+
+        let start = SystemTime::now();
+        let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
+        let now = since_the_epoch.as_secs() as i64;
+
+        for (uri, title, tags) in uris {
+            let draft_bookmark = DraftBookmark::try_from((uri, title, tags))
+                .expect("draft bookmark should be initialized");
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+                .await
+                .expect("bookmark should be saved in db");
+        }
+
+        // WHEN
+        let tags = get_tags(&fixture.pool)
+            .await
+            .expect("tags should've been fetched");
+
+        // THEN
+        assert_eq!(tags.len(), 5);
+        assert_eq!(
+            tags.iter().map(|t| t.as_str()).collect::<Vec<_>>(),
+            vec!["tag1", "tag2", "tag3", "tag4", "tag5",]
+        );
+    }
+
+    #[tokio::test]
+    async fn getting_tags_with_stats_works() {
+        // GIVEN
+        let fixture = DBPoolFixture::new().await;
+        let uris = [
+            ("https://uri-one.com", None, vec!["tag5", "tag2"]),
+            ("https://uri-two.com", None, vec!["tag2", "tag3"]),
+            ("https://uri-three.com", None, vec!["tag2", "tag3"]),
+            ("https://uri-four.com", None, vec!["tag1", "tag3"]),
+            ("https://uri-five.com", None, vec!["tag3", "tag4"]),
+        ];
+
+        let start = SystemTime::now();
+        let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
+        let now = since_the_epoch.as_secs() as i64;
+
+        for (uri, title, tags) in uris {
+            let draft_bookmark = DraftBookmark::try_from((uri, title, tags))
+                .expect("draft bookmark should be initialized");
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+                .await
+                .expect("bookmark should be saved in db");
+        }
+
+        // WHEN
+        let tags = get_tags_with_stats(&fixture.pool)
+            .await
+            .expect("tags should've been fetched");
+
+        // THEN
+        assert_eq!(tags.len(), 5);
+        assert_eq!(
+            tags.iter().map(|t| t.name.as_str()).collect::<Vec<_>>(),
+            vec!["tag1", "tag2", "tag3", "tag4", "tag5",]
+        );
+        assert_eq!(
+            tags.iter().map(|t| t.num_bookmarks).collect::<Vec<_>>(),
+            vec![1, 3, 4, 1, 1]
+        );
     }
 }

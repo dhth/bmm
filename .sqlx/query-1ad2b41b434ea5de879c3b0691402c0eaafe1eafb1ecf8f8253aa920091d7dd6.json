@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\nSELECT\n    t.name, count(bt.bookmark_id) as num_bookmarks\nFROM\n    tags t\n    LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id\nGROUP BY\n\tt.id\nORDER BY num_bookmarks DESC\n",
+  "query": "\nSELECT\n    t.name, count(bt.bookmark_id) as num_bookmarks\nFROM\n    tags t\n    LEFT JOIN bookmark_tags bt ON bt.tag_id = t.id\nGROUP BY\n\tt.id\nORDER BY name\n",
   "describe": {
     "columns": [
       {
@@ -22,5 +22,5 @@
       false
     ]
   },
-  "hash": "43832b6f671319175a86f2166d2058dae9e40c61f69d636920cb8eee1e84c865"
+  "hash": "1ad2b41b434ea5de879c3b0691402c0eaafe1eafb1ecf8f8253aa920091d7dd6"
 }

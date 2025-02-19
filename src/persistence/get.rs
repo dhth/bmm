@@ -488,6 +488,27 @@ FROM
     .map_err(|e| DBError::CouldntExecuteQuery("fetch number of bookmarks".into(), e))
 }
 
+#[allow(unused)]
+pub async fn does_tag_exist(pool: &Pool<Sqlite>, tag: &str) -> Result<Option<i64>, DBError> {
+    let maybe_id = sqlx::query!(
+        "
+SELECT
+    id
+FROM
+    tags
+WHERE
+    name = ?
+",
+        tag
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| DBError::CouldntExecuteQuery("check if tag exists".into(), e))?
+    .map(|r| r.id);
+
+    Ok(maybe_id)
+}
+
 pub async fn get_tags(pool: &Pool<Sqlite>) -> Result<Vec<String>, DBError> {
     let tag_names = sqlx::query!(
         "

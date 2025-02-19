@@ -103,7 +103,7 @@ impl AppError {
                 DeleteBookmarksError::CouldntReadUserInput(_) => Some(802),
             },
             AppError::CouldntRenameTag(e) => match e {
-                RenameTagError::NewTagNotDifferent => None,
+                RenameTagError::SourceAndTargetSame => None,
                 RenameTagError::NoSuchTag => None,
                 RenameTagError::CouldntRenameTag(_) => Some(900),
                 RenameTagError::TagIsInvalid => None,

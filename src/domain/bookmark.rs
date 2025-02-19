@@ -150,7 +150,7 @@ impl DraftBookmark {
     }
 
     pub fn tags(&self) -> Vec<&str> {
-        self.tags.iter().map(|t| t.value()).collect()
+        self.tags.iter().map(|t| t.name()).collect()
     }
 }
 

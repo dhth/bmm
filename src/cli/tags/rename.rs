@@ -5,8 +5,8 @@ use sqlx::{Pool, Sqlite};
 
 #[derive(thiserror::Error, Debug)]
 pub enum RenameTagError {
-    #[error("new tag and original tag are the same")]
-    NewTagNotDifferent,
+    #[error("source and target tag are the same")]
+    SourceAndTargetSame,
     #[error("no such tag")]
     NoSuchTag,
     #[error(transparent)]
@@ -17,15 +17,15 @@ pub enum RenameTagError {
 
 pub async fn rename_tag(
     pool: &Pool<Sqlite>,
-    original_tag: String,
-    new_tag: String,
+    source_tag: String,
+    target_tag: String,
 ) -> Result<(), RenameTagError> {
-    if original_tag.trim() == new_tag.trim() {
-        return Err(RenameTagError::NewTagNotDifferent);
+    if source_tag.trim() == target_tag.trim() {
+        return Err(RenameTagError::SourceAndTargetSame);
     }
 
-    let new_tag = Tag::try_from(new_tag.as_str()).map_err(|_| RenameTagError::TagIsInvalid)?;
-    let result = rename_tag_name(pool, original_tag, new_tag).await?;
+    let new_tag = Tag::try_from(target_tag.as_str()).map_err(|_| RenameTagError::TagIsInvalid)?;
+    let result = rename_tag_name(pool, source_tag, new_tag).await?;
     if result == 0 {
         return Err(RenameTagError::NoSuchTag);
     }

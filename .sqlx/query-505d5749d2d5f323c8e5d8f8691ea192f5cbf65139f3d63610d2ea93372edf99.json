@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\nUPDATE\n    bookmark_tags\nSET\n    tag_id = ?\nWHERE\n    tag_id = ?\nAND NOT EXISTS (\n    SELECT 1\n    FROM bookmark_tags AS bt\n    WHERE bt.bookmark_id = bookmark_tags.bookmark_id\n    AND bt.tag_id = ?\n)\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "505d5749d2d5f323c8e5d8f8691ea192f5cbf65139f3d63610d2ea93372edf99"
+}

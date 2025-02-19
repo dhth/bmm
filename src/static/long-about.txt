@@ -1,0 +1,7 @@
+bmm (stands for "bookmarks manager") lets you get to your bookmarks in a flash.
+
+It does so by storing your bookmarks locally, allowing you to quickly access,
+manage, and search through them using various commands.
+
+bmm has a traditional command line interface that can be used standalone or
+integrated with other tools, and a textual user interface for easy browsing.

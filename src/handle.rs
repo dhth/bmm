@@ -83,9 +83,9 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
                 tui,
             } => list_tags(&pool, format, show_stats, tui).await?,
             TagsCommand::Rename {
-                original_tag,
-                new_tag,
-            } => rename_tag(&pool, original_tag, new_tag).await?,
+                source_tag,
+                target_tag,
+            } => rename_tag(&pool, source_tag, target_tag).await?,
         },
         BmmCommand::Tui => run_tui(&pool, TuiContext::Initial).await?,
     }

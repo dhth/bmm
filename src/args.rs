@@ -3,17 +3,19 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 const NOT_PROVIDED: &str = "<not provided>";
+const LONG_ABOUT: &str = include_str!("static/long-about.txt");
+const IMPORT_HELP: &str = include_str!("static/import-help.txt");
 
-/// bmm lets you manage your bookmarks via the command line
+/// bmm lets you get to your bookmarks in a flash
 #[derive(Parser, Debug)]
-#[command(about)]
+#[command(long_about = LONG_ABOUT.trim())]
 pub struct Args {
     #[command(subcommand)]
     pub command: BmmCommand,
-    /// override bmm's database location (default: <DATA_DIR>/bmm/bmm.db)
+    /// Override bmm's database location (default: <DATA_DIR>/bmm/bmm.db)
     #[arg(long = "db-path", value_name = "STRING", global = true)]
     pub db_path: Option<String>,
-    /// output debug information without doing anything
+    /// Output debug information without doing anything
     #[arg(long = "debug", global = true)]
     pub debug: bool,
 }
@@ -21,6 +23,7 @@ pub struct Args {
 #[derive(Subcommand, Debug)]
 pub enum BmmCommand {
     /// Import bookmarks from various sources
+    #[command(long_about = IMPORT_HELP.trim())]
     Import {
         /// File to import from; the file's extension will be used to infer file format; supported formats: [html, json, txt, markdown]
         #[arg(value_name = "FILE", value_parser=validate_import_file)]
@@ -125,7 +128,7 @@ pub enum BmmCommand {
         #[arg(value_name = "URI")]
         uri: String,
     },
-    /// Interact with bmm tags
+    /// Interact with tags
     Tags {
         #[command(subcommand)]
         tags_command: TagsCommand,
@@ -155,12 +158,12 @@ pub enum TagsCommand {
     },
     /// Rename a tag
     Rename {
-        /// Original tag
-        #[arg(value_name = "ORIGINAL")]
-        original_tag: String,
-        /// New tag
-        #[arg(value_name = "NEW")]
-        new_tag: String,
+        /// Source tag (must already exist)
+        #[arg(value_name = "SOURCE")]
+        source_tag: String,
+        /// Target tag (can either be a new tag or an already existing one)
+        #[arg(value_name = "TARGET")]
+        target_tag: String,
     },
 }
 
@@ -290,15 +293,15 @@ run tui      : {}
                     format, show_stats, tui,
                 ),
                 TagsCommand::Rename {
-                    original_tag,
-                    new_tag,
+                    source_tag,
+                    target_tag,
                 } => format!(
                     r#"
 command      : Rename Tag
-original tag : {}
-new tag      : {}
+source tag   : {}
+target tag   : {}
 "#,
-                    original_tag, new_tag,
+                    source_tag, target_tag,
                 ),
             },
             BmmCommand::Tui => r#"

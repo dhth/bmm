@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\nSELECT\n    id\nFROM\n    tags\nWHERE\n    name = ?\n",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "77ca1c6680321890f5b4fcfd60fbabaa7e61fe8a487dfbda5e89fc6c54a05272"
+}

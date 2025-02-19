@@ -8,7 +8,7 @@ pub const TAG_REGEX_STR: &str = r"^[a-zA-Z0-9_-]{1,30}$";
 pub struct Tag(String);
 
 impl Tag {
-    pub fn value(&self) -> &str {
+    pub fn name(&self) -> &str {
         self.0.as_str()
     }
 }
@@ -76,7 +76,7 @@ mod tests {
             .expect("result should've been a success");
 
         // THEN
-        assert_eq!(result.value(), "a-tag-with-spaces-at-each-end");
+        assert_eq!(result.name(), "a-tag-with-spaces-at-each-end");
     }
 
     #[test]
@@ -86,7 +86,7 @@ mod tests {
         let result =
             Tag::try_from("UPPER-and-lower-case-chars").expect("result should've been a success");
         // THEN
-        assert_eq!(result.value(), "upper-and-lower-case-chars");
+        assert_eq!(result.name(), "upper-and-lower-case-chars");
     }
 
     //------------//

@@ -66,6 +66,7 @@ pub async fn save_bookmark(
     tags: Option<Vec<String>>,
     use_editor: bool,
     fail_if_uri_saved: bool,
+    reset_missing: bool,
 ) -> Result<(), SaveBookmarkError> {
     let maybe_existing_bookmark = get_bookmark_with_exact_uri(pool, &uri)
         .await
@@ -80,25 +81,6 @@ pub async fn save_bookmark(
         return Ok(());
     }
 
-    let title_to_save = match title {
-        Some(t) => Some(t),
-        None => match maybe_existing_bookmark.as_ref() {
-            Some(b) => b.title.clone(),
-            None => None,
-        },
-    };
-
-    let tags_to_save = match tags {
-        Some(t) => Some(t),
-        None => match maybe_existing_bookmark.as_ref() {
-            Some(b) => b
-                .tags
-                .as_ref()
-                .map(|tt| tt.split(",").map(|ttt| ttt.to_string()).collect::<Vec<_>>()),
-            None => None,
-        },
-    };
-
     let draft_bookmark = match use_editor {
         true => match maybe_existing_bookmark {
             Some(existing_bookmark) => {
@@ -112,15 +94,17 @@ pub async fn save_bookmark(
                 DraftBookmark::try_from(&potential_bookmark)?
             }
         },
-        false => DraftBookmark::try_from((uri.as_str(), title_to_save.as_deref(), tags_to_save))?,
+        false => DraftBookmark::try_from((uri.as_str(), title.as_deref(), tags))?,
     };
+
+    let reset_missing = if use_editor { true } else { reset_missing };
 
     let start = SystemTime::now();
     let since_the_epoch = start
         .duration_since(UNIX_EPOCH)
         .map_err(|e| SaveBookmarkError::UnexpectedError(format!("system time error: {}", e)))?;
     let now = since_the_epoch.as_secs() as i64;
-    create_or_update_bookmark(pool, &draft_bookmark, now)
+    create_or_update_bookmark(pool, &draft_bookmark, now, reset_missing)
         .await
         .map_err(SaveBookmarkError::CouldntSaveBookmark)?;
 

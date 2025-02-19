@@ -28,10 +28,10 @@ pub enum DraftBookmarkError {
     TagIsInvalid(Vec<String>),
 }
 
-impl TryFrom<(&str, Option<&str>, Vec<&str>)> for DraftBookmark {
+impl TryFrom<(&str, Option<&str>, &Vec<&str>)> for DraftBookmark {
     type Error = DraftBookmarkError;
 
-    fn try_from(value: (&str, Option<&str>, Vec<&str>)) -> Result<Self, Self::Error> {
+    fn try_from(value: (&str, Option<&str>, &Vec<&str>)) -> Result<Self, Self::Error> {
         let (uri, title, tags) = value;
 
         Url::parse(uri).map_err(DraftBookmarkError::CouldntParseUri)?;
@@ -85,7 +85,7 @@ impl TryFrom<(&str, Option<&str>, Option<&str>)> for DraftBookmark {
     fn try_from(value: (&str, Option<&str>, Option<&str>)) -> Result<Self, Self::Error> {
         let (uri, title, tags) = value;
         let tags = tags.map(|t| t.split(",").collect::<Vec<_>>());
-        Self::try_from((uri, title, tags.unwrap_or_default()))
+        Self::try_from((uri, title, &tags.unwrap_or_default()))
     }
 }
 
@@ -106,16 +106,7 @@ impl TryFrom<(&str, Option<&str>, Option<Vec<String>>)> for DraftBookmark {
         let tags_ref = tags
             .as_ref()
             .map(|v| v.iter().map(|t| t.as_str()).collect::<Vec<_>>());
-        Self::try_from((uri, title, tags_ref.unwrap_or_default()))
-    }
-}
-
-impl TryFrom<(&str, Option<&str>, Option<Vec<&str>>)> for DraftBookmark {
-    type Error = DraftBookmarkError;
-
-    fn try_from(value: (&str, Option<&str>, Option<Vec<&str>>)) -> Result<Self, Self::Error> {
-        let (uri, title, tags) = value;
-        Self::try_from((uri, title, tags.unwrap_or_default()))
+        Self::try_from((uri, title, &tags_ref.unwrap_or_default()))
     }
 }
 
@@ -123,7 +114,15 @@ impl TryFrom<&String> for DraftBookmark {
     type Error = DraftBookmarkError;
 
     fn try_from(uri: &String) -> Result<Self, Self::Error> {
-        Self::try_from((uri.as_str(), None, Vec::new()))
+        Self::try_from((uri.as_str(), None, &Vec::new()))
+    }
+}
+
+impl TryFrom<&str> for DraftBookmark {
+    type Error = DraftBookmarkError;
+
+    fn try_from(uri: &str) -> Result<Self, Self::Error> {
+        Self::try_from((uri, None, &Vec::new()))
     }
 }
 
@@ -133,7 +132,7 @@ impl TryFrom<&PotentialBookmark> for DraftBookmark {
     fn try_from(value: &PotentialBookmark) -> Result<Self, Self::Error> {
         let t: Vec<&str> = value.tags.as_deref().unwrap_or("").split(",").collect();
 
-        Self::try_from((value.uri.as_str(), value.title.as_deref(), t))
+        Self::try_from((value.uri.as_str(), value.title.as_deref(), &t))
     }
 }
 
@@ -181,7 +180,7 @@ mod tests {
         let tags = vec!["sql", "rust", "database-library-1"];
 
         // WHEN
-        let result = DraftBookmark::try_from((uri, Some(title), tags));
+        let result = DraftBookmark::try_from((uri, Some(title), &tags));
 
         // THEN
         assert!(result.is_ok());
@@ -195,7 +194,7 @@ mod tests {
         let tags = vec!["sql", "", "database-library", ""];
 
         // WHEN
-        let result = DraftBookmark::try_from((uri, Some(title), tags))
+        let result = DraftBookmark::try_from((uri, Some(title), &tags))
             .expect("draft bookmark should've been created");
 
         // THEN
@@ -218,7 +217,7 @@ mod tests {
 
         for uri in faulty_uris {
             // WHEN
-            let result = DraftBookmark::try_from((uri, None, Vec::new()));
+            let result = DraftBookmark::try_from((uri, None, &Vec::new()));
 
             // THEN
             match result {
@@ -235,7 +234,7 @@ mod tests {
         let title = "a".repeat(501);
 
         // WHEN
-        let result = DraftBookmark::try_from((uri, Some(title.as_str()), Vec::new()));
+        let result = DraftBookmark::try_from((uri, Some(title.as_str()), &Vec::new()));
 
         // THEN
         match result {
@@ -258,7 +257,7 @@ mod tests {
 
         for tag in malformed_tags {
             // WHEN
-            let result = DraftBookmark::try_from((uri, Some(title), vec![tag]));
+            let result = DraftBookmark::try_from((uri, Some(title), &vec![tag]));
 
             // THEN
             match result {

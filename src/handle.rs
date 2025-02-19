@@ -42,8 +42,12 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             delete_bookmarks(&pool, uris, skip_confirmation).await?;
         }
 
-        BmmCommand::Import { file, dry_run } => {
-            let result = import_bookmarks(&pool, &file, dry_run).await?;
+        BmmCommand::Import {
+            file,
+            reset_missing,
+            dry_run,
+        } => {
+            let result = import_bookmarks(&pool, &file, reset_missing, dry_run).await?;
             if let Some(stats) = result {
                 println!("imported {} bookmarks", stats.num_bookmarks_imported);
             }
@@ -71,8 +75,20 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             title,
             tags,
             use_editor,
-            fail_if_uri_already_saved: fail_if_uri_saved,
-        } => save_bookmark(&pool, uri, title, tags, use_editor, fail_if_uri_saved).await?,
+            fail_if_uri_already_saved,
+            reset_missing,
+        } => {
+            save_bookmark(
+                &pool,
+                uri,
+                title,
+                tags,
+                use_editor,
+                fail_if_uri_already_saved,
+                reset_missing,
+            )
+            .await?
+        }
 
         BmmCommand::Show { uri } => show_bookmark(&pool, uri).await?,
 

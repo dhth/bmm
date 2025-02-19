@@ -31,6 +31,9 @@ pub enum BmmCommand {
         /// Display bookmarks that will be imported without actually importing them
         #[arg(short = 'd', long = "dry-run")]
         dry_run: bool,
+        /// Reset previously saved details if not provided
+        #[arg(short = 'r', long = "reset-missing-details")]
+        reset_missing: bool,
     },
     /// Delete bookmarks
     Delete {
@@ -96,6 +99,9 @@ pub enum BmmCommand {
         /// Fail if URI already saved (bmm will update the existing entry by default)
         #[arg(short = 'f', long = "fail-if-already-saved", value_name = "STRING")]
         fail_if_uri_already_saved: bool,
+        /// Reset previously saved details if not provided
+        #[arg(short = 'r', long = "reset-missing-details")]
+        reset_missing: bool,
     },
     /// Search bookmarks based on a singular query
     Search {
@@ -236,20 +242,26 @@ limit             : {}
                 format,
                 limit,
             ),
-            BmmCommand::Import { file, dry_run } => format!(
+            BmmCommand::Import {
+                file,
+                dry_run,
+                reset_missing,
+            } => format!(
                 r#"
-command : Import bookmarks
-file    : {}
-dry_run : {}
+command       : Import bookmarks
+file          : {}
+dry run       : {}
+reset missing : {}
 "#,
-                file, dry_run
+                file, dry_run, reset_missing
             ),
             BmmCommand::Save {
                 uri,
                 title,
                 tags,
                 use_editor,
-                fail_if_uri_already_saved: fail_if_uri_saved,
+                fail_if_uri_already_saved,
+                reset_missing,
             } => format!(
                 r#"
 command                   : Save bookmark
@@ -258,12 +270,14 @@ title                     : {}
 tags                      : {}
 use editor                : {}
 fail if URI already saved : {}
+reset missing             : {}
 "#,
                 uri,
                 title.as_deref().unwrap_or(NOT_PROVIDED),
                 tags.as_ref().map_or(NOT_PROVIDED.into(), |t| t.join(" ")),
                 use_editor,
-                fail_if_uri_saved,
+                fail_if_uri_already_saved,
+                reset_missing,
             ),
             BmmCommand::Search {
                 query: uri,

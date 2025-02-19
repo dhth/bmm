@@ -65,22 +65,24 @@ Options:
 ### Basic Usage
 
 ```bash
-# save just the uri
+
+# import bookmarks
+bmm import firefox.html
+bmm import bookmarks.json --dry-run
+bmm import bookmarks.txt
+
+# save a new URI
 bmm save https://github.com/dhth/bmm
 
-# save a title as well
+# update the title of a previously saved bookmark
 bmm save https://github.com/dhth/bmm --title "yet another bookmarking tool"
 
-# save tags as well
+# update the tags of a previously saved bookmark
 bmm save https://github.com/dhth/bmm \
-    --title "yet another bookmarking tool" \
     --tags cli,bookmarks
 
 # use your editor to provide details
 bmm save https://github.com/dhth/bmm -e
-
-# save or update bookmark
-bmm save https://github.com/dhth/bmm --title "updated title"
 
 # list bookmarks based on several queries
 bmm list --uri 'github.com' \
@@ -114,11 +116,6 @@ bmm delete --yes https://github.com/dhth/bmm https://github.com/dhth/omm
 # rename tag
 bmm tags rename old-tag new-tag
 
-# import bookmarks
-bmm import firefox.html
-bmm import bookmarks.json --dry-run
-bmm import bookmarks.txt
-
 # open bmm's TUI
 bmm tui
 ```
@@ -140,8 +137,6 @@ To allow for quick access, `bmm` ships with its own TUI. The TUI simplifies
 browsing with a user-friendly interface. It can be launched either in a generic
 mode (via `bmm tui`) or in the context of a specific command (e.g., `bmm search
 tools --tui`).
-
-![tui-1](https://github.com/user-attachments/assets/f9f16763-ef1a-4538-bc7f-4eeb9a7f2a11)
 
 ![tui](https://github.com/user-attachments/assets/6ca63039-8872-4520-93da-1576cc0cf8ec)
 

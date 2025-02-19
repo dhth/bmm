@@ -136,14 +136,14 @@ mod tests {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
-        let draft_bookmark = DraftBookmark::try_from((uri, None, vec!["old-tag-1", "old-tag-2"]))
+        let draft_bookmark = DraftBookmark::try_from((uri, None, &vec!["old-tag-1", "old-tag-2"]))
             .expect("draft bookmark should be initialized");
 
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
             .await
             .expect("bookmark should be saved in db");
 
@@ -182,9 +182,9 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         for (uri, title, tags) in uris {
-            let draft_bookmark = DraftBookmark::try_from((uri, title, tags))
+            let draft_bookmark = DraftBookmark::try_from((uri, title, &tags))
                 .expect("draft bookmark should be initialized");
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
                 .await
                 .expect("bookmark should be saved in db");
         }
@@ -247,14 +247,14 @@ mod tests {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
-        let draft_bookmark = DraftBookmark::try_from((uri, None, vec!["old-tag-1", "old-tag-2"]))
+        let draft_bookmark = DraftBookmark::try_from((uri, None, &vec!["old-tag-1", "old-tag-2"]))
             .expect("draft bookmark should be initialized");
 
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
             .await
             .expect("bookmark should be saved in db");
         let new_tag = Tag::try_from("new-tag").expect("new tag should've been created");

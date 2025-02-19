@@ -101,6 +101,7 @@ pub struct ImportStats {
 pub async fn import_bookmarks(
     pool: &Pool<Sqlite>,
     path: &str,
+    reset_missing: bool,
     dry_run: bool,
 ) -> Result<Option<ImportStats>, ImportError> {
     let pathbuf = PathBuf::from(path);
@@ -175,7 +176,7 @@ pub async fn import_bookmarks(
         .duration_since(UNIX_EPOCH)
         .map_err(|e| ImportError::UnexpectedError(format!("system time error: {}", e)))?;
     let now = since_the_epoch.as_secs() as i64;
-    create_or_update_bookmarks(pool, &draft_bookmarks, now).await?;
+    create_or_update_bookmarks(pool, &draft_bookmarks, now, reset_missing).await?;
 
     Ok(Some(ImportStats {
         num_bookmarks_imported: draft_bookmarks.len(),

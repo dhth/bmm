@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\nINSERT INTO\n    bookmarks (uri, title, created_at, updated_at)\nVALUES\n    (?, ?, ?, ?) ON CONFLICT (uri) DO\nUPDATE\nSET\n    title = COALESCE(excluded.title, bookmarks.title),\n    updated_at = excluded.updated_at\n",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "5eb0463f1eb767bac0e8ea67ae2b3a9abcb327fef2feaba997c3cdde27d09bc1"
+}

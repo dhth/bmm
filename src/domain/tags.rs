@@ -13,11 +13,11 @@ impl Tag {
     }
 }
 
-impl TryFrom<&str> for Tag {
+impl TryFrom<&&str> for Tag {
     type Error = ();
 
     #[allow(clippy::expect_used)]
-    fn try_from(tag: &str) -> Result<Self, Self::Error> {
+    fn try_from(tag: &&str) -> Result<Self, Self::Error> {
         static RE: Lazy<Regex> = Lazy::new(|| Regex::new(TAG_REGEX_STR).expect("regex is invalid"));
 
         let trimmed_tag = tag.trim();
@@ -29,6 +29,14 @@ impl TryFrom<&str> for Tag {
         }
 
         Ok(Self(trimmed_tag.to_lowercase().to_string()))
+    }
+}
+
+impl TryFrom<&str> for Tag {
+    type Error = ();
+
+    fn try_from(tag: &str) -> Result<Self, Self::Error> {
+        Self::try_from(&tag)
     }
 }
 

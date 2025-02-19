@@ -1,0 +1,4 @@
+https://crates.io/crates/sqlx
+https://github.com/dhth/omm
+https://github.com/dhth/hours
+https://github.com/dhth/bmm

@@ -1,7 +1,7 @@
 use crate::cli::{
-    CouldntGetDetailsViaEditorError, DeleteBookmarksError, ImportError, ListBookmarksError,
-    ListTagsError, ParsingTempFileContentError, RenameTagError, SaveBookmarkError,
-    ShowBookmarkError,
+    CouldntGetDetailsViaEditorError, DeleteBookmarksError, DeleteTagsError, ImportError,
+    ListBookmarksError, ListTagsError, ParsingTempFileContentError, RenameTagError,
+    SaveBookmarkError, ShowBookmarkError,
 };
 use crate::persistence::DBError;
 use crate::tui::AppTuiError;
@@ -36,6 +36,8 @@ pub enum AppError {
     CouldntListTags(#[from] ListTagsError),
     #[error("couldn't rename tag: {0}")]
     CouldntRenameTag(#[from] RenameTagError),
+    #[error("couldn't delete tag(s): {0}")]
+    CouldntDeleteTag(#[from] DeleteTagsError),
 
     // tui related
     #[error("couldn't run bmm's TUI: {0}")]
@@ -109,6 +111,13 @@ impl AppError {
                 RenameTagError::TagIsInvalid => None,
             },
             AppError::CouldntRunTui(e) => Some(e.code()),
+            AppError::CouldntDeleteTag(e) => match e {
+                DeleteTagsError::CouldntFlushStdout(_) => Some(1000),
+                DeleteTagsError::CouldntReadUserInput(_) => Some(1001),
+                DeleteTagsError::CouldntCheckIfTagsExist(_) => Some(1002),
+                DeleteTagsError::TagsDoNotExist(_) => None,
+                DeleteTagsError::CouldntDeleteTags(_) => Some(1003),
+            },
         }
     }
 }

@@ -139,6 +139,15 @@ pub enum BmmCommand {
 
 #[derive(Subcommand, Debug)]
 pub enum TagsCommand {
+    /// Delete tags
+    Delete {
+        /// Tags to delete
+        #[arg(value_name = "STRING")]
+        tags: Vec<String>,
+        /// Whether to skip confirmation
+        #[arg(short = 'y', long = "yes")]
+        skip_confirmation: bool,
+    },
     /// List tags stored by bmm
     List {
         /// Format to output in
@@ -302,6 +311,17 @@ source tag   : {}
 target tag   : {}
 "#,
                     source_tag, target_tag,
+                ),
+                TagsCommand::Delete {
+                    tags,
+                    skip_confirmation,
+                } => format!(
+                    r#"
+command          : Delete Tags
+tags             : {:?}
+skip confirmation: {}
+"#,
+                    tags, skip_confirmation,
                 ),
             },
             BmmCommand::Tui => r#"

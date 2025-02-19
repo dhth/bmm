@@ -86,6 +86,10 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
                 source_tag,
                 target_tag,
             } => rename_tag(&pool, source_tag, target_tag).await?,
+            TagsCommand::Delete {
+                tags,
+                skip_confirmation,
+            } => delete_tags(&pool, tags, skip_confirmation).await?,
         },
         BmmCommand::Tui => run_tui(&pool, TuiContext::Initial).await?,
     }

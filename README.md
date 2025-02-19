@@ -105,7 +105,10 @@ bmm tags list \
 # open saved tags in bmm's TUI
 bmm tags list --tui
 
-# delete bookmarks
+# delete tags 
+bmm tags delete tag1 tag2 tag3
+
+# delete bookmarks and skip confirmation
 bmm delete --yes https://github.com/dhth/bmm https://github.com/dhth/omm
 
 # rename tag

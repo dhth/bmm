@@ -65,6 +65,29 @@ WHERE
     Ok(rows_affected)
 }
 
+pub async fn delete_tags_by_name(pool: &Pool<Sqlite>, tags: &[String]) -> Result<u64, DBError> {
+    let query = format!(
+        r#"
+DELETE FROM
+    tags
+WHERE
+    name IN ({})
+"#,
+        tags.iter().map(|_| "?").collect::<Vec<&str>>().join(", ")
+    );
+    let mut query_builder = sqlx::query(&query);
+    for tag in tags {
+        query_builder = query_builder.bind(tag);
+    }
+
+    let result = query_builder
+        .execute(pool)
+        .await
+        .map_err(|e| DBError::CouldntExecuteQuery("delete tags".into(), e))?;
+
+    Ok(result.rows_affected())
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::test_fixtures::DBPoolFixture;
@@ -175,5 +198,51 @@ mod tests {
             .await
             .expect("tags should've been fetched");
         assert!(tags_in_db.is_empty());
+    }
+
+    #[tokio::test]
+    async fn deleting_tags_works() {
+        // GIVEN
+        let fixture = DBPoolFixture::new().await;
+        let uris = [
+            ("https://uri-one.com", None, vec!["tag5", "tag2"]),
+            ("https://uri-two.com", None, vec!["tag2", "tag3"]),
+            ("https://uri-three.com", None, vec!["tag2", "tag3"]),
+            ("https://uri-four.com", None, vec!["tag1", "tag3"]),
+            ("https://uri-five.com", None, vec!["tag3", "tag4"]),
+        ];
+
+        let start = SystemTime::now();
+        let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
+        let now = since_the_epoch.as_secs() as i64;
+
+        for (uri, title, tags) in uris {
+            let draft_bookmark = DraftBookmark::try_from((uri, title, tags))
+                .expect("draft bookmark should be initialized");
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+                .await
+                .expect("bookmark should be saved in db");
+        }
+
+        // WHEN
+        let tags_to_delete = ["tag1", "tag2", "absent-tag"]
+            .iter()
+            .map(|t| t.to_string())
+            .collect::<Vec<_>>();
+        let num_rows_deleted = delete_tags_by_name(&fixture.pool, &tags_to_delete)
+            .await
+            .expect("result should've been a success");
+
+        // THEN
+        assert_eq!(num_rows_deleted, 2);
+
+        let tags_left = get_tags(&fixture.pool)
+            .await
+            .expect("tags should've been fetched");
+        assert_eq!(tags_left.len(), 3);
+        assert_eq!(
+            tags_left.iter().map(|t| t.as_str()).collect::<Vec<_>>(),
+            vec!["tag3", "tag4", "tag5"]
+        );
     }
 }

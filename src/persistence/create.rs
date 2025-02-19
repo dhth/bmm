@@ -585,7 +585,7 @@ mod tests {
         assert_eq!(saved_bookmark.updated_at, now);
         assert_eq!(
             saved_bookmark.tags.as_deref(),
-            Some("rust,sqlite,database,github")
+            Some("database,github,rust,sqlite")
         );
 
         let tags = get_tags(&fixture.pool)

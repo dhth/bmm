@@ -10,7 +10,7 @@ use pretty_assertions::assert_eq;
 fn importing_from_an_html_file_works() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut cmd = fixture.command;
+    let mut cmd = fixture.cmd();
     cmd.args(["import", "tests/static/import/valid.html"]);
 
     // WHEN
@@ -27,7 +27,7 @@ fn importing_from_an_html_file_works() {
 fn importing_from_an_invalid_html_file_doesnt_fail() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut cmd = fixture.command;
+    let mut cmd = fixture.cmd();
     cmd.args(["import", "tests/static/import/invalid.html"]);
 
     // WHEN
@@ -44,7 +44,7 @@ fn importing_from_an_invalid_html_file_doesnt_fail() {
 fn importing_from_a_valid_json_file_works() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut cmd = fixture.command;
+    let mut cmd = fixture.cmd();
     cmd.args(["import", "tests/static/import/valid.json"]);
 
     // WHEN
@@ -61,7 +61,7 @@ fn importing_from_a_valid_json_file_works() {
 fn importing_from_a_json_file_with_only_mandatory_details_works() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut cmd = fixture.command;
+    let mut cmd = fixture.cmd();
     cmd.args(["import", "tests/static/import/only-mandatory.json"]);
 
     // WHEN
@@ -78,7 +78,7 @@ fn importing_from_a_json_file_with_only_mandatory_details_works() {
 fn importing_from_a_valid_txt_file_works() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut cmd = fixture.command;
+    let mut cmd = fixture.cmd();
     cmd.args(["import", "tests/static/import/valid.txt"]);
 
     // WHEN
@@ -99,7 +99,7 @@ fn importing_from_a_valid_txt_file_works() {
 fn importing_from_an_invalid_json_file_fails() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut cmd = fixture.command;
+    let mut cmd = fixture.cmd();
     cmd.args(["import", "tests/static/import/invalid.json"]);
 
     // WHEN
@@ -116,7 +116,7 @@ fn importing_from_an_invalid_json_file_fails() {
 fn importing_from_a_json_file_fails_if_missing_uri() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut cmd = fixture.command;
+    let mut cmd = fixture.cmd();
     cmd.args(["import", "tests/static/import/missing-uri.json"]);
 
     // WHEN

@@ -16,7 +16,7 @@ SELECT
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',')
+            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
@@ -51,7 +51,7 @@ SELECT
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',')
+            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
@@ -90,7 +90,7 @@ SELECT
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',')
+            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
@@ -122,7 +122,7 @@ SELECT
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',')
+            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
@@ -158,7 +158,7 @@ SELECT
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',')
+            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
@@ -189,7 +189,7 @@ SELECT
     b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ', ') AS tags,
+    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
     b.updated_at
 FROM
     bookmarks b
@@ -237,7 +237,7 @@ SELECT
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',')
+            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
@@ -270,7 +270,7 @@ SELECT
     b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ', ') AS tags,
+    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
     b.updated_at
 FROM
     bookmarks b
@@ -313,7 +313,7 @@ SELECT
     b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ', ') AS tags,
+    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
     b.updated_at
 FROM
     bookmarks b
@@ -356,7 +356,7 @@ SELECT
     b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ', ') AS tags,
+    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
     b.updated_at
 FROM
     bookmarks b
@@ -410,7 +410,7 @@ SELECT
     b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ', ') AS tags,
+    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
     b.updated_at
 FROM
     bookmarks b

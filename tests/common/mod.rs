@@ -3,7 +3,7 @@ use tempfile::{tempdir, TempDir};
 
 pub struct Fixture {
     _temp_dir: TempDir,
-    pub command: Command,
+    data_file_path: String,
 }
 
 #[cfg(test)]
@@ -22,8 +22,15 @@ impl Fixture {
 
         Self {
             _temp_dir: temp_dir,
-            command,
+            data_file_path,
         }
+    }
+
+    pub fn cmd(&self) -> Command {
+        let mut command =
+            Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("command should've been created");
+        command.args(["--db-path", &self.data_file_path]);
+        command
     }
 }
 
@@ -47,6 +54,7 @@ impl ExpectedSuccess for std::process::Output {
 }
 
 pub trait ExpectedFailure {
+    #[allow(unused)]
     fn print_stdout_if_succeeded(&self, context: Option<&str>);
 }
 

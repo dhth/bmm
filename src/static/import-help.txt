@@ -49,8 +49,12 @@ An example file:
   {
     "uri": "https://github.com/dhth/bmm",
     "title": null,
-    "tags": "tools",
-    "updated_at": 1739404337
+    "tags": "tools,bookmarks"
+  },
+  {
+    "uri": "https://github.com/dhth/omm",
+    "title": "on-my-mind: a keyboard-driven task manager for the command line",
+    "tags": "tools,productivity"
   }
 ]
 

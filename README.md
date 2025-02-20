@@ -12,7 +12,7 @@ flash.
 
 It does so by storing your bookmarks locally, allowing you to quickly access,
 manage, and search through them using various commands. `bmm` has a traditional
-command line interface that can be used standalone or integrated with other
+command line interface that can be used standalone and/or integrated with other
 tools, and a textual user interface for easy browsing.
 
 🤔 Motivation
@@ -46,89 +46,21 @@ cargo install --git https://github.com/dhth/bmm.git
 Usage: bmm [OPTIONS] <COMMAND>
 
 Commands:
-  import  Import bookmarks from various sources
-  delete  Delete bookmarks
-  list    List bookmarks based on several kinds of queries
-  save    Save/update a bookmark
-  search  Search bookmarks based on a singular query
-  show    Show bookmark details
-  tags    Interact with bmm tags
-  tui     Open bmm's TUI
-  help    Print this message or the help of the given subcommand(s)
+  import    Import bookmarks from various sources
+  delete    Delete bookmarks
+  list      List bookmarks based on several kinds of queries
+  save      Save/update a bookmark
+  save-all  Save/update multiple bookmarks
+  search    Search bookmarks based on a singular query
+  show      Show bookmark details
+  tags      Interact with tags
+  tui       Open bmm's TUI
+  help      Print this message or the help of the given subcommand(s)
 
 Options:
-      --db-path <STRING>  override bmm's database location (default: <DATA_DIR>/bmm/bmm.db)
-      --debug             output debug information without doing anything
-  -h, --help              Print help
-```
-
-### Basic Usage
-
-```bash
-
-# import bookmarks
-bmm import firefox.html
-bmm import bookmarks.json --dry-run
-bmm import bookmarks.txt --reset-missing-details
-
-# save a new URI
-bmm save https://github.com/dhth/bmm
-
-# update the title of a previously saved bookmark
-bmm save https://github.com/dhth/bmm --title "yet another bookmarking tool"
-
-# update the tags of a previously saved bookmark
-bmm save https://github.com/dhth/bmm \
-    --tags cli,bookmarks
-
-# use your editor to provide details
-bmm save https://github.com/dhth/bmm -e
-
-# save/update multiple bookmarks via arguments
-bmm save https://github.com/dhth/bmm https://github.com/dhth/omm \
-    --tags cli,bookmarks
-
-# save/update multiple bookmarks via stdin
-cat << EOF | bmm save --tags tools --reset-missing-details -s
-https://github.com/dhth/bmm
-https://github.com/dhth/omm
-https://github.com/dhth/hours
-EOF
-
-# list bookmarks based on several queries
-bmm list --uri 'github.com' \
-    --title 'cli tool' \
-    --tags cli \
-    --format json
-
-# search bookmarks based on a singular query
-bmm search "cli" --format delimited
-
-# open search results in bmm's TUI
-bmm search "cli" --tui
-
-# show details for a bookmark
-bmm show https://github.com/dhth/bmm
-
-# show saved tags
-bmm tags list \
-    --format json \
-    --show-stats
-
-# open saved tags in bmm's TUI
-bmm tags list --tui
-
-# delete tags 
-bmm tags delete tag1 tag2 tag3
-
-# delete bookmarks and skip confirmation
-bmm delete --yes https://github.com/dhth/bmm https://github.com/dhth/omm
-
-# rename tag
-bmm tags rename old-tag new-tag
-
-# open bmm's TUI
-bmm tui
+      --db-path <STRING>  Override bmm's database location (default: <DATA_DIR>/bmm/bmm.db)
+      --debug             Output debug information without doing anything
+  -h, --help              Print help (see more with '--help')
 ```
 
 ⌨ CLI mode
@@ -141,13 +73,194 @@ etc.)
 
 ![cli](https://github.com/user-attachments/assets/f8493e7c-8286-4fa4-8d49-6f34b5c5044b)
 
+### Importing existing bookmarks
+
+`bmm` allows Import bookmarks from various sources. It supports the following
+input formats:
+
+- HTML (These are bookmark files exported by browsers like Firefox, Chrome, etc,
+  in the NETSCAPE-Bookmark-file-1 format.)
+- JSON
+- TXT
+
+```bash
+bmm import firefox.html
+bmm import bookmarks.json --dry-run
+bmm import bookmarks.txt --reset-missing-details
+```
+
+<details><summary> An example HTML file</summary>
+
+```html
+<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file.
+     It will be read and overwritten.
+     DO NOT EDIT! -->
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'none'; img-src data: *; object-src 'none'"></meta>
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks Menu</H1>
+
+<DL><p>
+    <DT><H3 ADD_DATE="1736450822" LAST_MODIFIED="1739920697" PERSONAL_TOOLBAR_FOLDER="true">Bookmarks Toolbar</H3>
+    <DL><p>
+        <DT><H3 ADD_DATE="1739896938" LAST_MODIFIED="1739920670">productivity</H3>
+        <DL><p>
+            <DT><H3 ADD_DATE="1739896992" LAST_MODIFIED="1739920767">crates</H3>
+            <DL><p>
+                <DT><A HREF="https://crates.io/crates/sqlx" ADD_DATE="1739897020" LAST_MODIFIED="1739897041" ICON_URI="https://crates.io/favicon.ico" TAGS="crates,rust">sqlx - crates.io: Rust Package Registry</A>
+            </DL><p>
+            <DT><A HREF="https://github.com/dhth/omm" ADD_DATE="1739920615" LAST_MODIFIED="1739920646" ICON_URI="https://github.com/fluidicon.png" TAGS="productivity,tools">GitHub - dhth/omm: on-my-mind: a keyboard-driven task manager for the command line</A>
+            <DT><A HREF="https://github.com/dhth/hours" ADD_DATE="1739920661" LAST_MODIFIED="1739920670" ICON_URI="https://github.com/fluidicon.png" TAGS="productivity,tools">GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds</A>
+        </DL><p>
+        <DT><A HREF="https://github.com/dhth/bmm" ADD_DATE="1739920697" LAST_MODIFIED="1739920739" ICON_URI="https://github.com/fluidicon.png" TAGS="tools">GitHub - dhth/bmm: get to your bookmarks in a flash</A>
+    </DL><p>
+</DL>
+```
+</details>
+
+<details><summary> An example JSON file</summary>
+
+```json
+[
+  {
+    "uri": "https://github.com/dhth/bmm",
+    "title": null,
+    "tags": "tools,bookmarks"
+  },
+  {
+    "uri": "https://github.com/dhth/omm",
+    "title": "on-my-mind: a keyboard-driven task manager for the command line",
+    "tags": null
+  }
+]
+```
+</details>
+
+<details><summary> An example TXT file</summary>
+
+```text
+https://github.com/dhth/bmm
+https://github.com/dhth/omm
+https://github.com/dhth/hours
+```
+</details>
+
+### Saving/updating a bookmark
+
+```bash
+# save a new URI
+bmm save https://github.com/dhth/bmm
+
+# save a new URI with title and tags
+bmm save https://github.com/dhth/omm \
+    --title 'a keyboard-driven task manager for the command line' \
+    --tags 'tools,productivity'
+
+# update the title of a previously saved bookmark
+bmm save https://github.com/dhth/bmm \
+    --title 'yet another bookmarking tool'
+
+# append to the tags of a previously saved bookmark
+bmm save https://github.com/dhth/omm \
+    --tags 'task-manager'
+
+# use your editor to provide details
+bmm save https://github.com/dhth/bmm -e
+```
+
+### Saving/updating several bookmarks at a time
+
+```bash
+# save/update multiple bookmarks via arguments
+bmm save \
+    'https://github.com/dhth/bmm' \
+    'https://github.com/dhth/omm' \
+    --tags 'cli,bookmarks'
+
+# save/update multiple bookmarks via stdin
+cat << EOF | bmm save --tags tools --reset-missing-details -s
+https://github.com/dhth/bmm
+https://github.com/dhth/omm
+https://github.com/dhth/hours
+EOF
+```
+
+### Listing bookmarks based on several queries
+
+`bmm` allows listing bookmarks based on queries on bookmark uri/title/tags. The
+first two are pattern matched, while the last is matched exactly.
+
+```bash
+bmm list --uri 'github.com' \
+    --title 'command line' \
+    --tags 'tools,productivity' \
+    --format json
+```
+
+### Searching bookmarks based on a singular query
+
+Sometimes you want to search for bookmarks without being very granular. The
+`search` command pattern matches a search query over all bookmarks attributes
+and tags and returns the results. You can also open the results in `bmm`'s TUI.
+
+```bash
+# search bookmarks based on a singular query
+bmm search 'cli' --format delimited
+
+# open search results in bmm's TUI
+bmm search 'cli' --tui
+```
+
+### Show bookmark details
+
+```bash
+bmm show 'https://github.com/dhth/bmm'
+```
+
+### Interaction with tags
+
+```bash
+# Show saved tags
+bmm tags list \
+    --format json \
+    --show-stats
+
+# open saved tags in bmm's TUI
+bmm tags list --tui
+
+# rename tag
+bmm tags rename old-tag new-tag
+
+# delete tags 
+bmm tags delete tag1 tag2 tag3
+```
+
+### Delete bookmarks
+
+```bash
+bmm delete 'https://github.com/dhth/bmm' 'https://github.com/dhth/omm'
+
+# skip confirmation
+bmm delete --yes 'https://github.com/dhth/bmm'
+```
+
 📟 TUI mode
 ---
 
-To allow for quick access, `bmm` ships with its own TUI. The TUI simplifies
-browsing with a user-friendly interface. It can be launched either in a generic
-mode (via `bmm tui`) or in the context of a specific command (e.g., `bmm search
-tools --tui`).
+To allow for easy browsing, `bmm` ships with its own TUI. It can be launched
+either in a generic mode (via `bmm tui`) or in the context of a specific command
+(e.g., `bmm search tools --tui`).
+
+The TUI lets you do the following:
+
+- Search bookmarks based on a query
+- List all tags
+- View bookmarks that hold a tag
+
+Feature requests for the TUI can be submitted via `bmm`'s [issues
+page](https://github.com/dhth/bmm/issues).
 
 ![tui](https://github.com/user-attachments/assets/6ca63039-8872-4520-93da-1576cc0cf8ec)
 

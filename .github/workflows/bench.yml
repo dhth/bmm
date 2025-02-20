@@ -27,4 +27,4 @@ jobs:
       - name: Run benchmarks
         run: |
           cd bench
-          ./bench
+          ./bench.sh

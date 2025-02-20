@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\nSELECT\n    id,\n    uri,\n    title,\n    (\n        SELECT\n            GROUP_CONCAT(t.name, ',')\n        FROM\n            tags t\n            JOIN bookmark_tags bt ON t.id = bt.tag_id\n        WHERE\n            bt.bookmark_id = b.id\n    ) AS \"tags: String\",\n    updated_at\nFROM\n    bookmarks b\nWHERE\n    title LIKE ?\nORDER BY\n    updated_at desc\nLIMIT\n    ?\n",
+  "query": "\nSELECT\n    id,\n    uri,\n    title,\n    (\n        SELECT\n            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)\n        FROM\n            tags t\n            JOIN bookmark_tags bt ON t.id = bt.tag_id\n        WHERE\n            bt.bookmark_id = b.id\n    ) AS \"tags: String\",\n    updated_at\nFROM\n    bookmarks b\nWHERE\n    id = ?\n",
   "describe": {
     "columns": [
       {
@@ -30,7 +30,7 @@
       }
     ],
     "parameters": {
-      "Right": 2
+      "Right": 1
     },
     "nullable": [
       false,
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "1c0b02b1f64ff8bd5098ce0a3dc5c9d5fd45d0f9d82ac0f1019afa42be42757f"
+  "hash": "ba18cdfe418e8db9fb3f56ff9cffaf07ea3ddcd1b1e2cadb29c703666b85ab55"
 }

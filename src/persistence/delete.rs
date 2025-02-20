@@ -112,10 +112,10 @@ mod tests {
 
         for i in 1..=num_bookmarks {
             let uri = format!("https://uri-{}.com", i);
-            let draft_bookmark = DraftBookmark::try_from((uri.as_str(), None, vec![]))
+            let draft_bookmark = DraftBookmark::try_from((uri.as_str(), None, &vec![]))
                 .expect("draft bookmark should've been created");
             println!("draft_bookmark: {}", draft_bookmark.uri());
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
                 .await
                 .expect("bookmark should've been saved in db");
         }
@@ -146,10 +146,10 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         let uri = "https://uri.com";
-        let draft_bookmark = DraftBookmark::try_from((uri, None, vec![]))
+        let draft_bookmark = DraftBookmark::try_from((uri, None, &vec![]))
             .expect("draft bookmark should've been created");
         println!("draft_bookmark: {}", draft_bookmark.uri());
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
             .await
             .expect("bookmark should've been saved in db");
 
@@ -179,10 +179,10 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         let uri = "https://uri.com";
-        let draft_bookmark = DraftBookmark::try_from((uri, None, vec!["tag"]))
+        let draft_bookmark = DraftBookmark::try_from((uri, None, &vec!["tag"]))
             .expect("draft bookmark should've been created");
         println!("draft_bookmark: {}", draft_bookmark.uri());
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
             .await
             .expect("bookmark should've been saved in db");
 
@@ -217,9 +217,9 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         for (uri, title, tags) in uris {
-            let draft_bookmark = DraftBookmark::try_from((uri, title, tags))
+            let draft_bookmark = DraftBookmark::try_from((uri, title, &tags))
                 .expect("draft bookmark should be initialized");
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now)
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
                 .await
                 .expect("bookmark should be saved in db");
         }

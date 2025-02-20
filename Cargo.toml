@@ -4,8 +4,17 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Dhruv Thakur"]
 repository = "https://github.com/dhth/bmm"
+description = "bmm lets you get to your bookmarks in a flash"
 homepage = "https://tools.dhruvs.space/bmm/"
-license = "MIT"
+license-file = "LICENSE"
+keywords = [
+    "cli",
+    "bookmarks",
+    "bookmarks-manager",
+]
+categories = [
+    "command-line-utilities",
+]
 exclude = [
     ".github",
     "bench",
@@ -39,3 +48,8 @@ pretty_assertions = "1.4.1"
 [lints.clippy]
 unwrap_used = "deny"
 expect_used = "deny"
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

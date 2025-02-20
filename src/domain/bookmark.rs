@@ -211,6 +211,8 @@ pub struct SavedBookmark {
     pub uri: String,
     pub title: Option<String>,
     pub tags: Option<String>,
+    #[serde(skip)]
+    #[allow(dead_code)]
     pub updated_at: i64,
 }
 

@@ -48,7 +48,11 @@ pub struct TagStats {
 
 impl std::fmt::Display for TagStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ({} bookmarks)", self.name, self.num_bookmarks)?;
+        if self.num_bookmarks == 1 {
+            write!(f, "{} (1 bookmark)", self.name)?;
+        } else {
+            write!(f, "{} ({} bookmarks)", self.name, self.num_bookmarks)?;
+        }
 
         Ok(())
     }

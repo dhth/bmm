@@ -94,6 +94,7 @@ mod tests {
     use super::super::{create_or_update_bookmark, get_num_bookmarks, get_tags};
     use super::*;
     use crate::domain::DraftBookmark;
+    use crate::persistence::SaveBookmarkOptions;
     use pretty_assertions::assert_eq;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -115,9 +116,14 @@ mod tests {
             let draft_bookmark = DraftBookmark::try_from((uri.as_str(), None, &vec![]))
                 .expect("draft bookmark should've been created");
             println!("draft_bookmark: {}", draft_bookmark.uri());
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should've been saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should've been saved in db");
         }
 
         // WHEN
@@ -149,9 +155,14 @@ mod tests {
         let draft_bookmark = DraftBookmark::try_from((uri, None, &vec![]))
             .expect("draft bookmark should've been created");
         println!("draft_bookmark: {}", draft_bookmark.uri());
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-            .await
-            .expect("bookmark should've been saved in db");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should've been saved in db");
 
         // WHEN
         let uris_to_delete = vec![
@@ -182,9 +193,14 @@ mod tests {
         let draft_bookmark = DraftBookmark::try_from((uri, None, &vec!["tag"]))
             .expect("draft bookmark should've been created");
         println!("draft_bookmark: {}", draft_bookmark.uri());
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-            .await
-            .expect("bookmark should've been saved in db");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should've been saved in db");
 
         // WHEN
         let uris_to_delete = vec![uri.to_string()];
@@ -219,9 +235,14 @@ mod tests {
         for (uri, title, tags) in uris {
             let draft_bookmark = DraftBookmark::try_from((uri, title, &tags))
                 .expect("draft bookmark should be initialized");
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN

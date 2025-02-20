@@ -1,5 +1,7 @@
 use crate::domain::{DraftBookmark, DraftBookmarkError, PotentialBookmark, SavedBookmark};
-use crate::persistence::{create_or_update_bookmark, get_bookmark_with_exact_uri, DBError};
+use crate::persistence::{
+    create_or_update_bookmark, get_bookmark_with_exact_uri, DBError, SaveBookmarkOptions,
+};
 use regex::{Error as RegexError, Regex};
 use sqlx::{Pool, Sqlite};
 use std::fs::{File, OpenOptions};
@@ -104,7 +106,11 @@ pub async fn save_bookmark(
         .duration_since(UNIX_EPOCH)
         .map_err(|e| SaveBookmarkError::UnexpectedError(format!("system time error: {}", e)))?;
     let now = since_the_epoch.as_secs() as i64;
-    create_or_update_bookmark(pool, &draft_bookmark, now, reset_missing)
+    let save_options = SaveBookmarkOptions {
+        reset_missing_attributes: reset_missing,
+        reset_tags: reset_missing,
+    };
+    create_or_update_bookmark(pool, &draft_bookmark, now, save_options)
         .await
         .map_err(SaveBookmarkError::CouldntSaveBookmark)?;
 

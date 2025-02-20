@@ -555,7 +555,7 @@ mod tests {
     use super::super::create_or_update_bookmark;
     use super::super::test_fixtures::DBPoolFixture;
     use super::*;
-    use crate::domain::DraftBookmark;
+    use crate::{domain::DraftBookmark, persistence::SaveBookmarkOptions};
     use pretty_assertions::assert_eq;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -584,9 +584,14 @@ mod tests {
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-            .await
-            .expect("bookmark should be saved in db");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should be saved in db");
 
         // WHEN
         let bookmark = get_bookmark_by_id(&fixture.pool, 1)
@@ -624,9 +629,14 @@ mod tests {
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-            .await
-            .expect("bookmark should be saved in db");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should be saved in db");
 
         // WHEN
         let bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
@@ -657,9 +667,14 @@ mod tests {
             let start = SystemTime::now();
             let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
             let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -700,9 +715,14 @@ mod tests {
             let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
             let now = since_the_epoch.as_secs() as i64;
 
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -750,9 +770,14 @@ mod tests {
             let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
             let now = since_the_epoch.as_secs() as i64;
 
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -806,9 +831,14 @@ mod tests {
             let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
             let now = since_the_epoch.as_secs() as i64;
 
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -861,9 +891,14 @@ mod tests {
             let start = SystemTime::now();
             let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
             let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -902,9 +937,14 @@ mod tests {
             let start = SystemTime::now();
             let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
             let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -960,9 +1000,14 @@ mod tests {
             let start = SystemTime::now();
             let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
             let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -1019,9 +1064,14 @@ mod tests {
             let start = SystemTime::now();
             let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
             let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -1059,9 +1109,14 @@ mod tests {
             let start = SystemTime::now();
             let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
             let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -1088,7 +1143,7 @@ mod tests {
             &DraftBookmark::try_from(("https://github.com/launchbadge/sqlx", None, &Vec::new()))
                 .expect("draft bookmark 1 should be initialized"),
             now - 200 * 60,
-            true,
+            SaveBookmarkOptions::default(),
         )
         .await
         .expect("bookmark 1 should be saved in db");
@@ -1098,7 +1153,7 @@ mod tests {
             &DraftBookmark::try_from(("https://github.com/serde-rs/serde", None, &Vec::new()))
                 .expect("draft bookmark 2 should be initialized"),
             now - 150 * 60,
-            true,
+            SaveBookmarkOptions::default(),
         )
         .await
         .expect("bookmark 2 should be saved in db");
@@ -1108,7 +1163,7 @@ mod tests {
             &DraftBookmark::try_from(("https://github.com/clap-rs/clap", None, &Vec::new()))
                 .expect("draft bookmark 3 should be initialized"),
             now - 100 * 60,
-            true,
+            SaveBookmarkOptions::default(),
         )
         .await
         .expect("bookmark 3 should be saved in db");
@@ -1118,7 +1173,7 @@ mod tests {
             &DraftBookmark::try_from(("https://crates.io/crates/anyhow", None, &Vec::new()))
                 .expect("draft bookmark 4 should be initialized"),
             now,
-            true,
+            SaveBookmarkOptions::default(),
         )
         .await
         .expect("bookmark 4 should be saved in db");
@@ -1179,9 +1234,14 @@ mod tests {
         for (uri, title, tags) in uris {
             let draft_bookmark = DraftBookmark::try_from((uri, title, &tags))
                 .expect("draft bookmark should be initialized");
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         let test_cases: Vec<(&str, usize)> = vec![
@@ -1225,9 +1285,14 @@ mod tests {
         for (uri, title, tags) in uris {
             let draft_bookmark = DraftBookmark::try_from((uri, title, &tags))
                 .expect("draft bookmark should be initialized");
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN
@@ -1262,9 +1327,14 @@ mod tests {
         for (uri, title, tags) in uris {
             let draft_bookmark = DraftBookmark::try_from((uri, title, &tags))
                 .expect("draft bookmark should be initialized");
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         // WHEN

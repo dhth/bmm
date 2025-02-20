@@ -90,6 +90,18 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             .await?
         }
 
+        BmmCommand::SaveAll {
+            uris,
+            tags,
+            use_stdin,
+            reset_missing,
+        } => {
+            let result = save_all_bookmarks(&pool, uris, tags, use_stdin, reset_missing).await?;
+            if let Some(stats) = result {
+                println!("saved {} bookmarks", stats.num_bookmarks);
+            }
+        }
+
         BmmCommand::Show { uri } => show_bookmark(&pool, uri).await?,
 
         BmmCommand::Tags { tags_command } => match tags_command {

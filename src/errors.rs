@@ -1,7 +1,7 @@
 use crate::cli::{
     CouldntGetDetailsViaEditorError, DeleteBookmarksError, DeleteTagsError, ImportError,
     ListBookmarksError, ListTagsError, ParsingTempFileContentError, RenameTagError,
-    SaveBookmarkError, ShowBookmarkError,
+    SaveBookmarkError, SaveBookmarksError, ShowBookmarkError,
 };
 use crate::persistence::DBError;
 use crate::tui::AppTuiError;
@@ -26,6 +26,8 @@ pub enum AppError {
     CouldntListBookmarks(#[from] ListBookmarksError),
     #[error("couldn't save bookmark: {0}")]
     CouldntSaveBookmark(#[from] SaveBookmarkError),
+    #[error("couldn't save bookmarks: {0}")]
+    CouldntSaveBookmarks(#[from] SaveBookmarksError),
     #[error("couldn't show bookmark details: {0}")]
     CouldntShowBookmark(#[from] ShowBookmarkError),
     #[error("couldn't delete bookmarks: {0}")]
@@ -117,6 +119,13 @@ impl AppError {
                 DeleteTagsError::CouldntCheckIfTagsExist(_) => Some(1002),
                 DeleteTagsError::TagsDoNotExist(_) => None,
                 DeleteTagsError::CouldntDeleteTags(_) => Some(1003),
+            },
+            AppError::CouldntSaveBookmarks(e) => match e {
+                SaveBookmarksError::CouldntReadStdin(_) => Some(2001),
+                SaveBookmarksError::TooManyBookmarks(_) => None,
+                SaveBookmarksError::ValidationError { .. } => None,
+                SaveBookmarksError::SaveError(_) => Some(2002),
+                SaveBookmarksError::UnexpectedError(_) => Some(2003),
             },
         }
     }

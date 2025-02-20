@@ -103,6 +103,26 @@ pub enum BmmCommand {
         #[arg(short = 'r', long = "reset-missing-details")]
         reset_missing: bool,
     },
+    /// Save/update multiple bookmarks
+    SaveAll {
+        /// Uri of the bookmark
+        #[arg(value_name = "URI")]
+        uris: Option<Vec<String>>,
+        /// Tags to attach to the bookmarks
+        #[arg(
+            short = 't',
+            long = "tags",
+            value_name = "STRING,STRING..",
+            value_delimiter = ','
+        )]
+        tags: Option<Vec<String>>,
+        /// Read input from stdin
+        #[arg(short = 's', long = "stdin")]
+        use_stdin: bool,
+        /// Reset previously saved details if not provided
+        #[arg(short = 'r', long = "reset-missing-details")]
+        reset_missing: bool,
+    },
     /// Search bookmarks based on a singular query
     Search {
         /// Pattern to match any attribute of a bookmark (URI, title, tags)
@@ -264,7 +284,7 @@ reset missing : {}
                 reset_missing,
             } => format!(
                 r#"
-command                   : Save bookmark
+command                   : Save/update bookmark
 URI                       : {}
 title                     : {}
 tags                      : {}
@@ -277,6 +297,24 @@ reset missing             : {}
                 tags.as_ref().map_or(NOT_PROVIDED.into(), |t| t.join(" ")),
                 use_editor,
                 fail_if_uri_already_saved,
+                reset_missing,
+            ),
+            BmmCommand::SaveAll {
+                uris,
+                tags,
+                use_stdin,
+                reset_missing,
+            } => format!(
+                r#"
+command                   : Save/update bookmarks
+URIs                      : {}
+tags                      : {}
+use stdin                 : {}
+reset missing             : {}
+"#,
+                uris.as_ref().map_or(NOT_PROVIDED.into(), |u| u.join(" ")),
+                tags.as_ref().map_or(NOT_PROVIDED.into(), |t| t.join(" ")),
+                use_stdin,
                 reset_missing,
             ),
             BmmCommand::Search {

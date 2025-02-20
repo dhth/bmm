@@ -28,6 +28,56 @@ pub enum DraftBookmarkError {
     TagIsInvalid(Vec<String>),
 }
 
+#[derive(Debug)]
+pub struct DraftBookmarkErrors {
+    pub errors: Vec<(usize, DraftBookmarkError)>,
+}
+
+impl DraftBookmarkErrors {
+    pub fn msg(&self) -> String {
+        let num_errors = self.errors.len();
+        if num_errors == 1 {
+            "there was 1 validation error".into()
+        } else {
+            format!("there were {} validation errors", num_errors)
+        }
+    }
+}
+
+impl std::fmt::Display for DraftBookmarkErrors {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let padding = match self.errors.last() {
+            Some(e) => match e.0 {
+                0 => 1,
+                n => (n as f64).log10().floor() as usize + 1,
+            },
+            None => 1,
+        };
+        let num_errors = self.errors.len();
+        for (i, (index, error)) in self.errors.iter().enumerate() {
+            if i == num_errors - 1 {
+                write!(
+                    f,
+                    "- entry {:width$}: {}",
+                    index + 1,
+                    error,
+                    width = padding
+                )?;
+            } else {
+                writeln!(
+                    f,
+                    "- entry {:width$}: {}",
+                    index + 1,
+                    error,
+                    width = padding
+                )?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 impl TryFrom<(&str, Option<&str>, &Vec<&str>)> for DraftBookmark {
     type Error = DraftBookmarkError;
 

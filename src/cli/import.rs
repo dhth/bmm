@@ -1,5 +1,5 @@
-use crate::common::{HTML, IMPORT_FILE_FORMATS, JSON, TXT};
-use crate::domain::{DraftBookmark, DraftBookmarkError, PotentialBookmark};
+use crate::common::{HTML, IMPORT_FILE_FORMATS, IMPORT_UPPER_LIMIT, JSON, TXT};
+use crate::domain::{DraftBookmark, DraftBookmarkError, DraftBookmarkErrors, PotentialBookmark};
 use crate::persistence::{create_or_update_bookmarks, DBError};
 use select::document::Document;
 use select::predicate::Name;
@@ -9,12 +9,6 @@ use std::io::{BufRead, BufReader, Read};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs::File, path::PathBuf};
 
-const IMPORT_UPPER_LIMIT: usize = 9999;
-
-//enum ParseResult {
-//    Ok(Vec<DraftBookmark>),
-//    Err(Vec<(usize, DraftBookmarkError)>),
-//}
 type ParseResult = Result<Vec<DraftBookmark>, Vec<(usize, DraftBookmarkError)>>;
 
 #[derive(thiserror::Error, Debug)]
@@ -36,61 +30,11 @@ pub enum ImportError {
     #[error("file format \"{0}\" not supported (supported formats: {IMPORT_FILE_FORMATS:?})")]
     FileFormatNotSupported(String),
     #[error("{}\n\n{}", errors.msg(), errors)]
-    ValidationError { errors: ImportDraftBookmarkErrors },
+    ValidationError { errors: DraftBookmarkErrors },
     #[error("couldn't save bookmarks to bmm's database: {0}")]
     SaveError(#[from] DBError),
     #[error("something unexpected happened: {0}")]
     UnexpectedError(String),
-}
-
-#[derive(Debug)]
-pub struct ImportDraftBookmarkErrors {
-    pub errors: Vec<(usize, DraftBookmarkError)>,
-}
-
-impl ImportDraftBookmarkErrors {
-    pub fn msg(&self) -> String {
-        let num_errors = self.errors.len();
-        if num_errors == 1 {
-            "there was 1 validation error".into()
-        } else {
-            format!("there were {} validation errors", num_errors)
-        }
-    }
-}
-
-impl std::fmt::Display for ImportDraftBookmarkErrors {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let padding = match self.errors.last() {
-            Some(e) => match e.0 {
-                0 => 1,
-                n => (n as f64).log10().floor() as usize + 1,
-            },
-            None => 1,
-        };
-        let num_errors = self.errors.len();
-        for (i, (index, error)) in self.errors.iter().enumerate() {
-            if i == num_errors - 1 {
-                write!(
-                    f,
-                    "- entry {:width$}: {}",
-                    index + 1,
-                    error,
-                    width = padding
-                )?;
-            } else {
-                writeln!(
-                    f,
-                    "- entry {:width$}: {}",
-                    index + 1,
-                    error,
-                    width = padding
-                )?;
-            }
-        }
-
-        Ok(())
-    }
 }
 
 #[derive(Debug)]
@@ -150,7 +94,7 @@ pub async fn import_bookmarks(
         ParseResult::Ok(b) => b,
         ParseResult::Err(errs) => {
             return Err(ImportError::ValidationError {
-                errors: ImportDraftBookmarkErrors { errors: errs },
+                errors: DraftBookmarkErrors { errors: errs },
             });
         }
     };

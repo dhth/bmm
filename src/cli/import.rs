@@ -1,6 +1,6 @@
 use crate::common::{HTML, IMPORT_FILE_FORMATS, IMPORT_UPPER_LIMIT, JSON, TXT};
 use crate::domain::{DraftBookmark, DraftBookmarkError, DraftBookmarkErrors, PotentialBookmark};
-use crate::persistence::{create_or_update_bookmarks, DBError};
+use crate::persistence::{create_or_update_bookmarks, DBError, SaveBookmarkOptions};
 use select::document::Document;
 use select::predicate::Name;
 use sqlx::{Pool, Sqlite};
@@ -120,7 +120,11 @@ pub async fn import_bookmarks(
         .duration_since(UNIX_EPOCH)
         .map_err(|e| ImportError::UnexpectedError(format!("system time error: {}", e)))?;
     let now = since_the_epoch.as_secs() as i64;
-    create_or_update_bookmarks(pool, &draft_bookmarks, now, reset_missing).await?;
+    let save_options = SaveBookmarkOptions {
+        reset_missing_attributes: reset_missing,
+        reset_tags: reset_missing,
+    };
+    create_or_update_bookmarks(pool, &draft_bookmarks, now, save_options).await?;
 
     Ok(Some(ImportStats {
         num_bookmarks_imported: draft_bookmarks.len(),

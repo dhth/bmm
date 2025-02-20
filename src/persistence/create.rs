@@ -3,11 +3,17 @@ use crate::domain::DraftBookmark;
 use sqlx::Row;
 use sqlx::{Pool, Sqlite};
 
+#[derive(Clone, Copy, Default)]
+pub struct SaveBookmarkOptions {
+    pub reset_missing_attributes: bool,
+    pub reset_tags: bool,
+}
+
 pub async fn create_or_update_bookmark(
     pool: &Pool<Sqlite>,
     bookmark: &DraftBookmark,
     now: i64,
-    reset_missing: bool,
+    options: SaveBookmarkOptions,
 ) -> Result<(), DBError> {
     let mut tx = pool
         .begin()
@@ -17,7 +23,7 @@ pub async fn create_or_update_bookmark(
     {
         let uri = bookmark.uri();
         let title = bookmark.title();
-        match reset_missing {
+        match options.reset_missing_attributes {
             true => {
                 sqlx::query!(
                     "
@@ -80,7 +86,7 @@ LIMIT 1
         .map_err(|e| DBError::CouldntExecuteQuery("select bookmark id".into(), e))?
         .id;
 
-        if reset_missing {
+        if options.reset_tags {
             sqlx::query!(
                 "
 DELETE FROM
@@ -188,7 +194,7 @@ pub async fn create_or_update_bookmarks(
     pool: &Pool<Sqlite>,
     bookmarks: &Vec<DraftBookmark>,
     now: i64,
-    reset_missing: bool,
+    options: SaveBookmarkOptions,
 ) -> Result<(), DBError> {
     let mut tx = pool
         .begin()
@@ -199,7 +205,7 @@ pub async fn create_or_update_bookmarks(
         for bookmark in bookmarks {
             let uri = bookmark.uri();
             let title = bookmark.title();
-            match reset_missing {
+            match options.reset_missing_attributes {
                 true => {
                     sqlx::query!(
                         "
@@ -261,7 +267,7 @@ LIMIT 1
             .map_err(|e| DBError::CouldntExecuteQuery("select bookmark id".into(), e))?
             .id;
 
-            if reset_missing {
+            if options.reset_tags {
                 sqlx::query!(
                     "
 DELETE FROM
@@ -394,7 +400,13 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         // WHEN
-        let result = create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, false).await;
+        let result = create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await;
 
         // THEN
         if let Err(error) = &result {
@@ -435,7 +447,13 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         // WHEN
-        let result = create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true).await;
+        let result = create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await;
 
         // THEN
         if let Err(error) = &result {
@@ -476,7 +494,13 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         // WHEN
-        let result = create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true).await;
+        let result = create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await;
 
         // THEN
         if let Err(error) = &result {
@@ -510,15 +534,26 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
         let created_at = now - 60 * 60;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark_old, created_at, false)
-            .await
-            .expect("bookmark should've been saved the first time");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark_old,
+            created_at,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should've been saved the first time");
 
         // WHEN
         let new_tags: Option<&str> = None;
         let draft_bookmark = DraftBookmark::try_from((uri, None, new_tags))
             .expect("draft bookmark should've been created");
-        let result = create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, false).await;
+        let result = create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await;
 
         // THEN
         if let Err(error) = &result {
@@ -555,15 +590,26 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
         let created_at = now - 60 * 60;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark_old, created_at, false)
-            .await
-            .expect("bookmark should've been saved the first time");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark_old,
+            created_at,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should've been saved the first time");
 
         // WHEN
         let new_tags = vec!["rust", "github", "database"];
         let draft_bookmark = DraftBookmark::try_from((uri, None, &new_tags))
             .expect("draft bookmark should've been created");
-        let result = create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, false).await;
+        let result = create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await;
 
         // THEN
         if let Err(error) = &result {
@@ -595,7 +641,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn updating_a_bookmark_overwrites_previous_data_if_requested() {
+    async fn updating_a_bookmark_overwrites_previous_attributes_if_requested() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
@@ -608,16 +654,25 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
         let created_at = now - 60 * 60;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark_old, created_at, true)
-            .await
-            .expect("bookmark should've been saved the first time");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark_old,
+            created_at,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should've been saved the first time");
 
         // WHEN
-        let new_tags = vec!["rust", "github", "database"];
         let title_new = "sqlx's github repository";
-        let draft_bookmark = DraftBookmark::try_from((uri, Some(title_new), &new_tags))
+        let draft_bookmark = DraftBookmark::try_from((uri, Some(title_new), &old_tags))
             .expect("draft bookmark should've been created");
-        let result = create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true).await;
+        let save_options = SaveBookmarkOptions {
+            reset_missing_attributes: true,
+            reset_tags: true,
+        };
+        let result =
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
 
         // THEN
         if let Err(error) = &result {
@@ -637,27 +692,58 @@ mod tests {
 
         assert_eq!(saved_bookmark.title, Some(title_new.into()));
         assert_eq!(saved_bookmark.updated_at, now);
+    }
 
-        let saved_tags = get_bookmark_tags(&fixture.pool, saved_bookmark.id, 10)
+    #[tokio::test]
+    async fn updating_a_bookmark_overwrites_previous_tags_if_requested() {
+        // GIVEN
+        let fixture = DBPoolFixture::new().await;
+        let old_tags = vec!["rust", "sqlite"];
+        let uri = "https://github.com/launchbadge/sqlx";
+        let title_old = "sqlx's github page";
+        let draft_bookmark_old = DraftBookmark::try_from((uri, Some(title_old), &old_tags))
+            .expect("draft bookmark should've been created");
+        let start = SystemTime::now();
+        let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
+        let now = since_the_epoch.as_secs() as i64;
+        let created_at = now - 60 * 60;
+
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark_old,
+            created_at,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should've been saved the first time");
+
+        // WHEN
+        let new_tags = vec!["rust", "github", "database"];
+        let draft_bookmark = DraftBookmark::try_from((uri, Some(title_old), &new_tags))
+            .expect("draft bookmark should've been created");
+        let save_options = SaveBookmarkOptions {
+            reset_missing_attributes: false,
+            reset_tags: true,
+        };
+        let result =
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
+
+        // THEN
+        if let Err(error) = &result {
+            println!("error: {}", error);
+        }
+        assert!(result.is_ok(), "result is not ok");
+
+        let num_bookmarks = get_num_bookmarks(&fixture.pool)
             .await
-            .expect("should have queried tags");
-        assert_eq!(
-            saved_tags.len(),
-            3,
-            "total saved tags for bookmark were not 4"
-        );
-        assert!(
-            saved_tags.contains(&"rust".to_string()),
-            "bookmark doesn't have tag1"
-        );
-        assert!(
-            saved_tags.contains(&"github".to_string()),
-            "bookmark doesn't have tag2"
-        );
-        assert!(
-            saved_tags.contains(&"database".to_string()),
-            "bookmark doesn't have tag3"
-        );
+            .expect("number of bookmarks should've been fetched");
+        assert_eq!(num_bookmarks, 1);
+
+        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+            .await
+            .expect("bookmark should've been queried")
+            .expect("queried result should've contained a bookmark");
+        assert_eq!(saved_bookmark.tags.as_deref(), Some("database,github,rust"));
     }
 
     #[tokio::test]
@@ -673,14 +759,24 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
         let created_at = now - 60 * 60;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark_old, created_at, true)
-            .await
-            .expect("bookmark should've been saved the first time");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark_old,
+            created_at,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should've been saved the first time");
 
         // WHEN
         let draft_bookmark = DraftBookmark::try_from((uri, None, &vec![]))
             .expect("draft bookmark should've been created");
-        let result = create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true).await;
+        let save_options = SaveBookmarkOptions {
+            reset_missing_attributes: true,
+            reset_tags: false,
+        };
+        let result =
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
 
         // THEN
         if let Err(error) = &result {
@@ -711,14 +807,24 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
         let created_at = now - 60 * 60;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark_old, created_at, true)
-            .await
-            .expect("bookmark should've been saved the first time");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark_old,
+            created_at,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should've been saved the first time");
 
         // WHEN
         let draft_bookmark = DraftBookmark::try_from((uri, Some(title), &vec![]))
             .expect("draft bookmark should've been created");
-        let result = create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true).await;
+        let save_options = SaveBookmarkOptions {
+            reset_missing_attributes: false,
+            reset_tags: true,
+        };
+        let result =
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
 
         // THEN
         if let Err(error) = &result {
@@ -762,14 +868,24 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
         let created_at = now - 60 * 60;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark_old, created_at, true)
-            .await
-            .expect("bookmark should've been saved the first time");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark_old,
+            created_at,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should've been saved the first time");
 
         // WHEN
         let draft_bookmark = DraftBookmark::try_from((uri, Some(title), &vec![]))
             .expect("draft bookmark should've been created");
-        let result = create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true).await;
+        let save_options = SaveBookmarkOptions {
+            reset_missing_attributes: false,
+            reset_tags: true,
+        };
+        let result =
+            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
 
         // THEN
         if let Err(error) = &result {
@@ -813,7 +929,13 @@ mod tests {
             .collect::<Vec<_>>();
 
         // WHEN
-        let result = create_or_update_bookmarks(&fixture.pool, &draft_bookmarks, now, true).await;
+        let result = create_or_update_bookmarks(
+            &fixture.pool,
+            &draft_bookmarks,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await;
 
         // THEN
         assert!(result.is_ok());
@@ -851,9 +973,14 @@ mod tests {
             })
             .collect::<Vec<_>>();
 
-        create_or_update_bookmarks(&fixture.pool, &draft_bookmarks_original, now, true)
-            .await
-            .expect("bookmarks should've been created");
+        create_or_update_bookmarks(
+            &fixture.pool,
+            &draft_bookmarks_original,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmarks should've been created");
 
         let updated_uris: [(&str, Option<&str>, Vec<&str>); 6] = [
             ("https://uri-one.com", None, vec![]),
@@ -873,7 +1000,14 @@ mod tests {
             .collect::<Vec<_>>();
 
         // WHEN
-        let result = create_or_update_bookmarks(&fixture.pool, &draft_bookmarks, now, false).await;
+
+        let result = create_or_update_bookmarks(
+            &fixture.pool,
+            &draft_bookmarks,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await;
 
         // THEN
         assert!(result.is_ok());
@@ -893,7 +1027,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resetting_details_for_multiple_bookmarks_works() {
+    async fn resetting_attributes_for_multiple_bookmarks_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
         let uris = [
@@ -916,9 +1050,14 @@ mod tests {
             })
             .collect::<Vec<_>>();
 
-        create_or_update_bookmarks(&fixture.pool, &draft_bookmarks_original, now, true)
-            .await
-            .expect("bookmarks should've been created");
+        create_or_update_bookmarks(
+            &fixture.pool,
+            &draft_bookmarks_original,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmarks should've been created");
 
         let updated_uris = [
             "https://uri-one.com",
@@ -937,7 +1076,12 @@ mod tests {
             .collect::<Vec<_>>();
 
         // WHEN
-        let result = create_or_update_bookmarks(&fixture.pool, &draft_bookmarks, now, true).await;
+        let save_options = SaveBookmarkOptions {
+            reset_missing_attributes: true,
+            reset_tags: false,
+        };
+        let result =
+            create_or_update_bookmarks(&fixture.pool, &draft_bookmarks, now, save_options).await;
 
         // THEN
         assert!(result.is_ok());
@@ -948,11 +1092,85 @@ mod tests {
         let num_tags = get_tags(&fixture.pool)
             .await
             .expect("tags should've been fetched");
-        assert_eq!(num_tags.len(), 0);
+        assert_eq!(num_tags.len(), 5, "tags shouldn't have been deleted");
         let bookmark_one = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-one.com")
             .await
             .expect("bookmark one should've been fetched")
             .expect("result should've contained a bookmark");
         assert_eq!(bookmark_one.title, None);
+    }
+
+    #[tokio::test]
+    async fn resetting_tags_for_multiple_bookmarks_works() {
+        // GIVEN
+        let fixture = DBPoolFixture::new().await;
+        let uris = [
+            ("https://uri-one.com", Some("title"), vec!["tag5", "tag2"]),
+            ("https://uri-two.com", None, vec!["tag2", "tag3"]),
+            ("https://uri-three.com", None, vec!["tag2", "tag3"]),
+            ("https://uri-four.com", None, vec!["tag1", "tag3"]),
+            ("https://uri-five.com", None, vec!["tag3", "tag4"]),
+        ];
+
+        let start = SystemTime::now();
+        let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
+        let now = since_the_epoch.as_secs() as i64;
+
+        let draft_bookmarks_original = uris
+            .into_iter()
+            .map(|(uri, title, tags)| {
+                DraftBookmark::try_from((uri, title, &tags))
+                    .expect("draft bookmarks should've been initialized")
+            })
+            .collect::<Vec<_>>();
+
+        create_or_update_bookmarks(
+            &fixture.pool,
+            &draft_bookmarks_original,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmarks should've been created");
+
+        let updated_uris = [
+            "https://uri-one.com",
+            "https://uri-two.com",
+            "https://uri-three.com",
+            "https://uri-four.com",
+            "https://uri-five.com",
+            "https://uri-six.com",
+        ];
+
+        let draft_bookmarks = updated_uris
+            .into_iter()
+            .map(|uri| {
+                DraftBookmark::try_from(uri).expect("draft bookmarks should've been initialized")
+            })
+            .collect::<Vec<_>>();
+
+        // WHEN
+        let save_options = SaveBookmarkOptions {
+            reset_missing_attributes: false,
+            reset_tags: true,
+        };
+        let result =
+            create_or_update_bookmarks(&fixture.pool, &draft_bookmarks, now, save_options).await;
+
+        // THEN
+        assert!(result.is_ok());
+        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+            .await
+            .expect("number of bookmarks should've been fetched");
+        assert_eq!(num_bookmarks, 6);
+        let num_tags = get_tags(&fixture.pool)
+            .await
+            .expect("tags should've been fetched");
+        assert_eq!(num_tags.len(), 0, "tags should've have been deleted");
+        let bookmark_one = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-one.com")
+            .await
+            .expect("bookmark one should've been fetched")
+            .expect("result should've contained a bookmark");
+        assert_eq!(bookmark_one.title.as_deref(), Some("title"));
     }
 }

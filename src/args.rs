@@ -119,7 +119,7 @@ pub enum BmmCommand {
         /// Read input from stdin
         #[arg(short = 's', long = "stdin")]
         use_stdin: bool,
-        /// Reset previously saved details if not provided
+        /// Reset previously saved tags if not provided
         #[arg(short = 'r', long = "reset-missing-details")]
         reset_missing: bool,
     },

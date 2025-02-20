@@ -172,7 +172,7 @@ fn saving_multiple_bookmarks_resets_previously_saved_tags_if_requested() {
 Bookmark details
 ---
 
-Title: <NOT SET>
+Title: bmm's github page
 URI  : {}
 Tags : tools
 "#,

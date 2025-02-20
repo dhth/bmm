@@ -125,7 +125,9 @@ mod tests {
     use super::*;
     use crate::domain::{DraftBookmark, Tag};
     use crate::persistence::test_fixtures::DBPoolFixture;
-    use crate::persistence::{create_or_update_bookmark, get_bookmark_with_exact_uri, get_tags};
+    use crate::persistence::{
+        create_or_update_bookmark, get_bookmark_with_exact_uri, get_tags, SaveBookmarkOptions,
+    };
 
     //-------------//
     //  SUCCESSES  //
@@ -143,9 +145,14 @@ mod tests {
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-            .await
-            .expect("bookmark should be saved in db");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should be saved in db");
 
         let new_tag = Tag::try_from("new-tag").expect("new tag should've been created");
 
@@ -184,9 +191,14 @@ mod tests {
         for (uri, title, tags) in uris {
             let draft_bookmark = DraftBookmark::try_from((uri, title, &tags))
                 .expect("draft bookmark should be initialized");
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-                .await
-                .expect("bookmark should be saved in db");
+            create_or_update_bookmark(
+                &fixture.pool,
+                &draft_bookmark,
+                now,
+                SaveBookmarkOptions::default(),
+            )
+            .await
+            .expect("bookmark should be saved in db");
         }
 
         let new_tag = Tag::try_from("tag3").expect("new tag should've been created");
@@ -254,9 +266,14 @@ mod tests {
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
 
-        create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, true)
-            .await
-            .expect("bookmark should be saved in db");
+        create_or_update_bookmark(
+            &fixture.pool,
+            &draft_bookmark,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmark should be saved in db");
         let new_tag = Tag::try_from("new-tag").expect("new tag should've been created");
 
         // WHEN

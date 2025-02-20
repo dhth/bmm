@@ -84,6 +84,17 @@ bmm save https://github.com/dhth/bmm \
 # use your editor to provide details
 bmm save https://github.com/dhth/bmm -e
 
+# save/update multiple bookmarks via arguments
+bmm save https://github.com/dhth/bmm https://github.com/dhth/omm \
+    --tags cli,bookmarks
+
+# save/update multiple bookmarks via stdin
+cat << EOF | bmm save --tags tools --reset-missing-details -s
+https://github.com/dhth/bmm
+https://github.com/dhth/omm
+https://github.com/dhth/hours
+EOF
+
 # list bookmarks based on several queries
 bmm list --uri 'github.com' \
     --title 'cli tool' \

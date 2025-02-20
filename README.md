@@ -69,7 +69,7 @@ Options:
 # import bookmarks
 bmm import firefox.html
 bmm import bookmarks.json --dry-run
-bmm import bookmarks.txt
+bmm import bookmarks.txt --reset-missing-details
 
 # save a new URI
 bmm save https://github.com/dhth/bmm

@@ -26,7 +26,7 @@ impl Fixture {
         }
     }
 
-    pub fn cmd(&self) -> Command {
+    pub fn command(&self) -> Command {
         let mut command =
             Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("command should've been created");
         command.args(["--db-path", &self.data_file_path]);

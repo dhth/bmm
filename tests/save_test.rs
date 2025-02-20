@@ -12,7 +12,7 @@ const URI_ONE: &str = "https://github.com/dhth/bmm";
 fn saving_a_new_bookmark_works() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut cmd = fixture.cmd();
+    let mut cmd = fixture.command();
     cmd.args(["save", URI_ONE]);
 
     // WHEN
@@ -22,7 +22,7 @@ fn saving_a_new_bookmark_works() {
     output.print_stderr_if_failed(None);
     assert!(output.status.success());
 
-    let mut list_cmd = fixture.cmd();
+    let mut list_cmd = fixture.command();
     list_cmd.arg("list");
     let list_output = list_cmd.output().expect("list command should've run");
     assert!(list_output.status.success());
@@ -34,7 +34,7 @@ fn saving_a_new_bookmark_works() {
 fn saving_a_new_bookmark_with_title_and_tags_works() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut cmd = fixture.cmd();
+    let mut cmd = fixture.command();
     cmd.args([
         "save",
         URI_ONE,
@@ -51,7 +51,7 @@ fn saving_a_new_bookmark_with_title_and_tags_works() {
     output.print_stderr_if_failed(None);
     assert!(output.status.success());
 
-    let mut list_cmd = fixture.cmd();
+    let mut list_cmd = fixture.command();
     list_cmd.args(["list", "-f", "delimited"]);
     let list_output = list_cmd.output().expect("list command should've run");
     assert!(list_output.status.success());
@@ -66,7 +66,7 @@ fn saving_a_new_bookmark_with_title_and_tags_works() {
 fn extending_tags_for_a_saved_bookmark_works() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut create_cmd = fixture.cmd();
+    let mut create_cmd = fixture.command();
     create_cmd.args([
         "save",
         URI_ONE,
@@ -78,7 +78,7 @@ fn extending_tags_for_a_saved_bookmark_works() {
     create_cmd.output().expect("command should've run");
 
     // WHEN
-    let mut cmd = fixture.cmd();
+    let mut cmd = fixture.command();
     cmd.args(["save", URI_ONE, "--tags", "bookmarks"]);
     let output = cmd.output().expect("command should've run");
 
@@ -86,7 +86,7 @@ fn extending_tags_for_a_saved_bookmark_works() {
     output.print_stderr_if_failed(None);
     assert!(output.status.success());
 
-    let mut list_cmd = fixture.cmd();
+    let mut list_cmd = fixture.command();
     list_cmd.args(["list", "-f", "delimited"]);
     let list_output = list_cmd.output().expect("list command should've run");
     assert!(list_output.status.success());
@@ -101,7 +101,7 @@ fn extending_tags_for_a_saved_bookmark_works() {
 fn resetting_properties_on_bookmark_update_works() {
     // GIVEN
     let fixture = Fixture::new();
-    let mut create_cmd = fixture.cmd();
+    let mut create_cmd = fixture.command();
     create_cmd.args([
         "save",
         URI_ONE,
@@ -113,7 +113,7 @@ fn resetting_properties_on_bookmark_update_works() {
     create_cmd.output().expect("command should've run");
 
     // WHEN
-    let mut cmd = fixture.cmd();
+    let mut cmd = fixture.command();
     cmd.args(["save", URI_ONE, "--tags", "cli,bookmarks", "-r"]);
     let output = cmd.output().expect("command should've run");
 
@@ -121,11 +121,10 @@ fn resetting_properties_on_bookmark_update_works() {
     output.print_stderr_if_failed(None);
     assert!(output.status.success());
 
-    let mut list_cmd = fixture.cmd();
+    let mut list_cmd = fixture.command();
     list_cmd.args(["list", "-f", "delimited"]);
     let list_output = list_cmd.output().expect("list command should've run");
     assert!(list_output.status.success());
     let list_stdout = String::from_utf8(list_output.stdout).expect("invalid utf-8 list_stdout");
-    println!("list_stdout: {:?}", list_stdout);
     assert!(list_stdout.contains(&format!(r#"{},,"bookmarks,cli"#, URI_ONE)));
 }

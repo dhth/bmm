@@ -48,11 +48,9 @@ pub fn display_bookmark_details(bookmark: &SavedBookmark) {
         r#"Bookmark details
 ---
 
-ID   : {}
 Title: {}
 URI  : {}
 Tags : {}"#,
-        bookmark.id,
         bookmark.title.as_deref().unwrap_or(NOT_SET),
         bookmark.uri,
         bookmark.tags.as_deref().unwrap_or(NOT_SET),

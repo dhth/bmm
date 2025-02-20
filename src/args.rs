@@ -25,8 +25,8 @@ pub enum BmmCommand {
     /// Import bookmarks from various sources
     #[command(long_about = IMPORT_HELP.trim())]
     Import {
-        /// File to import from; the file's extension will be used to infer file format; supported formats: [html, json, txt, markdown]
         #[arg(value_name = "FILE", value_parser=validate_import_file)]
+        #[arg(help = format!("File to import from; the file's extension will be used to infer file format; supported formats: {:?}", IMPORT_FILE_FORMATS))]
         file: String,
         /// Display bookmarks that will be imported without actually importing them
         #[arg(short = 'd', long = "dry-run")]

@@ -156,6 +156,7 @@ impl DraftBookmark {
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct SavedBookmark {
     #[serde(skip)]
+    #[allow(dead_code)]
     pub id: i64,
     pub uri: String,
     pub title: Option<String>,

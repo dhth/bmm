@@ -2,6 +2,9 @@
   <h1 align="center">bmm</h1>
   <p align="center">
     <a href="https://github.com/dhth/bmm/actions/workflows/build.yml"><img alt="GitHub release" src="https://img.shields.io/github/actions/workflow/status/dhth/bmm/build.yml?style=flat-square"></a>
+    <a href="https://crates.io/crates/bmm"><img alt="GitHub release" src="https://img.shields.io/crates/v/bmm?style=flat-square"></a>
+    <a href="https://github.com/dhth/bmm/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/release/dhth/bmm.svg?style=flat-square"></a>
+    <a href="https://github.com/dhth/bmm/releases"><img alt="Commits since latest release" src="https://img.shields.io/github/commits-since/dhth/bmm/latest?style=flat-square"></a>
   </p>
 </p>
 
@@ -33,11 +36,21 @@ out.
 💾 Installation
 ---
 
+**homebrew**:
+
+```sh
+brew install dhth/tap/bmm
+```
+
 **cargo**:
 
 ```sh
-cargo install --git https://github.com/dhth/bmm.git
+cargo install bmm
 ```
+
+Or get the binaries directly from a Github [release][1]. Read more about
+verifying the authenticity of released artifacts
+[here](#-verifying-release-artifacts).
 
 ⚡️ Usage
 ---
@@ -264,6 +277,44 @@ page](https://github.com/dhth/bmm/issues).
 
 ![tui](https://github.com/user-attachments/assets/6ca63039-8872-4520-93da-1576cc0cf8ec)
 
+🔐 Verifying release artifacts
+---
+
+In case you get the `bmm` binary directly from a [release][1], you may want to
+verify its authenticity. Checksums are applied to all released artifacts, and
+the resulting checksum file is attested using [Github Attestations][2].
+
+Steps to verify (replace `A.B.C` in the commands below with the version you
+want):
+
+1. Download the sha256 checksum file for your platform from the release:
+
+   ```shell
+   curl -sSLO https://github.com/dhth/bmm/releases/download/vA.B.C/bmm-x86_64-unknown-linux-gnu.tar.xz.sha256
+   ```
+
+2. Verify the integrity of the checksum file using [gh][3].
+
+   ```shell
+   gh attestation verify bmm-x86_64-unknown-linux-gnu.tar.xz.sha256 --repo dhth/bmm
+   ```
+
+3. Download the compressed archive you want, and validate its checksum:
+
+   ```shell
+   curl -sSLO https://github.com/dhth/bmm/releases/download/vA.B.C/bmm-x86_64-unknown-linux-gnu.tar.xz
+   sha256sum --ignore-missing -c bmm-x86_64-unknown-linux-gnu.tar.xz.sha256
+   ```
+
+3. If checksum validation goes through, uncompress the archive:
+
+   ```shell
+   tar -xzf bmm-x86_64-unknown-linux-gnu.tar.xz
+   cd bmm-x86_64-unknown-linux-gnu
+   ./bmm
+   # profit!
+   ```
+
 🙏 Acknowledgements
 ---
 
@@ -287,3 +338,7 @@ page](https://github.com/dhth/bmm/issues).
 - [input](https://crates.io/crates/tui-input)
 - [url](https://crates.io/crates/url)
 - [which](https://crates.io/crates/which)
+
+[1]: https://github.com/dhth/bmm/releases
+[2]: https://github.blog/news-insights/product-news/introducing-artifact-attestations-now-in-public-beta/
+[3]: https://github.com/cli/cli

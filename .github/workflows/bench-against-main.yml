@@ -1,9 +1,7 @@
 name: bench-against-main
 
 on:
-  pull_request:
-  pull_request_target:
-    types: [labeled]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -11,7 +9,6 @@ env:
 
 jobs:
   bench:
-    if: contains(github.event.pull_request.labels.*.name, 'bench')
     runs-on: ubuntu-latest
     steps:
       - name: Install rust toolchain

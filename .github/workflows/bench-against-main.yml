@@ -23,10 +23,10 @@ jobs:
         with:
           ref: main
       - name: Build main
-        run: cargo build --release --target /var/tmp/main
+        run: cargo build --release --target-dir /var/tmp/main
       - uses: actions/checkout@v4
       - name: Build head
-        run: cargo build --release --target /var/tmp/head
+        run: cargo build --release --target-dir /var/tmp/head
       - name: Run benchmarks
         run: |
           cd bench

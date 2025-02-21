@@ -88,7 +88,7 @@ etc.)
 
 ### Importing existing bookmarks
 
-`bmm` allows Import bookmarks from various sources. It supports the following
+`bmm` allows importing bookmarks from various sources. It supports the following
 input formats:
 
 - HTML (These are bookmark files exported by browsers like Firefox, Chrome, etc,

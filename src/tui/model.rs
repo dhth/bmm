@@ -1,5 +1,8 @@
 use super::{commands::Command, common::*};
-use crate::domain::{SavedBookmark, TagStats};
+use crate::{
+    domain::{SavedBookmark, TagStats},
+    persistence::SearchTerms,
+};
 use ratatui::{
     style::Style,
     text::Line,
@@ -51,7 +54,7 @@ impl UserMessage {
 
 pub enum TuiContext {
     Initial,
-    Search(String),
+    Search(SearchTerms),
     Tags,
 }
 

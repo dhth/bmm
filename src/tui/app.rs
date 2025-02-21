@@ -4,6 +4,7 @@ use super::handle::handle_command;
 use super::message::{Message, UrlsOpenedResult};
 use super::model::*;
 use super::view::view;
+use crate::persistence::SearchTerms;
 use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::Terminal;
@@ -80,7 +81,7 @@ impl AppTui {
         match &context {
             TuiContext::Initial => {}
             TuiContext::Search(q) => {
-                initial_commands.push(Command::SearchBookmarks(q.into()));
+                initial_commands.push(Command::SearchBookmarks(q.clone()));
             }
             TuiContext::Tags => {
                 initial_commands.push(Command::FetchTags);
@@ -273,14 +274,19 @@ impl AppTui {
             }
             Message::SubmitSearch => {
                 let search_query = self.model.search_input.value();
-                if !search_query.is_empty() {
-                    cmds.push(Command::SearchBookmarks(search_query.to_string()));
-                    if self.model.initial {
-                        self.model.initial = false;
+                match SearchTerms::try_from(search_query) {
+                    Ok(search_terms) => {
+                        if !search_query.is_empty() {
+                            cmds.push(Command::SearchBookmarks(search_terms));
+                            if self.model.initial {
+                                self.model.initial = false;
+                            }
+                        }
+                        self.model.search_input.reset();
+                        self.model.active_pane = ActivePane::List;
                     }
+                    Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
                 }
-                self.model.search_input.reset();
-                self.model.active_pane = ActivePane::List;
             }
             Message::ClearUserMsg => {
                 let now = Instant::now();

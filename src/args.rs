@@ -123,11 +123,11 @@ pub enum BmmCommand {
         #[arg(short = 'r', long = "reset-missing-details")]
         reset_missing: bool,
     },
-    /// Search bookmarks based on a singular query
+    /// Search bookmarks by matching over terms
     Search {
-        /// Pattern to match any attribute of a bookmark (URI, title, tags)
-        #[arg(value_name = "QUERY")]
-        query: String,
+        /// Query terms to search bookmarks with (will be matched over bookmark uri, title, and tags)
+        #[arg(value_name = "TERM")]
+        query_terms: Vec<String>,
         /// Format to output in
         #[arg(
             short = 'f',
@@ -318,19 +318,19 @@ reset missing             : {}
                 reset_missing,
             ),
             BmmCommand::Search {
-                query: uri,
+                query_terms,
                 format,
                 limit,
                 tui,
             } => format!(
                 r#"
 command     : Search bookmarks
-query       : {}
+query terms : {:?}
 format      : {}
 limit       : {}
 tui         : {}
 "#,
-                uri, format, limit, tui
+                query_terms, format, limit, tui
             ),
             BmmCommand::Show { uri } => format!(
                 r#"

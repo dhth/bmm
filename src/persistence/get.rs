@@ -2,6 +2,78 @@ use super::DBError;
 use crate::domain::{SavedBookmark, TagStats};
 use sqlx::{Pool, Sqlite};
 
+const SEARCH_TERMS_UPPER_LIMIT: usize = 10;
+
+#[derive(thiserror::Error, Debug)]
+pub enum SearchTermsError {
+    #[error("query is empty")]
+    QueryEmpty,
+    #[error("too many terms (maximum allowed: {SEARCH_TERMS_UPPER_LIMIT})")]
+    TooManyTerms,
+}
+
+#[derive(Debug, Clone)]
+pub struct SearchTerms(Vec<String>);
+
+impl SearchTerms {
+    pub fn iter(&self) -> std::slice::Iter<String> {
+        self.0.iter()
+    }
+}
+
+impl TryFrom<&str> for SearchTerms {
+    type Error = SearchTermsError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        if value.trim().is_empty() {
+            return Err(SearchTermsError::QueryEmpty);
+        }
+
+        let mut terms = value
+            .trim()
+            .split(" ")
+            .filter(|t| !t.trim().is_empty())
+            .collect::<Vec<_>>();
+
+        terms.sort();
+        terms.dedup();
+
+        if terms.len() > SEARCH_TERMS_UPPER_LIMIT {
+            return Err(SearchTermsError::TooManyTerms);
+        }
+
+        Ok(Self(
+            terms.into_iter().map(|t| t.to_string()).collect::<Vec<_>>(),
+        ))
+    }
+}
+
+impl TryFrom<&Vec<String>> for SearchTerms {
+    type Error = SearchTermsError;
+
+    fn try_from(value: &Vec<String>) -> Result<Self, Self::Error> {
+        if value.is_empty() {
+            return Err(SearchTermsError::QueryEmpty);
+        }
+
+        let mut terms = value
+            .iter()
+            .filter(|t| !t.trim().is_empty())
+            .collect::<Vec<_>>();
+
+        terms.sort();
+        terms.dedup();
+
+        if terms.len() > SEARCH_TERMS_UPPER_LIMIT {
+            return Err(SearchTermsError::TooManyTerms);
+        }
+
+        Ok(Self(
+            terms.into_iter().map(|t| t.to_string()).collect::<Vec<_>>(),
+        ))
+    }
+}
+
 #[allow(unused)]
 pub async fn get_bookmark_by_id(
     pool: &Pool<Sqlite>,
@@ -399,12 +471,10 @@ LIMIT
 
 pub async fn get_bookmarks_by_query(
     pool: &Pool<Sqlite>,
-    search_query: &str,
+    search_terms: &SearchTerms,
     limit: u16,
 ) -> Result<Vec<SavedBookmark>, DBError> {
-    let search_val = format!("%{}%", search_query);
-    sqlx::query_as!(
-        SavedBookmark,
+    let query = format!(
         r#"
 SELECT
     b.id,
@@ -417,9 +487,7 @@ FROM
     LEFT JOIN bookmark_tags bt ON b.id = bt.bookmark_id
     LEFT JOIN tags t ON bt.tag_id = t.id
 WHERE
-    b.uri LIKE ?
-    OR b.title LIKE ?
-    OR t.name LIKE ?
+    {}
 GROUP BY
     b.id,
     b.uri,
@@ -430,14 +498,29 @@ ORDER BY
 LIMIT
     ?
 "#,
-        search_val,
-        search_val,
-        search_val,
-        limit
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(|e| {
+        search_terms
+            .iter()
+        .map(|_| "(b.uri LIKE ? OR b.title LIKE ? OR EXISTS (SELECT 1 FROM tags t JOIN bookmark_tags bt ON t.id = bt.tag_id WHERE bt.bookmark_id = b.id AND t.name LIKE ?))")
+            .collect::<Vec<&str>>()
+            .join(" AND ")
+    );
+
+    let mut query_builder = sqlx::query_as::<_, SavedBookmark>(&query);
+
+    let search_terms_with_like_markers = search_terms
+        .iter()
+        .map(|t| format!("%{}%", t))
+        .collect::<Vec<_>>();
+
+    for term in search_terms_with_like_markers.iter() {
+        query_builder = query_builder.bind(term);
+        query_builder = query_builder.bind(term);
+        query_builder = query_builder.bind(term);
+    }
+
+    query_builder = query_builder.bind(limit);
+
+    query_builder.fetch_all(pool).await.map_err(|e| {
         DBError::CouldntExecuteQuery("get bookmarks where any attribute matches query".into(), e)
     })
 }
@@ -1244,25 +1327,40 @@ mod tests {
             .expect("bookmark should be saved in db");
         }
 
-        let test_cases: Vec<(&str, usize)> = vec![
-            ("absent", 0),   // none
-            ("uri", 2),      // uri only
-            ("title", 2),    // title only
-            ("prefix2", 2),  // tags only
-            ("keyword1", 2), // uri + title
-            ("keyword2", 2), // title + tags
-            ("keyword3", 2), // uri + tags
-            ("keyword4", 3), // uri + title + tags
+        let test_cases: Vec<(SearchTerms, usize)> = vec![
+            (SearchTerms::try_from("absent").unwrap(), 0),   // none
+            (SearchTerms::try_from("uri").unwrap(), 2),      // uri only
+            (SearchTerms::try_from("title").unwrap(), 2),    // title only
+            (SearchTerms::try_from("prefix2").unwrap(), 2),  // tags only
+            (SearchTerms::try_from("keyword1").unwrap(), 2), // uri + title
+            (SearchTerms::try_from("keyword2").unwrap(), 2), // title + tags
+            (SearchTerms::try_from("keyword3").unwrap(), 2), // uri + tags
+            (SearchTerms::try_from("keyword4").unwrap(), 3), // uri + title + tags
+            (
+                SearchTerms::try_from("https keyword one prefix2-tag tag-suffix1").unwrap(),
+                1,
+            ), // multiple terms
+            (SearchTerms::try_from("uri prefix2 keyword3").unwrap(), 2), // multiple terms
+            (SearchTerms::try_from("three keyword").unwrap(), 1), // multiple terms
+            (
+                SearchTerms::try_from("title prefix2 uri one tag-suffix1").unwrap(),
+                1,
+            ), // multiple terms
         ];
 
         // WHEN
         for (query, expected_num_bookmarks) in test_cases {
-            let bookmarks = get_bookmarks_by_query(&fixture.pool, query, 10)
+            let bookmarks = get_bookmarks_by_query(&fixture.pool, &query, 10)
                 .await
                 .unwrap();
 
             // THEN
-            assert_eq!(bookmarks.len(), expected_num_bookmarks);
+            assert_eq!(
+                bookmarks.len(),
+                expected_num_bookmarks,
+                "failed for query: {:?}",
+                &query
+            );
         }
     }
 

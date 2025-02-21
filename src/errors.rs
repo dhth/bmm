@@ -1,7 +1,7 @@
 use crate::cli::{
     CouldntGetDetailsViaEditorError, DeleteBookmarksError, DeleteTagsError, ImportError,
     ListBookmarksError, ListTagsError, ParsingTempFileContentError, RenameTagError,
-    SaveBookmarkError, SaveBookmarksError, ShowBookmarkError,
+    SaveBookmarkError, SaveBookmarksError, SearchBookmarksError, ShowBookmarkError,
 };
 use crate::persistence::DBError;
 use crate::tui::AppTuiError;
@@ -24,7 +24,9 @@ pub enum AppError {
     CouldntImportBookmarks(#[from] ImportError),
     #[error("couldn't list bookmarks: {0}")]
     CouldntListBookmarks(#[from] ListBookmarksError),
-    #[error("couldn't save bookmark: {0}")]
+    #[error("couldn't search bookmarks: {0}")]
+    CouldntSearchBookmarks(#[from] SearchBookmarksError),
+    #[error("couldn't search bookmarks: {0}")]
     CouldntSaveBookmark(#[from] SaveBookmarkError),
     #[error("couldn't save bookmarks: {0}")]
     CouldntSaveBookmarks(#[from] SaveBookmarksError),
@@ -69,7 +71,6 @@ impl AppError {
             AppError::CouldntListBookmarks(e) => match e {
                 ListBookmarksError::CouldntGetBookmarksFromDB(_) => Some(400),
                 ListBookmarksError::CouldntDisplayResults(_) => Some(401),
-                ListBookmarksError::CouldntRunTui(e) => Some(e.code()),
             },
             AppError::CouldntSaveBookmark(e) => match e {
                 SaveBookmarkError::CouldntCheckIfBookmarkExists(_) => Some(500),
@@ -126,6 +127,12 @@ impl AppError {
                 SaveBookmarksError::ValidationError { .. } => None,
                 SaveBookmarksError::SaveError(_) => Some(2002),
                 SaveBookmarksError::UnexpectedError(_) => Some(2003),
+            },
+            AppError::CouldntSearchBookmarks(e) => match e {
+                SearchBookmarksError::SearchQueryInvalid(_) => None,
+                SearchBookmarksError::CouldntGetBookmarksFromDB(_) => Some(3000),
+                SearchBookmarksError::CouldntDisplayResults(_) => Some(3001),
+                SearchBookmarksError::CouldntRunTui(e) => Some(e.code()),
             },
         }
     }

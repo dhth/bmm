@@ -48,6 +48,32 @@ impl TryFrom<&str> for SearchTerms {
     }
 }
 
+impl TryFrom<&Vec<String>> for SearchTerms {
+    type Error = SearchTermsError;
+
+    fn try_from(value: &Vec<String>) -> Result<Self, Self::Error> {
+        if value.is_empty() {
+            return Err(SearchTermsError::QueryEmpty);
+        }
+
+        let mut terms = value
+            .iter()
+            .filter(|t| !t.trim().is_empty())
+            .collect::<Vec<_>>();
+
+        terms.sort();
+        terms.dedup();
+
+        if terms.len() > SEARCH_TERMS_UPPER_LIMIT {
+            return Err(SearchTermsError::TooManyTerms);
+        }
+
+        Ok(Self(
+            terms.into_iter().map(|t| t.to_string()).collect::<Vec<_>>(),
+        ))
+    }
+}
+
 #[allow(unused)]
 pub async fn get_bookmark_by_id(
     pool: &Pool<Sqlite>,

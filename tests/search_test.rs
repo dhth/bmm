@@ -98,7 +98,14 @@ fn searching_bookmarks_by_multiple_terms_works() {
     assert!(import_output.status.success());
 
     let mut cmd = fixture.command();
-    cmd.args(["search", "github tools productivity command time"]);
+    cmd.args([
+        "search",
+        "github",
+        "tools",
+        "productivity",
+        "command",
+        "time",
+    ]);
 
     // WHEN
     let output = cmd.output().expect("command should've run");
@@ -125,12 +132,7 @@ fn searching_bookmarks_fails_if_search_terms_exceeds_limit() {
 
     let mut cmd = fixture.command();
     cmd.arg("search");
-    cmd.arg(
-        (1..=11)
-            .map(|i| format!("term-{}", i))
-            .collect::<Vec<_>>()
-            .join(" "),
-    );
+    cmd.args((1..=11).map(|i| format!("term-{}", i)).collect::<Vec<_>>());
 
     // WHEN
     let output = cmd.output().expect("command should've run");
@@ -152,7 +154,7 @@ fn searching_bookmarks_fails_if_search_query_empty() {
     assert!(import_output.status.success());
 
     let mut cmd = fixture.command();
-    cmd.args(["search", ""]);
+    cmd.args(["search"]);
 
     // WHEN
     let output = cmd.output().expect("command should've run");

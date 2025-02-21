@@ -21,12 +21,12 @@ pub enum SearchBookmarksError {
 
 pub async fn search_bookmarks(
     pool: &Pool<Sqlite>,
-    query: &str,
+    query_terms: &Vec<String>,
     format: OutputFormat,
     limit: u16,
     tui: bool,
 ) -> Result<(), SearchBookmarksError> {
-    let search_terms = SearchTerms::try_from(query)?;
+    let search_terms = SearchTerms::try_from(query_terms)?;
 
     if tui {
         run_tui(pool, TuiContext::Search(search_terms)).await?;

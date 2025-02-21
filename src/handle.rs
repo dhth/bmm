@@ -62,11 +62,11 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
         } => list_bookmarks(&pool, uri, title, tags, format, limit).await?,
 
         BmmCommand::Search {
-            query,
+            query_terms,
             format,
             limit,
             tui,
-        } => search_bookmarks(&pool, &query, format, limit, tui).await?,
+        } => search_bookmarks(&pool, &query_terms, format, limit, tui).await?,
 
         BmmCommand::Save {
             uri,

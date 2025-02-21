@@ -18,6 +18,8 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@cd6b2b78ad38bdd294341cda064ec0692b06215b # v1.14.0
         with:
           repo: sharkdp/hyperfine
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
       - uses: actions/checkout@v4
         with:
           ref: main

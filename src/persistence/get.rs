@@ -402,9 +402,12 @@ pub async fn get_bookmarks_by_query(
     search_query: &str,
     limit: u16,
 ) -> Result<Vec<SavedBookmark>, DBError> {
-    let search_val = format!("%{}%", search_query);
-    sqlx::query_as!(
-        SavedBookmark,
+    let search_terms = search_query
+        .split(" ")
+        .map(|t| format!("%{}%", t.trim()))
+        .collect::<Vec<_>>();
+
+    let query = format!(
         r#"
 SELECT
     b.id,
@@ -417,9 +420,7 @@ FROM
     LEFT JOIN bookmark_tags bt ON b.id = bt.bookmark_id
     LEFT JOIN tags t ON bt.tag_id = t.id
 WHERE
-    b.uri LIKE ?
-    OR b.title LIKE ?
-    OR t.name LIKE ?
+    {}
 GROUP BY
     b.id,
     b.uri,
@@ -430,14 +431,24 @@ ORDER BY
 LIMIT
     ?
 "#,
-        search_val,
-        search_val,
-        search_val,
-        limit
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(|e| {
+        &search_terms
+            .iter()
+        .map(|_| "(b.uri LIKE ? OR b.title LIKE ? OR EXISTS (SELECT 1 FROM tags t JOIN bookmark_tags bt ON t.id = bt.tag_id WHERE bt.bookmark_id = b.id AND t.name LIKE ?))")
+            .collect::<Vec<&str>>()
+            .join(" AND ")
+    );
+
+    let mut query_builder = sqlx::query_as::<_, SavedBookmark>(&query);
+
+    for term in &search_terms {
+        query_builder = query_builder.bind(term);
+        query_builder = query_builder.bind(term);
+        query_builder = query_builder.bind(term);
+    }
+
+    query_builder = query_builder.bind(limit);
+
+    query_builder.fetch_all(pool).await.map_err(|e| {
         DBError::CouldntExecuteQuery("get bookmarks where any attribute matches query".into(), e)
     })
 }
@@ -1245,14 +1256,18 @@ mod tests {
         }
 
         let test_cases: Vec<(&str, usize)> = vec![
-            ("absent", 0),   // none
-            ("uri", 2),      // uri only
-            ("title", 2),    // title only
-            ("prefix2", 2),  // tags only
-            ("keyword1", 2), // uri + title
-            ("keyword2", 2), // title + tags
-            ("keyword3", 2), // uri + tags
-            ("keyword4", 3), // uri + title + tags
+            ("absent", 0),                                    // none
+            ("uri", 2),                                       // uri only
+            ("title", 2),                                     // title only
+            ("prefix2", 2),                                   // tags only
+            ("keyword1", 2),                                  // uri + title
+            ("keyword2", 2),                                  // title + tags
+            ("keyword3", 2),                                  // uri + tags
+            ("keyword4", 3),                                  // uri + title + tags
+            ("https keyword one prefix2-tag tag-suffix1", 1), // multiple terms
+            ("uri prefix2 keyword3", 2),                      // multiple terms
+            ("three keyword", 1),                             // multiple terms
+            ("title prefix2 uri one tag-suffix1", 1),         // multiple terms
         ];
 
         // WHEN
@@ -1262,7 +1277,12 @@ mod tests {
                 .unwrap();
 
             // THEN
-            assert_eq!(bookmarks.len(), expected_num_bookmarks);
+            assert_eq!(
+                bookmarks.len(),
+                expected_num_bookmarks,
+                "failed for query: {}",
+                query
+            );
         }
     }
 

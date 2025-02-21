@@ -1,7 +1,8 @@
-name: bench
+name: bench-against-main
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [labeled]
 
 env:
   CARGO_TERM_COLOR: always
@@ -9,22 +10,24 @@ env:
 
 jobs:
   bench:
+    if: ${{ github.event.label.name == 'bench' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - name: Install rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Install bmm
-        run: cargo install --path .
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-      - name: Install buku
-        run: uv tool install buku
       - name: Install hyperfine
         uses: jaxxstorm/action-install-gh-release@cd6b2b78ad38bdd294341cda064ec0692b06215b # v1.14.0
         with:
           repo: sharkdp/hyperfine
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Build main
+        run: cargo build --release --target /var/tmp/main
+      - uses: actions/checkout@v4
+      - name: Build head
+        run: cargo build --release --target /var/tmp/head
       - name: Run benchmarks
         run: |
           cd bench
-          ./bench-against-buku.sh
+          ./bench-against-prev-version.sh /var/tmp/main /var/tmp/head

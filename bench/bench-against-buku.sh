@@ -57,7 +57,7 @@ cat <<EOF
 EOF
 
 XDG_DATA_HOME=${temp_dir} buku --nostdin --np -f 10 --nc -n 500 -s 1000.com >/var/tmp/buku.txt
-bmm --db-path=${temp_dir}/bmm.db search -f plain -l 500 1000.com >/var/tmp/bmm.txt
+bmm --db-path "${temp_dir}/bmm.db" search -f plain -l 500 1000.com >/var/tmp/bmm.txt
 
 git --no-pager diff --no-index /var/tmp/buku.txt /var/tmp/bmm.txt || {
     echo "command outputs differ"
@@ -75,7 +75,7 @@ $BMM_COMMAND
 
 EOF
 
-hyperfine --warmup 30 --runs 100 ${BUKU_COMMAND} ${BMM_COMMAND} -n buku -n bmm
+hyperfine --warmup 30 --runs 100 "${BUKU_COMMAND}" "${BMM_COMMAND}" -n buku -n bmm
 
 cat <<EOF
 
@@ -85,7 +85,7 @@ cat <<EOF
 EOF
 
 XDG_DATA_HOME=${temp_dir} buku --nostdin --np -f 10 --nc -n 1000 --stag tag1 > buku.txt
-bmm --db-path=${temp_dir}/bmm.db list -f plain -l 1000 -t tag1 >bmm.txt
+bmm --db-path "${temp_dir}/bmm.db" list -f plain -l 1000 -t tag1 >bmm.txt
 
 git --no-pager diff --no-index /var/tmp/buku.txt /var/tmp/bmm.txt || {
     echo "command outputs differ"

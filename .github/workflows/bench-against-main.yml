@@ -31,4 +31,4 @@ jobs:
       - name: Run benchmarks
         run: |
           cd bench
-          ./bench-against-prev-version.sh /var/tmp/main /var/tmp/head
+          ./bench-against-prev-version.sh /var/tmp/main/release/bmm /var/tmp/head/release/bmm

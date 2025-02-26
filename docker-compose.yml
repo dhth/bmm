@@ -1,0 +1,9 @@
+# to test operations on linux
+services:
+  bmm-dev:
+    image: rust:1.85-slim-bullseye
+    platform: linux/amd64
+    volumes:
+      - .:/usr/src/app
+    working_dir: /usr/src/app
+    command: sleep infinity

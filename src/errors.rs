@@ -53,6 +53,7 @@ impl AppError {
     pub fn code(&self) -> Option<u16> {
         match self {
             AppError::CouldntGetDataDirectory(e) => match e {
+                #[cfg(target_family = "unix")]
                 DataDirError::XDGDataHomeNotAbsolute => None,
                 DataDirError::CouldntGetDataDir => Some(100),
             },

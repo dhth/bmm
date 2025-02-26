@@ -3,7 +3,7 @@ use crate::cli::*;
 use crate::errors::AppError;
 use crate::persistence::get_db_pool;
 use crate::tui::{run_tui, TuiContext};
-use dirs::data_dir;
+use crate::utils::get_data_dir;
 use std::fs;
 use std::path::PathBuf;
 
@@ -14,7 +14,7 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
     let db_path = match &args.db_path {
         Some(p) => PathBuf::from(p),
         None => {
-            let user_data_dir = data_dir().ok_or(AppError::CouldntGetDataDirectory)?;
+            let user_data_dir = get_data_dir().map_err(AppError::CouldntGetDataDirectory)?;
             let data_dir = user_data_dir.join(PathBuf::from(DATA_DIR));
 
             if !data_dir.exists() {

@@ -5,13 +5,14 @@ use crate::cli::{
 };
 use crate::persistence::DBError;
 use crate::tui::AppTuiError;
+use crate::utils::DataDirError;
 use std::io::Error as IOError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum AppError {
     // data related
-    #[error("couldn't get your data directory, trying passing a db path manually")]
-    CouldntGetDataDirectory,
+    #[error(transparent)]
+    CouldntGetDataDirectory(DataDirError),
     #[error("could not create data directory: {0}")]
     CouldntCreateDataDirectory(IOError),
     #[error("couldn't initialize bmm's database: {0}")]
@@ -51,7 +52,10 @@ pub enum AppError {
 impl AppError {
     pub fn code(&self) -> Option<u16> {
         match self {
-            AppError::CouldntGetDataDirectory => Some(100),
+            AppError::CouldntGetDataDirectory(e) => match e {
+                DataDirError::XDGDataHomeNotAbsolute => None,
+                DataDirError::CouldntGetDataDir => Some(100),
+            },
             AppError::CouldntCreateDataDirectory(_) => Some(101),
             AppError::CouldntInitializeDatabase(_) => Some(102),
             AppError::DBPathNotValidStr => None,

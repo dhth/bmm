@@ -6,6 +6,7 @@ mod errors;
 mod handle;
 mod persistence;
 mod tui;
+mod utils;
 
 use args::Args;
 use clap::Parser;

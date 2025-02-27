@@ -64,7 +64,7 @@ Commands:
   list      List bookmarks based on several kinds of queries
   save      Save/update a bookmark
   save-all  Save/update multiple bookmarks
-  search    Search bookmarks based on a singular query
+  search    Search bookmarks by matching over terms
   show      Show bookmark details
   tags      Interact with tags
   tui       Open bmm's TUI
@@ -212,18 +212,19 @@ bmm list --uri 'github.com' \
     --format json
 ```
 
-### Searching bookmarks based on a singular query
+### Searching bookmarks by terms
 
 Sometimes you want to search for bookmarks without being very granular. The
-`search` command pattern matches a search query over all bookmarks attributes
-and tags and returns the results. You can also open the results in `bmm`'s TUI.
+`search` command allows you to do so. It accepts a list of terms, and will
+return bookmarks where all of the terms are matched over any attribute or tag
+belonging to a bookmark. You can also open the results in `bmm`'s TUI.
 
 ```bash
-# search bookmarks based on a singular query
-bmm search 'cli' --format delimited
+# search bookmarks based on search terms
+bmm search cli rust tool bookmarks --format delimited
 
 # open search results in bmm's TUI
-bmm search 'cli' --tui
+bmm search cli rust tool bookmarks --tui
 ```
 
 ### Show bookmark details
@@ -268,7 +269,7 @@ either in a generic mode (via `bmm tui`) or in the context of a specific command
 
 The TUI lets you do the following:
 
-- Search bookmarks based on a query
+- Search bookmarks based on terms
 - List all tags
 - View bookmarks that hold a tag
 

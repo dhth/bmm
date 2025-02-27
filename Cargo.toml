@@ -1,12 +1,12 @@
 [package]
 name = "bmm"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Dhruv Thakur"]
 repository = "https://github.com/dhth/bmm"
 description = "bmm lets you get to your bookmarks in a flash"
 homepage = "https://tools.dhruvs.space/bmm/"
-license-file = "LICENSE"
+license = "MIT"
 keywords = [
     "cli",
     "bookmarks",

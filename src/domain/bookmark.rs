@@ -1,4 +1,4 @@
-use super::tags::{Tag, TAG_REGEX_STR};
+use super::tags::{TAG_REGEX_STR, Tag};
 use serde::{Deserialize, Serialize};
 use url::{ParseError, Url};
 

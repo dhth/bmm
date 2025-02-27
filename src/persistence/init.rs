@@ -1,5 +1,5 @@
 use super::DBError;
-use sqlx::{migrate::MigrateDatabase, Pool, Sqlite, SqlitePool};
+use sqlx::{Pool, Sqlite, SqlitePool, migrate::MigrateDatabase};
 
 pub async fn get_db_pool(uri: &str) -> Result<Pool<Sqlite>, DBError> {
     let db_exists = Sqlite::database_exists(uri)

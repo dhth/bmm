@@ -1,11 +1,11 @@
 use super::common::*;
 use super::model::{Model, UserMessage};
 use ratatui::{
+    Frame,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Style, Stylize},
     text::{Line, Span},
     widgets::{Block, List, ListDirection, ListItem, Padding, Paragraph},
-    Frame,
 };
 
 const HELP_CONTENTS: &str = include_str!("static/help.txt");

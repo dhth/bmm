@@ -1,5 +1,5 @@
-use sqlx::migrate::MigrateError;
 use sqlx::Error as SqlxError;
+use sqlx::migrate::MigrateError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum DBError {

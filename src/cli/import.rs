@@ -1,6 +1,6 @@
 use crate::common::{HTML, IMPORT_FILE_FORMATS, IMPORT_UPPER_LIMIT, JSON, TXT};
 use crate::domain::{DraftBookmark, DraftBookmarkError, DraftBookmarkErrors, PotentialBookmark};
-use crate::persistence::{create_or_update_bookmarks, DBError, SaveBookmarkOptions};
+use crate::persistence::{DBError, SaveBookmarkOptions, create_or_update_bookmarks};
 use select::document::Document;
 use select::predicate::Name;
 use sqlx::{Pool, Sqlite};

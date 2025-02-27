@@ -1,8 +1,8 @@
-use super::display::display_bookmarks;
 use super::DisplayError;
+use super::display::display_bookmarks;
 use crate::args::OutputFormat;
 use crate::persistence::DBError;
-use crate::persistence::{get_bookmarks_by_query, SearchTerms, SearchTermsError};
+use crate::persistence::{SearchTerms, SearchTermsError, get_bookmarks_by_query};
 use crate::tui::run_tui;
 use crate::tui::{AppTuiError, TuiContext};
 use sqlx::{Pool, Sqlite};

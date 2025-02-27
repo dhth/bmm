@@ -2,7 +2,7 @@ use crate::args::{Args, BmmCommand, TagsCommand};
 use crate::cli::*;
 use crate::errors::AppError;
 use crate::persistence::get_db_pool;
-use crate::tui::{run_tui, TuiContext};
+use crate::tui::{TuiContext, run_tui};
 use crate::utils::get_data_dir;
 use std::fs;
 use std::path::PathBuf;

@@ -1,7 +1,7 @@
 [package]
 name = "bmm"
 version = "0.2.0"
-edition = "2021"
+edition = "2024"
 authors = ["Dhruv Thakur"]
 repository = "https://github.com/dhth/bmm"
 description = "bmm lets you get to your bookmarks in a flash"

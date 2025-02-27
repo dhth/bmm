@@ -1,6 +1,6 @@
 use crate::domain::{DraftBookmark, DraftBookmarkError, PotentialBookmark, SavedBookmark};
 use crate::persistence::{
-    create_or_update_bookmark, get_bookmark_with_exact_uri, DBError, SaveBookmarkOptions,
+    DBError, SaveBookmarkOptions, create_or_update_bookmark, get_bookmark_with_exact_uri,
 };
 use regex::{Error as RegexError, Regex};
 use sqlx::{Pool, Sqlite};
@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tempfile::tempdir;
-use which::{which, Error as WhichError};
+use which::{Error as WhichError, which};
 
 const ENV_VAR_BMM_EDITOR: &str = "BMM_EDITOR";
 const ENV_VAR_EDITOR: &str = "EDITOR";

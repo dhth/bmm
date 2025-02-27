@@ -1,5 +1,5 @@
-use crate::persistence::delete_bookmarks_with_uris;
 use crate::persistence::DBError;
+use crate::persistence::delete_bookmarks_with_uris;
 use sqlx::{Pool, Sqlite};
 use std::io::{Error as IOError, Write};
 

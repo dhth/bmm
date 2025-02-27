@@ -1,8 +1,8 @@
-use super::display::display_bookmarks;
 use super::DisplayError;
+use super::display::display_bookmarks;
 use crate::args::OutputFormat;
-use crate::persistence::get_bookmarks;
 use crate::persistence::DBError;
+use crate::persistence::get_bookmarks;
 use sqlx::{Pool, Sqlite};
 
 #[derive(thiserror::Error, Debug)]

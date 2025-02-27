@@ -1,6 +1,6 @@
 use crate::common::IMPORT_UPPER_LIMIT;
 use crate::domain::{DraftBookmark, DraftBookmarkErrors};
-use crate::persistence::{create_or_update_bookmarks, DBError, SaveBookmarkOptions};
+use crate::persistence::{DBError, SaveBookmarkOptions, create_or_update_bookmarks};
 use sqlx::{Pool, Sqlite};
 use std::io::BufRead;
 use std::io::Error as IOError;

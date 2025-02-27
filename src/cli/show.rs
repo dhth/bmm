@@ -1,6 +1,6 @@
 use super::display::display_bookmark_details;
-use crate::persistence::get_bookmark_with_exact_uri;
 use crate::persistence::DBError;
+use crate::persistence::get_bookmark_with_exact_uri;
 use sqlx::{Pool, Sqlite};
 
 #[derive(thiserror::Error, Debug)]

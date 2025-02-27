@@ -1,6 +1,6 @@
-use crate::domain::{Tag, TAG_REGEX_STR};
-use crate::persistence::rename_tag_name;
+use crate::domain::{TAG_REGEX_STR, Tag};
 use crate::persistence::DBError;
+use crate::persistence::rename_tag_name;
 use sqlx::{Pool, Sqlite};
 
 #[derive(thiserror::Error, Debug)]

@@ -1,5 +1,5 @@
 use assert_cmd::Command;
-use tempfile::{tempdir, TempDir};
+use tempfile::{TempDir, tempdir};
 
 pub struct Fixture {
     _temp_dir: TempDir,

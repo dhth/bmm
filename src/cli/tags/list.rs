@@ -1,9 +1,9 @@
-use super::super::display::{display_tags, display_tags_with_stats};
 use super::super::DisplayError;
+use super::super::display::{display_tags, display_tags_with_stats};
 use crate::args::OutputFormat;
 use crate::persistence::DBError;
 use crate::persistence::{get_tags, get_tags_with_stats};
-use crate::tui::{run_tui, AppTuiError, TuiContext};
+use crate::tui::{AppTuiError, TuiContext, run_tui};
 use sqlx::{Pool, Sqlite};
 
 #[derive(thiserror::Error, Debug)]

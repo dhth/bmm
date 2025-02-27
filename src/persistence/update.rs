@@ -126,7 +126,7 @@ mod tests {
     use crate::domain::{DraftBookmark, Tag};
     use crate::persistence::test_fixtures::DBPoolFixture;
     use crate::persistence::{
-        create_or_update_bookmark, get_bookmark_with_exact_uri, get_tags, SaveBookmarkOptions,
+        SaveBookmarkOptions, create_or_update_bookmark, get_bookmark_with_exact_uri, get_tags,
     };
 
     //-------------//

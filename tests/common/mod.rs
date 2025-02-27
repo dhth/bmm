@@ -7,6 +7,7 @@ pub struct Fixture {
 }
 
 #[cfg(test)]
+#[allow(unused)]
 impl Fixture {
     pub fn new() -> Self {
         let temp_dir = tempdir().expect("temporary directory should've been created");

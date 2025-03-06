@@ -1,5 +1,7 @@
 use crate::common::{HTML, IMPORT_FILE_FORMATS, IMPORT_UPPER_LIMIT, JSON, TXT};
-use crate::domain::{DraftBookmark, DraftBookmarkError, DraftBookmarkErrors, PotentialBookmark};
+use crate::domain::{
+    DraftBookmark, DraftBookmarkError, DraftBookmarkErrors, PotentialImportedBookmark,
+};
 use crate::persistence::{DBError, SaveBookmarkOptions, create_or_update_bookmarks};
 use select::document::Document;
 use select::predicate::Name;
@@ -140,7 +142,9 @@ fn parse_html_content(bytes: &[u8]) -> Result<ParseResult, std::io::Error> {
         let uri = node.attr("href").unwrap_or("");
         let title = node.text();
         let tags = node.attr("tags").unwrap_or("");
-        match DraftBookmark::try_from((uri, Some(title.as_str()), Some(tags))) {
+        let potential_bookmark =
+            PotentialImportedBookmark::from((uri, Some(title.as_str()), Some(tags)));
+        match DraftBookmark::try_from(potential_bookmark) {
             Ok(db) => {
                 draft_bookmarks.push(db);
             }
@@ -163,7 +167,13 @@ fn parse_text_content(lines: &[String]) -> ParseResult {
     let mut validation_errors = Vec::new();
     let mut draft_bookmarks = Vec::new();
     for (index, uri) in lines.iter().enumerate() {
-        let db_result = DraftBookmark::try_from(uri);
+        let potential_bookmark = PotentialImportedBookmark {
+            uri: uri.clone(),
+            title: None,
+            tags: None,
+        };
+
+        let db_result = DraftBookmark::try_from(potential_bookmark);
         match db_result {
             Ok(db) => draft_bookmarks.push(db),
             Err(e) => validation_errors.push((index, e)),
@@ -178,12 +188,12 @@ fn parse_text_content(lines: &[String]) -> ParseResult {
 }
 
 fn parse_json_content(bytes: &[u8]) -> Result<ParseResult, serde_json::Error> {
-    let potential_bookmarks: Vec<PotentialBookmark> = serde_json::from_slice(bytes)?;
+    let potential_bookmarks: Vec<PotentialImportedBookmark> = serde_json::from_slice(bytes)?;
 
     let mut validation_errors = Vec::new();
     let mut draft_bookmarks = Vec::new();
     for (index, pb) in potential_bookmarks.into_iter().enumerate() {
-        let db_result = DraftBookmark::try_from(&pb);
+        let db_result = DraftBookmark::try_from(pb);
         match db_result {
             Ok(db) => draft_bookmarks.push(db),
             Err(e) => validation_errors.push((index, e)),

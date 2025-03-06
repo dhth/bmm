@@ -1,5 +1,6 @@
 use crate::args::{Args, BmmCommand, TagsCommand};
 use crate::cli::*;
+use crate::domain::PotentialBookmark;
 use crate::errors::AppError;
 use crate::persistence::get_db_pool;
 use crate::tui::{TuiContext, run_tui};
@@ -75,15 +76,17 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             use_editor,
             fail_if_uri_already_saved,
             reset_missing,
+            ignore_attribute_errors,
         } => {
+            let potential_bookmark = PotentialBookmark::from((uri, title, &tags));
+
             save_bookmark(
                 &pool,
-                uri,
-                title,
-                tags,
+                potential_bookmark,
                 use_editor,
                 fail_if_uri_already_saved,
                 reset_missing,
+                ignore_attribute_errors,
             )
             .await?
         }

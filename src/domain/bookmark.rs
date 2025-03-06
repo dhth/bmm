@@ -1,4 +1,6 @@
 use super::tags::{TAG_REGEX_STR, Tag};
+use once_cell::sync::Lazy;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use url::{ParseError, Url};
 
@@ -15,7 +17,79 @@ pub struct DraftBookmark {
 pub struct PotentialBookmark {
     pub uri: String,
     pub title: Option<String>,
+    pub tags: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PotentialImportedBookmark {
+    pub uri: String,
+    pub title: Option<String>,
     pub tags: Option<String>,
+}
+
+impl From<PotentialImportedBookmark> for PotentialBookmark {
+    fn from(bookmark: PotentialImportedBookmark) -> Self {
+        Self {
+            uri: bookmark.uri,
+            title: bookmark.title,
+            tags: bookmark
+                .tags
+                .unwrap_or_default()
+                .split(",")
+                .map(|t| t.to_string())
+                .collect::<Vec<_>>(),
+        }
+    }
+}
+
+impl<T> From<(T, Option<T>, Option<T>)> for PotentialImportedBookmark
+where
+    T: AsRef<str>,
+{
+    fn from(tuple: (T, Option<T>, Option<T>)) -> Self {
+        let (uri, title, tags) = tuple;
+        Self {
+            uri: uri.as_ref().to_string(),
+            title: title.map(|t| t.as_ref().to_string()),
+            tags: tags.map(|t| t.as_ref().to_string()),
+        }
+    }
+}
+
+impl<T> From<(T, Option<T>, Option<T>)> for PotentialBookmark
+where
+    T: AsRef<str>,
+{
+    fn from(tuple: (T, Option<T>, Option<T>)) -> Self {
+        let (uri, title, tags) = tuple;
+        Self {
+            uri: uri.as_ref().to_string(),
+            title: title.map(|t| t.as_ref().to_string()),
+            tags: tags
+                .map(|t| t.as_ref().to_string())
+                .unwrap_or_default()
+                .split(",")
+                .map(|t| t.to_string())
+                .collect::<Vec<_>>(),
+        }
+    }
+}
+
+impl<T> From<(T, Option<T>, &Vec<T>)> for PotentialBookmark
+where
+    T: AsRef<str>,
+{
+    fn from(tuple: (T, Option<T>, &Vec<T>)) -> Self {
+        let (uri, title, tags) = tuple;
+        Self {
+            uri: uri.as_ref().to_string(),
+            title: title.map(|t| t.as_ref().to_string()),
+            tags: tags
+                .iter()
+                .map(|t| t.as_ref().to_string())
+                .collect::<Vec<_>>(),
+        }
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -78,111 +152,116 @@ impl std::fmt::Display for DraftBookmarkErrors {
     }
 }
 
-impl TryFrom<(&str, Option<&str>, &Vec<&str>)> for DraftBookmark {
+impl TryFrom<(PotentialBookmark, bool)> for DraftBookmark {
     type Error = DraftBookmarkError;
 
-    fn try_from(value: (&str, Option<&str>, &Vec<&str>)) -> Result<Self, Self::Error> {
-        let (uri, title, tags) = value;
+    fn try_from(value: (PotentialBookmark, bool)) -> Result<Self, Self::Error> {
+        #[allow(clippy::expect_used)]
+        static WHITESPACE_RE: Lazy<Regex> =
+            Lazy::new(|| Regex::new(r"\s+").expect("regex is invalid"));
 
-        Url::parse(uri).map_err(DraftBookmarkError::CouldntParseUri)?;
+        let (potential_bookmark, ignore_attribute_errors) = value;
+        let tags = &potential_bookmark.tags;
 
-        if let Some(t) = title {
-            let title_len = t.len();
-            if title_len > TAG_TITLE_MAX_LENGTH {
-                return Err(DraftBookmarkError::TitleTooLong(title_len));
+        Url::parse(&potential_bookmark.uri).map_err(DraftBookmarkError::CouldntParseUri)?;
+
+        let title = match ignore_attribute_errors {
+            true => potential_bookmark
+                .title
+                .as_ref()
+                .map(|t| t.trim())
+                .and_then(|t| {
+                    if t.is_empty() {
+                        None
+                    } else if t.len() > TAG_TITLE_MAX_LENGTH {
+                        t.get(0..TAG_TITLE_MAX_LENGTH)
+                    } else {
+                        Some(t)
+                    }
+                })
+                .map(|t| t.to_string()),
+            false => {
+                if let Some(t) = &potential_bookmark.title {
+                    let title_len = t.len();
+                    if title_len > TAG_TITLE_MAX_LENGTH {
+                        return Err(DraftBookmarkError::TitleTooLong(title_len));
+                    }
+                };
+
+                potential_bookmark.title.as_ref().and_then(|t| {
+                    let trimmed = t.trim();
+                    if trimmed.is_empty() {
+                        None
+                    } else {
+                        Some(trimmed.to_string())
+                    }
+                })
             }
         };
 
-        let title_to_save = title.and_then(|t| {
-            let trimmed = t.trim();
-            if trimmed.is_empty() {
-                None
-            } else {
-                Some(trimmed.to_string())
-            }
-        });
+        let tags = match ignore_attribute_errors {
+            true => potential_bookmark
+                .tags
+                .iter()
+                .map(|t| t.trim())
+                .filter(|t| !t.is_empty())
+                .map(|t| WHITESPACE_RE.replace_all(t, "-").to_string())
+                .filter_map(|t| Tag::try_from(t.as_str()).ok())
+                .collect::<Vec<_>>(),
+            false => {
+                let mut tags = Vec::with_capacity(tags.len());
+                let mut invalid_tags = Vec::new();
+                for tag in potential_bookmark.tags {
+                    if tag.is_empty() {
+                        continue;
+                    }
 
-        let mut tags_to_save = Vec::with_capacity(tags.len());
-        let mut invalid_tags = Vec::new();
-        for tag in tags {
-            if tag.is_empty() {
-                continue;
-            }
+                    match Tag::try_from(tag.as_str()) {
+                        Ok(t) => tags.push(t),
+                        Err(_) => invalid_tags.push(tag.to_string()),
+                    }
+                }
+                if !invalid_tags.is_empty() {
+                    return Err(DraftBookmarkError::TagIsInvalid(invalid_tags));
+                }
 
-            match Tag::try_from(tag) {
-                Ok(t) => tags_to_save.push(t),
-                Err(_) => invalid_tags.push(tag.to_string()),
+                tags.sort();
+                tags.dedup();
+                tags
             }
-        }
-        if !invalid_tags.is_empty() {
-            return Err(DraftBookmarkError::TagIsInvalid(invalid_tags));
-        }
-
-        tags_to_save.sort();
-        tags_to_save.dedup();
+        };
 
         Ok(Self {
-            uri: uri.to_string(),
-            title: title_to_save,
-            tags: tags_to_save,
+            uri: potential_bookmark.uri,
+            title,
+            tags,
         })
     }
 }
 
-impl TryFrom<(&str, Option<&str>, Option<&str>)> for DraftBookmark {
+impl TryFrom<PotentialBookmark> for DraftBookmark {
     type Error = DraftBookmarkError;
 
-    fn try_from(value: (&str, Option<&str>, Option<&str>)) -> Result<Self, Self::Error> {
-        let (uri, title, tags) = value;
-        let tags = tags.map(|t| t.split(",").collect::<Vec<_>>());
-        Self::try_from((uri, title, &tags.unwrap_or_default()))
+    fn try_from(potential_bookmark: PotentialBookmark) -> Result<Self, Self::Error> {
+        Self::try_from((potential_bookmark, false))
     }
 }
 
-impl TryFrom<(&str, Option<&str>, Option<String>)> for DraftBookmark {
+impl TryFrom<(PotentialImportedBookmark, bool)> for DraftBookmark {
     type Error = DraftBookmarkError;
 
-    fn try_from(value: (&str, Option<&str>, Option<String>)) -> Result<Self, Self::Error> {
-        let (uri, title, tags) = value;
-        Self::try_from((uri, title, tags.as_deref()))
+    fn try_from(value: (PotentialImportedBookmark, bool)) -> Result<Self, Self::Error> {
+        let potential_bookmark = PotentialBookmark::from(value.0);
+        Self::try_from((potential_bookmark, value.1))
     }
 }
 
-impl TryFrom<(&str, Option<&str>, Option<Vec<String>>)> for DraftBookmark {
+impl TryFrom<PotentialImportedBookmark> for DraftBookmark {
     type Error = DraftBookmarkError;
 
-    fn try_from(value: (&str, Option<&str>, Option<Vec<String>>)) -> Result<Self, Self::Error> {
-        let (uri, title, tags) = value;
-        let tags_ref = tags
-            .as_ref()
-            .map(|v| v.iter().map(|t| t.as_str()).collect::<Vec<_>>());
-        Self::try_from((uri, title, &tags_ref.unwrap_or_default()))
-    }
-}
-
-impl TryFrom<&String> for DraftBookmark {
-    type Error = DraftBookmarkError;
-
-    fn try_from(uri: &String) -> Result<Self, Self::Error> {
-        Self::try_from((uri.as_str(), None, &Vec::new()))
-    }
-}
-
-impl TryFrom<&str> for DraftBookmark {
-    type Error = DraftBookmarkError;
-
-    fn try_from(uri: &str) -> Result<Self, Self::Error> {
-        Self::try_from((uri, None, &Vec::new()))
-    }
-}
-
-impl TryFrom<&PotentialBookmark> for DraftBookmark {
-    type Error = DraftBookmarkError;
-
-    fn try_from(value: &PotentialBookmark) -> Result<Self, Self::Error> {
-        let t: Vec<&str> = value.tags.as_deref().unwrap_or("").split(",").collect();
-
-        Self::try_from((value.uri.as_str(), value.title.as_deref(), &t))
+    fn try_from(value: PotentialImportedBookmark) -> Result<Self, Self::Error> {
+        let potential_bookmark = PotentialBookmark::from(value);
+        Self::try_from((potential_bookmark, false))
     }
 }
 
@@ -231,9 +310,10 @@ mod tests {
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
         let tags = vec!["sql", "rust", "database-library-1"];
+        let potential_bookmark = PotentialBookmark::from((uri, Some(title), &tags));
 
         // WHEN
-        let result = DraftBookmark::try_from((uri, Some(title), &tags));
+        let result = DraftBookmark::try_from(potential_bookmark);
 
         // THEN
         assert!(result.is_ok());
@@ -245,13 +325,67 @@ mod tests {
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
         let tags = vec!["sql", "", "database-library", ""];
+        let potential_bookmark = PotentialBookmark::from((uri, Some(title), &tags));
 
         // WHEN
-        let result = DraftBookmark::try_from((uri, Some(title), &tags))
+        let result = DraftBookmark::try_from(potential_bookmark)
             .expect("draft bookmark should've been created");
 
         // THEN
         assert_eq!(result.tags(), vec!["database-library", "sql"]);
+    }
+
+    #[test]
+    fn force_creating_a_draft_bookmark_with_too_long_a_title_works() {
+        // GIVEN
+        let uri = "https://github.com/launchbadge/sqlx";
+        let title = "a".repeat(501);
+        let tags = vec![];
+        let potential_bookmark = PotentialBookmark::from((uri, Some(title.as_str()), &tags));
+
+        // WHEN
+        let draft_bookmark = DraftBookmark::try_from((potential_bookmark, true))
+            .expect("draft bookmark should've been created");
+
+        // THEN
+        assert_eq!(
+            draft_bookmark.title.map(|t| t.len()),
+            Some(TAG_TITLE_MAX_LENGTH)
+        );
+    }
+
+    #[test]
+    fn force_creating_a_draft_bookmark_with_invalid_tags_works() {
+        // GIVEN
+        let uri = "https://github.com/launchbadge/sqlx";
+        let tags = vec![
+            "tag with spaces",
+            "tag\twith\ttabs",
+            "tag with trailing space   ",
+            "  tag with leading space",
+            "  tag with\t\tboth\ttabs and spaces  ",
+            "inv@lid-t@g",
+            "!!",
+            "",
+            "??",
+        ];
+        let potential_bookmark = PotentialBookmark::from((uri, None, &tags));
+
+        // WHEN
+        let draft_bookmark = DraftBookmark::try_from((potential_bookmark, true))
+            .expect("draft bookmark should've been created");
+
+        // THEN
+        assert_eq!(
+            draft_bookmark.tags(),
+            vec![
+                "tag-with-spaces",
+                "tag-with-tabs",
+                "tag-with-trailing-space",
+                "tag-with-leading-space",
+                "tag-with-both-tabs-and-spaces"
+            ]
+        );
     }
 
     //------------//
@@ -260,7 +394,6 @@ mod tests {
 
     #[test]
     fn draft_bookmark_cannot_be_created_with_an_incorrect_uri() {
-        // GIVEN
         let faulty_uris = vec![
             "https:://github.com/launchbadge/sqlx",
             "github.com/launchbadge/sqlx",
@@ -269,8 +402,10 @@ mod tests {
         ];
 
         for uri in faulty_uris {
+            // GIVEN
+            let potential_bookmark = PotentialBookmark::from((uri, None, None));
             // WHEN
-            let result = DraftBookmark::try_from((uri, None, &Vec::new()));
+            let result = DraftBookmark::try_from(potential_bookmark);
 
             // THEN
             match result {
@@ -285,9 +420,10 @@ mod tests {
         // GIVEN
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "a".repeat(501);
+        let potential_bookmark = PotentialBookmark::from((uri, Some(title.as_str()), None));
 
         // WHEN
-        let result = DraftBookmark::try_from((uri, Some(title.as_str()), &Vec::new()));
+        let result = DraftBookmark::try_from(potential_bookmark);
 
         // THEN
         match result {
@@ -310,7 +446,8 @@ mod tests {
 
         for tag in malformed_tags {
             // WHEN
-            let result = DraftBookmark::try_from((uri, Some(title), &vec![tag]));
+            let potential_bookmark = PotentialBookmark::from((uri, Some(title), &vec![tag]));
+            let result = DraftBookmark::try_from(potential_bookmark);
 
             // THEN
             match result {

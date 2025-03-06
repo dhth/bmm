@@ -383,6 +383,7 @@ mod tests {
     };
     use super::super::test_fixtures::DBPoolFixture;
     use super::*;
+    use crate::domain::PotentialBookmark;
     use pretty_assertions::assert_eq;
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -393,8 +394,9 @@ mod tests {
         let tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
-        let draft_bookmark = DraftBookmark::try_from((uri, Some(title), &tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title), &tags)))
+                .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -440,7 +442,7 @@ mod tests {
         let fixture = DBPoolFixture::new().await;
         let tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
-        let draft_bookmark = DraftBookmark::try_from((uri, None, &tags))
+        let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, None, &tags)))
             .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
@@ -487,8 +489,9 @@ mod tests {
         let fixture = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
-        let draft_bookmark = DraftBookmark::try_from((uri, Some(title), &vec![]))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title), &vec![])))
+                .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -527,8 +530,9 @@ mod tests {
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
-        let draft_bookmark_old = DraftBookmark::try_from((uri, Some(title_old), &old_tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark_old =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title_old), &old_tags)))
+                .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -544,8 +548,7 @@ mod tests {
         .expect("bookmark should've been saved the first time");
 
         // WHEN
-        let new_tags: Option<&str> = None;
-        let draft_bookmark = DraftBookmark::try_from((uri, None, new_tags))
+        let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, None, None)))
             .expect("draft bookmark should've been created");
         let result = create_or_update_bookmark(
             &fixture.pool,
@@ -583,8 +586,9 @@ mod tests {
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
-        let draft_bookmark_old = DraftBookmark::try_from((uri, Some(title_old), &old_tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark_old =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title_old), &old_tags)))
+                .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -601,8 +605,9 @@ mod tests {
 
         // WHEN
         let new_tags = vec!["rust", "github", "database"];
-        let draft_bookmark = DraftBookmark::try_from((uri, None, &new_tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, None, &new_tags)))
+                .expect("draft bookmark should've been created");
         let result = create_or_update_bookmark(
             &fixture.pool,
             &draft_bookmark,
@@ -647,8 +652,9 @@ mod tests {
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
-        let draft_bookmark_old = DraftBookmark::try_from((uri, Some(title_old), &old_tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark_old =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title_old), &old_tags)))
+                .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -665,8 +671,9 @@ mod tests {
 
         // WHEN
         let title_new = "sqlx's github repository";
-        let draft_bookmark = DraftBookmark::try_from((uri, Some(title_new), &old_tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title_new), &old_tags)))
+                .expect("draft bookmark should've been created");
         let save_options = SaveBookmarkOptions {
             reset_missing_attributes: true,
             reset_tags: true,
@@ -701,8 +708,9 @@ mod tests {
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
-        let draft_bookmark_old = DraftBookmark::try_from((uri, Some(title_old), &old_tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark_old =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title_old), &old_tags)))
+                .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -719,8 +727,9 @@ mod tests {
 
         // WHEN
         let new_tags = vec!["rust", "github", "database"];
-        let draft_bookmark = DraftBookmark::try_from((uri, Some(title_old), &new_tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title_old), &new_tags)))
+                .expect("draft bookmark should've been created");
         let save_options = SaveBookmarkOptions {
             reset_missing_attributes: false,
             reset_tags: true,
@@ -752,8 +761,9 @@ mod tests {
         let fixture = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
-        let draft_bookmark_old = DraftBookmark::try_from((uri, Some(title_old), &vec![]))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark_old =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title_old), &vec![])))
+                .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -769,7 +779,7 @@ mod tests {
         .expect("bookmark should've been saved the first time");
 
         // WHEN
-        let draft_bookmark = DraftBookmark::try_from((uri, None, &vec![]))
+        let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, None, &vec![])))
             .expect("draft bookmark should've been created");
         let save_options = SaveBookmarkOptions {
             reset_missing_attributes: true,
@@ -800,8 +810,9 @@ mod tests {
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
-        let draft_bookmark_old = DraftBookmark::try_from((uri, Some(title), &old_tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark_old =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title), &old_tags)))
+                .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -817,8 +828,9 @@ mod tests {
         .expect("bookmark should've been saved the first time");
 
         // WHEN
-        let draft_bookmark = DraftBookmark::try_from((uri, Some(title), &vec![]))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title), &vec![])))
+                .expect("draft bookmark should've been created");
         let save_options = SaveBookmarkOptions {
             reset_missing_attributes: false,
             reset_tags: true,
@@ -861,8 +873,9 @@ mod tests {
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
-        let draft_bookmark_old = DraftBookmark::try_from((uri, Some(title), &old_tags))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark_old =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title), &old_tags)))
+                .expect("draft bookmark should've been created");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -878,8 +891,9 @@ mod tests {
         .expect("bookmark should've been saved the first time");
 
         // WHEN
-        let draft_bookmark = DraftBookmark::try_from((uri, Some(title), &vec![]))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title), &vec![])))
+                .expect("draft bookmark should've been created");
         let save_options = SaveBookmarkOptions {
             reset_missing_attributes: false,
             reset_tags: true,
@@ -923,7 +937,7 @@ mod tests {
         let draft_bookmarks = uris
             .into_iter()
             .map(|(uri, title, tags)| {
-                DraftBookmark::try_from((uri, title, &tags))
+                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmarks should've been initialized")
             })
             .collect::<Vec<_>>();
@@ -968,7 +982,7 @@ mod tests {
         let draft_bookmarks_original = uris
             .into_iter()
             .map(|(uri, title, tags)| {
-                DraftBookmark::try_from((uri, title, &tags))
+                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmarks should've been initialized")
             })
             .collect::<Vec<_>>();
@@ -994,7 +1008,7 @@ mod tests {
         let draft_bookmarks = updated_uris
             .into_iter()
             .map(|(uri, title, tags)| {
-                DraftBookmark::try_from((uri, title, &tags))
+                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmarks should've been initialized")
             })
             .collect::<Vec<_>>();
@@ -1045,7 +1059,7 @@ mod tests {
         let draft_bookmarks_original = uris
             .into_iter()
             .map(|(uri, title, tags)| {
-                DraftBookmark::try_from((uri, title, &tags))
+                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmarks should've been initialized")
             })
             .collect::<Vec<_>>();
@@ -1071,7 +1085,8 @@ mod tests {
         let draft_bookmarks = updated_uris
             .into_iter()
             .map(|uri| {
-                DraftBookmark::try_from(uri).expect("draft bookmarks should've been initialized")
+                DraftBookmark::try_from(PotentialBookmark::from((uri, None, None)))
+                    .expect("draft bookmarks should've been initialized")
             })
             .collect::<Vec<_>>();
 
@@ -1119,7 +1134,7 @@ mod tests {
         let draft_bookmarks_original = uris
             .into_iter()
             .map(|(uri, title, tags)| {
-                DraftBookmark::try_from((uri, title, &tags))
+                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmarks should've been initialized")
             })
             .collect::<Vec<_>>();
@@ -1145,7 +1160,8 @@ mod tests {
         let draft_bookmarks = updated_uris
             .into_iter()
             .map(|uri| {
-                DraftBookmark::try_from(uri).expect("draft bookmarks should've been initialized")
+                DraftBookmark::try_from(PotentialBookmark::from((uri, None, None)))
+                    .expect("draft bookmarks should've been initialized")
             })
             .collect::<Vec<_>>();
 

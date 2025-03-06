@@ -31,6 +31,7 @@ pub async fn save_all_bookmarks(
     tags: Vec<String>,
     use_stdin: bool,
     reset_missing: bool,
+    ignore_attribute_errors: bool,
 ) -> Result<Option<SaveAllStats>, SaveBookmarksError> {
     let mut uris_to_save = uris.unwrap_or_default();
 
@@ -50,7 +51,7 @@ pub async fn save_all_bookmarks(
 
     for (index, uri) in uris_to_save.into_iter().enumerate() {
         let potential_bookmark = PotentialBookmark::from((uri, None, &tags));
-        let db_result = DraftBookmark::try_from(potential_bookmark);
+        let db_result = DraftBookmark::try_from((potential_bookmark, ignore_attribute_errors));
         match db_result {
             Ok(db) => draft_bookmarks.push(db),
             Err(e) => validation_errors.push((index, e)),

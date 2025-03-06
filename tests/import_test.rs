@@ -41,6 +41,27 @@ fn importing_from_an_invalid_html_file_doesnt_fail() {
 }
 
 #[test]
+fn force_importing_from_an_html_file_with_some_invalid_attrs_works() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut cmd = fixture.command();
+    cmd.args([
+        "import",
+        "tests/static/import/valid-with-some-invalid-attributes.html",
+        "-i",
+    ]);
+
+    // WHEN
+    let output = cmd.output().expect("command should've run");
+
+    // THEN
+    output.print_stderr_if_failed(None);
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
+    assert_eq!(stdout.trim(), "imported 4 bookmarks");
+}
+
+#[test]
 fn importing_from_a_valid_json_file_works() {
     // GIVEN
     let fixture = Fixture::new();
@@ -72,6 +93,27 @@ fn importing_from_a_json_file_with_only_mandatory_details_works() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
     assert_eq!(stdout.trim(), "imported 2 bookmarks");
+}
+
+#[test]
+fn force_importing_from_a_json_file_with_some_invalid_attrs_works() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut cmd = fixture.command();
+    cmd.args([
+        "import",
+        "tests/static/import/valid-with-some-invalid-attributes.json",
+        "-i",
+    ]);
+
+    // WHEN
+    let output = cmd.output().expect("command should've run");
+
+    // THEN
+    output.print_stderr_if_failed(None);
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
+    assert_eq!(stdout.trim(), "imported 4 bookmarks");
 }
 
 #[test]
@@ -214,6 +256,23 @@ fn importing_from_a_json_file_fails_if_missing_uri() {
     let fixture = Fixture::new();
     let mut cmd = fixture.command();
     cmd.args(["import", "tests/static/import/missing-uri.json"]);
+
+    // WHEN
+    let output = cmd.output().expect("command should've run");
+
+    // THEN
+    output.print_stdout_if_succeeded(None);
+    assert!(!output.status.success());
+    let stderr = String::from_utf8(output.stderr).expect("invalid utf-8 stderr");
+    assert!(stderr.contains("missing field `uri`"));
+}
+
+#[test]
+fn importing_from_a_json_file_fails_if_missing_uri_even_when_forced() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut cmd = fixture.command();
+    cmd.args(["import", "tests/static/import/missing-uri.json", "-i"]);
 
     // WHEN
     let output = cmd.output().expect("command should've run");

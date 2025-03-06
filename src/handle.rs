@@ -47,8 +47,16 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             file,
             reset_missing,
             dry_run,
+            ignore_attribute_errors,
         } => {
-            let result = import_bookmarks(&pool, &file, reset_missing, dry_run).await?;
+            let result = import_bookmarks(
+                &pool,
+                &file,
+                reset_missing,
+                dry_run,
+                ignore_attribute_errors,
+            )
+            .await?;
             if let Some(stats) = result {
                 println!("imported {} bookmarks", stats.num_bookmarks_imported);
             }
@@ -96,8 +104,17 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             tags,
             use_stdin,
             reset_missing,
+            ignore_attribute_errors,
         } => {
-            let result = save_all_bookmarks(&pool, uris, tags, use_stdin, reset_missing).await?;
+            let result = save_all_bookmarks(
+                &pool,
+                uris,
+                tags,
+                use_stdin,
+                reset_missing,
+                ignore_attribute_errors,
+            )
+            .await?;
             if let Some(stats) = result {
                 println!("saved {} bookmarks", stats.num_bookmarks);
             }

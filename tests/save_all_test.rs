@@ -182,6 +182,49 @@ Tags : tools
     );
 }
 
+#[test]
+fn force_saving_multiple_bookmarks_with_invalid_tags_works() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut cmd = fixture.command();
+    cmd.args([
+        "save-all",
+        URI_ONE,
+        URI_TWO,
+        URI_THREE,
+        "--tags",
+        "tag1,invalid tag, another    invalid\t\ttag ",
+        "-i",
+    ]);
+
+    // WHEN
+    let output = cmd.output().expect("command should've run");
+
+    // THEN
+    output.print_stderr_if_failed(None);
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
+    assert_eq!(stdout.trim(), "saved 3 bookmarks");
+
+    let mut list_tags_cmd = fixture.command();
+    list_tags_cmd.args(["tags", "list"]);
+    let list_tags_output = list_tags_cmd
+        .output()
+        .expect("list tags command should've run");
+    assert!(list_tags_output.status.success());
+    let list_tags_stdout =
+        String::from_utf8(list_tags_output.stdout).expect("invalid utf-8 list_stdout");
+    assert_eq!(
+        list_tags_stdout.trim(),
+        "
+another-invalid-tag
+invalid-tag
+tag1
+"
+        .trim()
+    );
+}
+
 //------------//
 //  FAILURES  //
 //------------//

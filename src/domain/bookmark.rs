@@ -250,9 +250,10 @@ impl TryFrom<PotentialBookmark> for DraftBookmark {
 impl TryFrom<(PotentialImportedBookmark, bool)> for DraftBookmark {
     type Error = DraftBookmarkError;
 
-    fn try_from(value: (PotentialImportedBookmark, bool)) -> Result<Self, Self::Error> {
-        let potential_bookmark = PotentialBookmark::from(value.0);
-        Self::try_from((potential_bookmark, value.1))
+    fn try_from(tuple: (PotentialImportedBookmark, bool)) -> Result<Self, Self::Error> {
+        let (potential_imported_bookmark, ignore_attribute_errors) = tuple;
+        let potential_bookmark = PotentialBookmark::from(potential_imported_bookmark);
+        Self::try_from((potential_bookmark, ignore_attribute_errors))
     }
 }
 

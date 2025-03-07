@@ -1,5 +1,5 @@
 use crate::common::IMPORT_UPPER_LIMIT;
-use crate::domain::{DraftBookmark, DraftBookmarkErrors};
+use crate::domain::{DraftBookmark, DraftBookmarkErrors, PotentialBookmark};
 use crate::persistence::{DBError, SaveBookmarkOptions, create_or_update_bookmarks};
 use sqlx::{Pool, Sqlite};
 use std::io::BufRead;
@@ -28,9 +28,10 @@ pub struct SaveAllStats {
 pub async fn save_all_bookmarks(
     pool: &Pool<Sqlite>,
     uris: Option<Vec<String>>,
-    tags: Option<Vec<String>>,
+    tags: Vec<String>,
     use_stdin: bool,
     reset_missing: bool,
+    ignore_attribute_errors: bool,
 ) -> Result<Option<SaveAllStats>, SaveBookmarksError> {
     let mut uris_to_save = uris.unwrap_or_default();
 
@@ -48,11 +49,9 @@ pub async fn save_all_bookmarks(
     let mut validation_errors = Vec::new();
     let mut draft_bookmarks = Vec::new();
 
-    let tags_to_save = tags.unwrap_or_default();
-    let tags_ref = tags_to_save.iter().map(|t| t.as_str()).collect::<Vec<_>>();
-
     for (index, uri) in uris_to_save.into_iter().enumerate() {
-        let db_result = DraftBookmark::try_from((uri.as_str(), None, &tags_ref));
+        let potential_bookmark = PotentialBookmark::from((uri, None, &tags));
+        let db_result = DraftBookmark::try_from((potential_bookmark, ignore_attribute_errors));
         match db_result {
             Ok(db) => draft_bookmarks.push(db),
             Err(e) => validation_errors.push((index, e)),

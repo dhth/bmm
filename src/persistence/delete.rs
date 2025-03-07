@@ -93,7 +93,7 @@ mod tests {
     use super::super::test_fixtures::DBPoolFixture;
     use super::super::{create_or_update_bookmark, get_num_bookmarks, get_tags};
     use super::*;
-    use crate::domain::DraftBookmark;
+    use crate::domain::{DraftBookmark, PotentialBookmark};
     use crate::persistence::SaveBookmarkOptions;
     use pretty_assertions::assert_eq;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -113,8 +113,9 @@ mod tests {
 
         for i in 1..=num_bookmarks {
             let uri = format!("https://uri-{}.com", i);
-            let draft_bookmark = DraftBookmark::try_from((uri.as_str(), None, &vec![]))
-                .expect("draft bookmark should've been created");
+            let draft_bookmark =
+                DraftBookmark::try_from(PotentialBookmark::from((uri.as_str(), None, &vec![])))
+                    .expect("draft bookmark should've been created");
             println!("draft_bookmark: {}", draft_bookmark.uri());
             create_or_update_bookmark(
                 &fixture.pool,
@@ -152,7 +153,7 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         let uri = "https://uri.com";
-        let draft_bookmark = DraftBookmark::try_from((uri, None, &vec![]))
+        let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, None, &vec![])))
             .expect("draft bookmark should've been created");
         println!("draft_bookmark: {}", draft_bookmark.uri());
         create_or_update_bookmark(
@@ -190,8 +191,9 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         let uri = "https://uri.com";
-        let draft_bookmark = DraftBookmark::try_from((uri, None, &vec!["tag"]))
-            .expect("draft bookmark should've been created");
+        let draft_bookmark =
+            DraftBookmark::try_from(PotentialBookmark::from((uri, None, &vec!["tag"])))
+                .expect("draft bookmark should've been created");
         println!("draft_bookmark: {}", draft_bookmark.uri());
         create_or_update_bookmark(
             &fixture.pool,
@@ -233,8 +235,9 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         for (uri, title, tags) in uris {
-            let draft_bookmark = DraftBookmark::try_from((uri, title, &tags))
-                .expect("draft bookmark should be initialized");
+            let draft_bookmark =
+                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
+                    .expect("draft bookmark should be initialized");
             create_or_update_bookmark(
                 &fixture.pool,
                 &draft_bookmark,

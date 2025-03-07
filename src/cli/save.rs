@@ -63,14 +63,13 @@ pub enum ParsingTempFileContentError {
 
 pub async fn save_bookmark(
     pool: &Pool<Sqlite>,
-    uri: String,
-    title: Option<String>,
-    tags: Option<Vec<String>>,
+    potential_bookmark: PotentialBookmark,
     use_editor: bool,
     fail_if_uri_saved: bool,
     reset_missing: bool,
+    ignore_attribute_errors: bool,
 ) -> Result<(), SaveBookmarkError> {
-    let maybe_existing_bookmark = get_bookmark_with_exact_uri(pool, &uri)
+    let maybe_existing_bookmark = get_bookmark_with_exact_uri(pool, &potential_bookmark.uri)
         .await
         .map_err(SaveBookmarkError::CouldntCheckIfBookmarkExists)?;
 
@@ -78,7 +77,11 @@ pub async fn save_bookmark(
         return Err(SaveBookmarkError::UriAlreadySaved);
     }
 
-    if maybe_existing_bookmark.is_some() && !use_editor && title.is_none() && tags.is_none() {
+    if maybe_existing_bookmark.is_some()
+        && !use_editor
+        && potential_bookmark.title.is_none()
+        && potential_bookmark.tags.is_empty()
+    {
         println!("nothing to update!");
         return Ok(());
     }
@@ -88,15 +91,22 @@ pub async fn save_bookmark(
             Some(existing_bookmark) => {
                 let (title, tags) = get_bookmark_update_details_from_temp_file(&existing_bookmark)?;
 
-                DraftBookmark::try_from((existing_bookmark.uri.as_str(), title.as_deref(), tags))?
+                let potential_bookmark = PotentialBookmark::from((
+                    potential_bookmark.uri.as_str(),
+                    title.as_deref(),
+                    tags.as_deref(),
+                ));
+
+                DraftBookmark::try_from((potential_bookmark, ignore_attribute_errors))?
             }
             None => {
-                let potential_bookmark = get_new_bookmark_details_from_temp_file(&uri)?;
+                let potential_bookmark =
+                    get_new_bookmark_details_from_temp_file(&potential_bookmark.uri)?;
 
-                DraftBookmark::try_from(&potential_bookmark)?
+                DraftBookmark::try_from((potential_bookmark, ignore_attribute_errors))?
             }
         },
-        false => DraftBookmark::try_from((uri.as_str(), title.as_deref(), tags))?,
+        false => DraftBookmark::try_from((potential_bookmark, ignore_attribute_errors))?,
     };
 
     let reset_missing = if use_editor { true } else { reset_missing };
@@ -211,7 +221,11 @@ fn get_new_bookmark_details_from_temp_file(
         .map_err(CouldntGetDetailsViaEditorError::ReadTempFileContents)?;
 
     let (uri, title, tags) = parse_new_bookmark_temp_file_content(&modified_contents)?;
-    Ok(PotentialBookmark { uri, title, tags })
+    Ok(PotentialBookmark::from((
+        &uri,
+        title.as_ref(),
+        tags.as_ref(),
+    )))
 }
 
 fn get_update_bookmark_tmp_file_contents(bookmark: &SavedBookmark) -> String {

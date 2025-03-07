@@ -34,6 +34,9 @@ pub enum BmmCommand {
         /// Reset previously saved details if not provided
         #[arg(short = 'r', long = "reset-missing-details")]
         reset_missing: bool,
+        /// Ignore errors related to bookmark title and tags; if title is too long, it'll be trimmed, some invalid tags will be corrected
+        #[arg(short = 'i', long = "ignore-attribute-errors")]
+        ignore_attribute_errors: bool,
     },
     /// Delete bookmarks
     Delete {
@@ -92,7 +95,7 @@ pub enum BmmCommand {
             value_name = "STRING,STRING..",
             value_delimiter = ','
         )]
-        tags: Option<Vec<String>>,
+        tags: Vec<String>,
         /// Provide details via a text editor
         #[arg(short = 'e', long = "editor")]
         use_editor: bool,
@@ -102,6 +105,9 @@ pub enum BmmCommand {
         /// Reset previously saved details if not provided
         #[arg(short = 'r', long = "reset-missing-details")]
         reset_missing: bool,
+        /// Ignore errors related to bookmark title and tags; if title is too long, it'll be trimmed, some invalid tags will be corrected
+        #[arg(short = 'i', long = "ignore-attribute-errors")]
+        ignore_attribute_errors: bool,
     },
     /// Save/update multiple bookmarks
     SaveAll {
@@ -115,13 +121,16 @@ pub enum BmmCommand {
             value_name = "STRING,STRING..",
             value_delimiter = ','
         )]
-        tags: Option<Vec<String>>,
+        tags: Vec<String>,
         /// Read input from stdin
         #[arg(short = 's', long = "stdin")]
         use_stdin: bool,
         /// Reset previously saved tags if not provided
         #[arg(short = 'r', long = "reset-missing-details")]
         reset_missing: bool,
+        /// Ignore errors related to bookmark tags; some invalid tags will be corrected
+        #[arg(short = 'i', long = "ignore-attribute-errors")]
+        ignore_attribute_errors: bool,
     },
     /// Search bookmarks by matching over terms
     Search {
@@ -266,14 +275,16 @@ limit             : {}
                 file,
                 dry_run,
                 reset_missing,
+                ignore_attribute_errors,
             } => format!(
                 r#"
 command       : Import bookmarks
 file          : {}
 dry run       : {}
 reset missing : {}
+ignore attribute errors   : {}
 "#,
-                file, dry_run, reset_missing
+                file, dry_run, reset_missing, ignore_attribute_errors,
             ),
             BmmCommand::Save {
                 uri,
@@ -282,6 +293,7 @@ reset missing : {}
                 use_editor,
                 fail_if_uri_already_saved,
                 reset_missing,
+                ignore_attribute_errors,
             } => format!(
                 r#"
 command                   : Save/update bookmark
@@ -291,19 +303,22 @@ tags                      : {}
 use editor                : {}
 fail if URI already saved : {}
 reset missing             : {}
+ignore attribute errors   : {}
 "#,
                 uri,
                 title.as_deref().unwrap_or(NOT_PROVIDED),
-                tags.as_ref().map_or(NOT_PROVIDED.into(), |t| t.join(" ")),
+                tags.join(" "),
                 use_editor,
                 fail_if_uri_already_saved,
                 reset_missing,
+                ignore_attribute_errors,
             ),
             BmmCommand::SaveAll {
                 uris,
                 tags,
                 use_stdin,
                 reset_missing,
+                ignore_attribute_errors,
             } => format!(
                 r#"
 command                   : Save/update bookmarks
@@ -311,11 +326,13 @@ URIs                      : {}
 tags                      : {}
 use stdin                 : {}
 reset missing             : {}
+ignore attribute errors   : {}
 "#,
                 uris.as_ref().map_or(NOT_PROVIDED.into(), |u| u.join(" ")),
-                tags.as_ref().map_or(NOT_PROVIDED.into(), |t| t.join(" ")),
+                tags.join(" "),
                 use_stdin,
                 reset_missing,
+                ignore_attribute_errors,
             ),
             BmmCommand::Search {
                 query_terms,

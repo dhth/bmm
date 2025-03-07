@@ -1,5 +1,7 @@
 use crate::common::{HTML, IMPORT_FILE_FORMATS, IMPORT_UPPER_LIMIT, JSON, TXT};
-use crate::domain::{DraftBookmark, DraftBookmarkError, DraftBookmarkErrors, PotentialBookmark};
+use crate::domain::{
+    DraftBookmark, DraftBookmarkError, DraftBookmarkErrors, PotentialImportedBookmark,
+};
 use crate::persistence::{DBError, SaveBookmarkOptions, create_or_update_bookmarks};
 use select::document::Document;
 use select::predicate::Name;
@@ -47,6 +49,7 @@ pub async fn import_bookmarks(
     path: &str,
     reset_missing: bool,
     dry_run: bool,
+    ignore_attribute_errors: bool,
 ) -> Result<Option<ImportStats>, ImportError> {
     let pathbuf = PathBuf::from(path);
     if !pathbuf.exists() {
@@ -65,7 +68,8 @@ pub async fn import_bookmarks(
             file.read_to_end(&mut html_bytes)
                 .map_err(ImportError::CouldntReadFile)?;
 
-            parse_html_content(html_bytes.as_slice()).map_err(ImportError::CouldntParseHTMLInput)?
+            parse_html_content(html_bytes.as_slice(), ignore_attribute_errors)
+                .map_err(ImportError::CouldntParseHTMLInput)?
         }
         TXT => {
             let file = File::open(path).map_err(ImportError::CouldntOpenFile)?;
@@ -83,7 +87,7 @@ pub async fn import_bookmarks(
             file.read_to_end(&mut bytes)
                 .map_err(ImportError::CouldntReadFile)?;
 
-            parse_json_content(bytes.as_slice())?
+            parse_json_content(bytes.as_slice(), ignore_attribute_errors)?
         }
         ext => {
             return Err(ImportError::FileFormatNotSupported(ext.into()));
@@ -131,7 +135,10 @@ pub async fn import_bookmarks(
     }))
 }
 
-fn parse_html_content(bytes: &[u8]) -> Result<ParseResult, std::io::Error> {
+fn parse_html_content(
+    bytes: &[u8],
+    ignore_attribute_errors: bool,
+) -> Result<ParseResult, std::io::Error> {
     let document = Document::from_read(bytes)?;
     let mut validation_errors = Vec::new();
     let mut draft_bookmarks = Vec::new();
@@ -140,7 +147,9 @@ fn parse_html_content(bytes: &[u8]) -> Result<ParseResult, std::io::Error> {
         let uri = node.attr("href").unwrap_or("");
         let title = node.text();
         let tags = node.attr("tags").unwrap_or("");
-        match DraftBookmark::try_from((uri, Some(title.as_str()), Some(tags))) {
+        let potential_bookmark =
+            PotentialImportedBookmark::from((uri, Some(title.as_str()), Some(tags)));
+        match DraftBookmark::try_from((potential_bookmark, ignore_attribute_errors)) {
             Ok(db) => {
                 draft_bookmarks.push(db);
             }
@@ -163,7 +172,13 @@ fn parse_text_content(lines: &[String]) -> ParseResult {
     let mut validation_errors = Vec::new();
     let mut draft_bookmarks = Vec::new();
     for (index, uri) in lines.iter().enumerate() {
-        let db_result = DraftBookmark::try_from(uri);
+        let potential_bookmark = PotentialImportedBookmark {
+            uri: uri.clone(),
+            title: None,
+            tags: None,
+        };
+
+        let db_result = DraftBookmark::try_from(potential_bookmark);
         match db_result {
             Ok(db) => draft_bookmarks.push(db),
             Err(e) => validation_errors.push((index, e)),
@@ -177,13 +192,16 @@ fn parse_text_content(lines: &[String]) -> ParseResult {
     }
 }
 
-fn parse_json_content(bytes: &[u8]) -> Result<ParseResult, serde_json::Error> {
-    let potential_bookmarks: Vec<PotentialBookmark> = serde_json::from_slice(bytes)?;
+fn parse_json_content(
+    bytes: &[u8],
+    ignore_attribute_errors: bool,
+) -> Result<ParseResult, serde_json::Error> {
+    let potential_bookmarks: Vec<PotentialImportedBookmark> = serde_json::from_slice(bytes)?;
 
     let mut validation_errors = Vec::new();
     let mut draft_bookmarks = Vec::new();
     for (index, pb) in potential_bookmarks.into_iter().enumerate() {
-        let db_result = DraftBookmark::try_from(&pb);
+        let db_result = DraftBookmark::try_from((pb, ignore_attribute_errors));
         match db_result {
             Ok(db) => draft_bookmarks.push(db),
             Err(e) => validation_errors.push((index, e)),
@@ -227,7 +245,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_html_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_html_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
@@ -274,7 +293,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_html_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_html_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
@@ -315,7 +335,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_html_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_html_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
@@ -380,7 +401,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_json_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
@@ -422,7 +444,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_json_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
@@ -463,7 +486,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_json_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
@@ -498,7 +522,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_json_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
@@ -544,7 +569,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_html_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_html_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let validation_errors = result.expect_err("should've returned validation errors");
 
         // THEN
@@ -570,7 +596,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_html_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_html_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let validation_errors = result.expect_err("should've returned validation errors");
 
         // THEN
@@ -611,7 +638,7 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes());
+        let result = parse_json_content(content.as_bytes(), false);
 
         // THEN
         assert!(result.is_err());
@@ -634,7 +661,7 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes());
+        let result = parse_json_content(content.as_bytes(), false);
 
         // THEN
         assert!(result.is_err());
@@ -658,7 +685,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_json_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let validation_errors = result.expect_err("should've returned validation errors");
 
         // THEN
@@ -683,7 +711,8 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes()).expect("parsing should've succeeded");
+        let result =
+            parse_json_content(content.as_bytes(), false).expect("parsing should've succeeded");
         let validation_errors = result.expect_err("should've returned validation errors");
 
         // THEN

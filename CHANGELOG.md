@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow ignoring attribute errors while saving/importing bookmarks (longer
     titles will be trimmed, some invalid tags will be corrected)
 
+### Fixed
+
+- Listing bookmarks by tag(s) shows all tags for each bookmark returned
+
 ## [v0.2.0] - Feb 27, 2025
 
 ### Changed

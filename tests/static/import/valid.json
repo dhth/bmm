@@ -2,7 +2,7 @@
   {
     "uri": "https://crates.io/crates/sqlx",
     "title": "sqlx - crates.io: Rust Package Registry",
-    "tags": "crates,rust"
+    "tags": "rust,crates"
   },
   {
     "uri": "https://github.com/dhth/omm",
@@ -12,7 +12,7 @@
   {
     "uri": "https://github.com/dhth/hours",
     "title": "GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds",
-    "tags": "productivity,tools"
+    "tags": "tools,productivity"
   },
   {
     "uri": "https://github.com/dhth/bmm",

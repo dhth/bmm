@@ -27,7 +27,7 @@ pub enum AppError {
     CouldntListBookmarks(#[from] ListBookmarksError),
     #[error("couldn't search bookmarks: {0}")]
     CouldntSearchBookmarks(#[from] SearchBookmarksError),
-    #[error("couldn't search bookmarks: {0}")]
+    #[error("couldn't save bookmark: {0}")]
     CouldntSaveBookmark(#[from] SaveBookmarkError),
     #[error("couldn't save bookmarks: {0}")]
     CouldntSaveBookmarks(#[from] SaveBookmarksError),

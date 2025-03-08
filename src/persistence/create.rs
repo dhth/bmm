@@ -378,9 +378,7 @@ WHERE
 
 #[cfg(test)]
 mod tests {
-    use super::super::get::{
-        get_bookmark_tags, get_bookmark_with_exact_uri, get_num_bookmarks, get_tags,
-    };
+    use super::super::get::{get_bookmark_with_exact_uri, get_num_bookmarks, get_tags};
     use super::super::test_fixtures::DBPoolFixture;
     use super::*;
     use crate::domain::PotentialBookmark;
@@ -421,19 +419,7 @@ mod tests {
             .expect("should have queried bookmark")
             .expect("queried result should've contained a bookmark");
         assert_eq!(saved_bookmark.title, Some(title.into()));
-
-        let saved_tags = get_bookmark_tags(&fixture.pool, saved_bookmark.id, 10)
-            .await
-            .expect("should have queried tags");
-        assert_eq!(saved_tags.len(), 2, "number of tags is incorrect");
-        assert!(
-            saved_tags.contains(&"rust".to_string()),
-            "tag1 not found in the db"
-        );
-        assert!(
-            saved_tags.contains(&"sqlite".to_string()),
-            "tag2 not found in the db"
-        );
+        assert_eq!(saved_bookmark.tags.as_deref(), Some("rust,sqlite"));
     }
 
     #[tokio::test]
@@ -468,19 +454,7 @@ mod tests {
             .expect("should have queried bookmark")
             .expect("queried result should've contained a bookmark");
         assert!(saved_bookmark.title.is_none());
-
-        let saved_tags = get_bookmark_tags(&fixture.pool, saved_bookmark.id, 10)
-            .await
-            .expect("should have queried tags");
-        assert_eq!(saved_tags.len(), 2, "number of tags is incorrect");
-        assert!(
-            saved_tags.contains(&"rust".to_string()),
-            "tag1 not found in the db"
-        );
-        assert!(
-            saved_tags.contains(&"sqlite".to_string()),
-            "tag2 not found in the db"
-        );
+        assert_eq!(saved_bookmark.tags.as_deref(), Some("rust,sqlite"));
     }
 
     #[tokio::test]
@@ -516,11 +490,7 @@ mod tests {
             .expect("should have queried bookmark")
             .expect("queried result should've contained a bookmark");
         assert_eq!(saved_bookmark.title, Some(title.into()));
-
-        let saved_tags = get_bookmark_tags(&fixture.pool, saved_bookmark.id, 10)
-            .await
-            .expect("should have queried tags");
-        assert_eq!(saved_tags.len(), 0, "number of tags is incorrect");
+        assert_eq!(saved_bookmark.tags, None);
     }
 
     #[tokio::test]
@@ -575,7 +545,6 @@ mod tests {
             .expect("queried result should've contained a bookmark");
 
         assert_eq!(saved_bookmark.title, Some(title_old.into()));
-        assert_eq!(saved_bookmark.updated_at, now);
         assert_eq!(saved_bookmark.tags.as_deref(), Some("rust,sqlite"));
     }
 
@@ -633,7 +602,6 @@ mod tests {
             .expect("queried result should've contained a bookmark");
 
         assert_eq!(saved_bookmark.title, Some(title_old.into()));
-        assert_eq!(saved_bookmark.updated_at, now);
         assert_eq!(
             saved_bookmark.tags.as_deref(),
             Some("database,github,rust,sqlite")
@@ -698,7 +666,6 @@ mod tests {
             .expect("queried result should've contained a bookmark");
 
         assert_eq!(saved_bookmark.title, Some(title_new.into()));
-        assert_eq!(saved_bookmark.updated_at, now);
     }
 
     #[tokio::test]
@@ -800,7 +767,6 @@ mod tests {
             .expect("queried result should've contained a bookmark");
 
         assert!(saved_bookmark.title.is_none());
-        assert_eq!(saved_bookmark.updated_at, now);
     }
 
     #[tokio::test]
@@ -853,17 +819,7 @@ mod tests {
             .await
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
-
-        assert_eq!(saved_bookmark.updated_at, now);
-
-        let saved_tags = get_bookmark_tags(&fixture.pool, saved_bookmark.id, 10)
-            .await
-            .expect("should have queried tags");
-        assert_eq!(
-            saved_tags.len(),
-            0,
-            "total saved tags for bookmark were not 0"
-        );
+        assert!(saved_bookmark.tags.is_none());
     }
 
     #[tokio::test]

@@ -74,42 +74,6 @@ impl TryFrom<&Vec<String>> for SearchTerms {
     }
 }
 
-#[allow(unused)]
-pub async fn get_bookmark_by_id(
-    pool: &Pool<Sqlite>,
-    id: i64,
-) -> Result<Option<SavedBookmark>, DBError> {
-    let maybe_bookmark = sqlx::query_as!(
-        SavedBookmark,
-        r#"
-SELECT
-    id,
-    uri,
-    title,
-    (
-        SELECT
-            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
-        FROM
-            tags t
-            JOIN bookmark_tags bt ON t.id = bt.tag_id
-        WHERE
-            bt.bookmark_id = b.id
-    ) AS "tags: String",
-    updated_at
-FROM
-    bookmarks b
-WHERE
-    id = ?
-"#,
-        id
-    )
-    .fetch_optional(pool)
-    .await
-    .map_err(|e| DBError::CouldntExecuteQuery("fetch bookmark by id".into(), e))?;
-
-    Ok(maybe_bookmark)
-}
-
 pub async fn get_bookmark_with_exact_uri(
     pool: &Pool<Sqlite>,
     uri: &str,
@@ -118,7 +82,6 @@ pub async fn get_bookmark_with_exact_uri(
         SavedBookmark,
         r#"
 SELECT
-    id,
     uri,
     title,
     (
@@ -129,8 +92,7 @@ SELECT
             JOIN bookmark_tags bt ON t.id = bt.tag_id
         WHERE
             bt.bookmark_id = b.id
-    ) AS "tags: String",
-    updated_at
+    ) AS "tags: String"
 FROM
     bookmarks b
 WHERE
@@ -157,23 +119,26 @@ pub async fn get_bookmarks(
             SavedBookmark,
             r#"
 SELECT
-    id,
     uri,
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
+            GROUP_CONCAT(
+                t.name,
+                ','
+                ORDER BY
+                    t.name ASC
+            )
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
         WHERE
             bt.bookmark_id = b.id
-    ) AS "tags: String",
-    updated_at
+    ) AS tags
 FROM
     bookmarks b
 ORDER BY
-    updated_at desc
+    updated_at DESC
 LIMIT
     ?
 "#,
@@ -189,25 +154,28 @@ LIMIT
                 SavedBookmark,
                 r#"
 SELECT
-    id,
     uri,
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
+            GROUP_CONCAT(
+                t.name,
+                ','
+                ORDER BY
+                    t.name ASC
+            )
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
         WHERE
             bt.bookmark_id = b.id
-    ) AS "tags: String",
-    updated_at
+    ) AS tags
 FROM
     bookmarks b
 WHERE
     b.uri LIKE ?
 ORDER BY
-    b.updated_at desc
+    b.updated_at DESC
 LIMIT
     ?
 "#,
@@ -225,25 +193,28 @@ LIMIT
                 SavedBookmark,
                 r#"
 SELECT
-    id,
     uri,
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
+            GROUP_CONCAT(
+                t.name,
+                ','
+                ORDER BY
+                    t.name ASC
+            )
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
         WHERE
             bt.bookmark_id = b.id
-    ) AS "tags: String",
-    updated_at
+    ) AS tags
 FROM
     bookmarks b
 WHERE
     title LIKE ?
 ORDER BY
-    updated_at desc
+    updated_at DESC
 LIMIT
     ?
 "#,
@@ -258,11 +229,22 @@ LIMIT
             let query = format!(
                 r#"
 SELECT
-    b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
-    b.updated_at
+    (
+        SELECT
+            GROUP_CONCAT(
+                t.name,
+                ','
+                ORDER BY
+                    t.name ASC
+            )
+        FROM
+            tags t
+            JOIN bookmark_tags bt ON t.id = bt.tag_id
+        WHERE
+            bt.bookmark_id = b.id
+    ) AS tags
 FROM
     bookmarks b
     JOIN bookmark_tags bt ON b.id = bt.bookmark_id
@@ -276,6 +258,8 @@ GROUP BY
     b.updated_at
 HAVING
     COUNT(DISTINCT t.name) = ?
+ORDER BY
+    updated_at DESC
 LIMIT
     ?
 "#,
@@ -304,26 +288,29 @@ LIMIT
                 SavedBookmark,
                 r#"
 SELECT
-    id,
     uri,
     title,
     (
         SELECT
-            GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC)
+            GROUP_CONCAT(
+                t.name,
+                ','
+                ORDER BY
+                    t.name ASC
+            )
         FROM
             tags t
             JOIN bookmark_tags bt ON t.id = bt.tag_id
         WHERE
             bt.bookmark_id = b.id
-    ) AS "tags: String",
-    updated_at
+    ) AS tags
 FROM
     bookmarks b
 WHERE
     uri LIKE ?
     AND title LIKE ?
 ORDER BY
-    updated_at desc
+    updated_at DESC
 LIMIT
     ?
 "#,
@@ -339,11 +326,22 @@ LIMIT
             let query = format!(
                 r#"
 SELECT
-    b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
-    b.updated_at
+    (
+        SELECT
+            GROUP_CONCAT(
+                t.name,
+                ','
+                ORDER BY
+                    t.name ASC
+            )
+        FROM
+            tags t
+            JOIN bookmark_tags bt ON t.id = bt.tag_id
+        WHERE
+            bt.bookmark_id = b.id
+    ) AS tags
 FROM
     bookmarks b
     JOIN bookmark_tags bt ON b.id = bt.bookmark_id
@@ -358,6 +356,8 @@ GROUP BY
     b.updated_at
 HAVING
     COUNT(DISTINCT t.name) = ?
+ORDER BY
+    b.updated_at DESC
 LIMIT
     ?
 "#,
@@ -382,11 +382,22 @@ LIMIT
             let query = format!(
                 r#"
 SELECT
-    b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
-    b.updated_at
+    (
+        SELECT
+            GROUP_CONCAT(
+                t.name,
+                ','
+                ORDER BY
+                    t.name ASC
+            )
+        FROM
+            tags t
+            JOIN bookmark_tags bt ON t.id = bt.tag_id
+        WHERE
+            bt.bookmark_id = b.id
+    ) AS tags
 FROM
     bookmarks b
     JOIN bookmark_tags bt ON b.id = bt.bookmark_id
@@ -401,6 +412,8 @@ GROUP BY
     b.updated_at
 HAVING
     COUNT(DISTINCT t.name) = ?
+ORDER BY
+    b.updated_at DESC
 LIMIT
     ?
 "#,
@@ -425,11 +438,22 @@ LIMIT
             let query = format!(
                 r#"
 SELECT
-    b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
-    b.updated_at
+    (
+        SELECT
+            GROUP_CONCAT(
+                t.name,
+                ','
+                ORDER BY
+                    t.name ASC
+            )
+        FROM
+            tags t
+            JOIN bookmark_tags bt ON t.id = bt.tag_id
+        WHERE
+            bt.bookmark_id = b.id
+    ) AS tags
 FROM
     bookmarks b
     JOIN bookmark_tags bt ON b.id = bt.bookmark_id
@@ -445,6 +469,8 @@ GROUP BY
     b.updated_at
 HAVING
     COUNT(DISTINCT t.name) = ?
+ORDER BY
+    b.updated_at DESC
 LIMIT
     ?
 "#,
@@ -477,11 +503,14 @@ pub async fn get_bookmarks_by_query(
     let query = format!(
         r#"
 SELECT
-    b.id,
     b.uri,
     b.title,
-    GROUP_CONCAT(t.name, ',' ORDER BY t.name ASC) as tags,
-    b.updated_at
+    GROUP_CONCAT(
+        t.name,
+        ','
+        ORDER BY
+            t.name ASC
+    ) AS tags
 FROM
     bookmarks b
     LEFT JOIN bookmark_tags bt ON b.id = bt.bookmark_id
@@ -523,37 +552,6 @@ LIMIT
     query_builder.fetch_all(pool).await.map_err(|e| {
         DBError::CouldntExecuteQuery("get bookmarks where any attribute matches query".into(), e)
     })
-}
-
-#[allow(unused)]
-pub(super) async fn get_bookmark_tags(
-    pool: &Pool<Sqlite>,
-    bookmark_id: i64,
-    limit: u8,
-) -> Result<Vec<String>, DBError> {
-    let tag_names = sqlx::query!(
-        "
-SELECT
-    t.name
-FROM
-    bookmark_tags bt
-    LEFT JOIN tags t ON bt.tag_id = t.id
-WHERE
-    bt.bookmark_id = ?
-LIMIT
-    ?
-",
-        bookmark_id,
-        limit
-    )
-    .fetch_all(pool)
-    .await
-    .map_err(|e| DBError::CouldntExecuteQuery("fetch tag for bookmark".into(), e))?
-    .into_iter()
-    .map(|r| r.name)
-    .collect();
-
-    Ok(tag_names)
 }
 
 #[allow(unused)]
@@ -645,49 +643,107 @@ mod tests {
     use pretty_assertions::assert_eq;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    #[tokio::test]
-    async fn get_bookmark_from_id_returns_none_if_bookmark_doesnt_exist() {
-        // GIVEN
-        let fixture = DBPoolFixture::new().await;
-
-        // WHEN
-        let maybe_bookmark = get_bookmark_by_id(&fixture.pool, 10).await.unwrap();
-
-        // THEN
-        assert!(maybe_bookmark.is_none())
+    enum TestCase {
+        Sqlx,
+        Serde,
+        Clap,
+        Anyhow,
+        ThisError,
     }
 
-    #[tokio::test]
-    async fn get_bookmark_from_id_returns_bookmark_when_present() {
-        // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        let uri = "https://github.com/launchbadge/sqlx";
-        let title = Some("sqlx's github page");
-        let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, title, None)))
-            .expect("draft bookmark should be initialized");
-
+    async fn save_test_bookmarks(pool: &Pool<Sqlite>) {
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
+        let uris = [
+            (
+                "https://github.com/launchbadge/sqlx",
+                Some("sqlx's github page"),
+                vec!["sql", "sqlite", "github", "crate"],
+                now,
+            ),
+            (
+                "https://github.com/serde-rs/serde",
+                None,
+                vec!["serde", "github"],
+                now - 100,
+            ),
+            (
+                "https://github.com/clap-rs/clap",
+                Some("clap repository on github"),
+                vec!["cli", "clap"],
+                now - 200,
+            ),
+            (
+                "https://crates.io/crates/anyhow",
+                Some("anyhow on crates.io PaGe"),
+                vec!["github", "error-handling", "crate"],
+                now - 300,
+            ),
+            (
+                "https://crates.io/crates/thiserror",
+                None,
+                vec!["error-handling", "github", "crate"],
+                now - 400,
+            ),
+        ];
 
-        create_or_update_bookmark(
-            &fixture.pool,
-            &draft_bookmark,
-            now,
-            SaveBookmarkOptions::default(),
-        )
-        .await
-        .expect("bookmark should be saved in db");
+        for (uri, title, tags, now) in uris {
+            let draft_bookmark =
+                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
+                    .expect("draft bookmark should've been initialized");
 
-        // WHEN
-        let bookmark = get_bookmark_by_id(&fixture.pool, 1)
-            .await
-            .unwrap()
-            .expect("result should've been a bookmark");
+            create_or_update_bookmark(pool, &draft_bookmark, now, SaveBookmarkOptions::default())
+                .await
+                .expect("bookmark should be saved in db");
+        }
+    }
 
-        // THEN
-        assert_eq!(bookmark.uri.as_str(), uri);
-        assert_eq!(bookmark.title.as_deref(), title);
+    fn check_bookmark(bookmark: &SavedBookmark, expected: &TestCase) {
+        match expected {
+            TestCase::Sqlx => {
+                assert_eq!(bookmark.uri.as_str(), "https://github.com/launchbadge/sqlx");
+                assert_eq!(bookmark.title.as_deref(), Some("sqlx's github page"));
+                assert_eq!(bookmark.tags.as_deref(), Some("crate,github,sql,sqlite"));
+            }
+            TestCase::Serde => {
+                assert_eq!(bookmark.uri.as_str(), "https://github.com/serde-rs/serde");
+                assert_eq!(bookmark.title, None);
+                assert_eq!(bookmark.tags.as_deref(), Some("github,serde"));
+            }
+            TestCase::Clap => {
+                assert_eq!(bookmark.uri.as_str(), "https://github.com/clap-rs/clap");
+                assert_eq!(bookmark.title.as_deref(), Some("clap repository on github"));
+                assert_eq!(bookmark.tags.as_deref(), Some("clap,cli"));
+            }
+            TestCase::Anyhow => {
+                assert_eq!(bookmark.uri.as_str(), "https://crates.io/crates/anyhow");
+                assert_eq!(bookmark.title.as_deref(), Some("anyhow on crates.io PaGe"));
+                assert_eq!(
+                    bookmark.tags.as_deref(),
+                    Some("crate,error-handling,github")
+                );
+            }
+            TestCase::ThisError => {
+                assert_eq!(bookmark.uri.as_str(), "https://crates.io/crates/thiserror");
+                assert_eq!(bookmark.title, None);
+                assert_eq!(
+                    bookmark.tags.as_deref(),
+                    Some("crate,error-handling,github")
+                );
+            }
+        }
+    }
+
+    fn check_bookmarks(bookmarks: &[SavedBookmark], expected: Vec<TestCase>) {
+        assert_eq!(
+            bookmarks.len(),
+            expected.len(),
+            "number of bookmarks and expected values are not equal"
+        );
+        for (bookmark, expected) in bookmarks.iter().zip(expected.iter()) {
+            check_bookmark(bookmark, expected);
+        }
     }
 
     #[tokio::test]
@@ -710,7 +766,8 @@ mod tests {
         let fixture = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title = Some("sqlx's github page");
-        let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, title, None)))
+        let tags = vec!["sql", "crate", "github"];
+        let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
             .expect("draft bookmark should be initialized");
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
@@ -733,36 +790,14 @@ mod tests {
         // THEN
         assert_eq!(bookmark.uri.as_str(), uri);
         assert_eq!(bookmark.title.as_deref(), title);
+        assert_eq!(bookmark.tags.as_deref(), Some("crate,github,sql"));
     }
 
     #[tokio::test]
     async fn getting_bookmarks_by_uri_only_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
-        let uris = [
-            "https://github.com/launchbadge/sqlx",
-            "https://github.com/serde-rs/serde",
-            "https://github.com/clap-rs/clap",
-            "https://crates.io/crates/anyhow",
-            "https://crates.io/crates/thiserror",
-        ];
-
-        for uri in uris {
-            let draft_bookmark =
-                DraftBookmark::try_from(PotentialBookmark::from((uri, None, None)))
-                    .expect("draft bookmark should be initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(
-                &fixture.pool,
-                &draft_bookmark,
-                now,
-                SaveBookmarkOptions::default(),
-            )
-            .await
-            .expect("bookmark should be saved in db");
-        }
+        save_test_bookmarks(&fixture.pool).await;
 
         // WHEN
         let uri_query = Some("github.com".into());
@@ -778,40 +813,7 @@ mod tests {
     async fn getting_bookmarks_by_title_only_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
-        let uris = [
-            (
-                "https://github.com/launchbadge/sqlx",
-                Some("sqlx's github page"),
-            ),
-            ("https://github.com/serde-rs/serde", None),
-            (
-                "https://github.com/clap-rs/clap",
-                Some("clap repository on github"),
-            ),
-            (
-                "https://crates.io/crates/anyhow",
-                Some("anyhow on crates.io PaGe"),
-            ),
-            ("https://crates.io/crates/thiserror", None),
-        ];
-
-        for (uri, title) in uris {
-            let draft_bookmark =
-                DraftBookmark::try_from(PotentialBookmark::from((uri, title, None)))
-                    .expect("draft bookmark should be initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
-
-            create_or_update_bookmark(
-                &fixture.pool,
-                &draft_bookmark,
-                now,
-                SaveBookmarkOptions::default(),
-            )
-            .await
-            .expect("bookmark should be saved in db");
-        }
+        save_test_bookmarks(&fixture.pool).await;
 
         // WHEN
         let title_query = Some("page".into());
@@ -820,116 +822,30 @@ mod tests {
             .unwrap();
 
         // THEN
-        assert_eq!(bookmarks.len(), 2);
+        check_bookmarks(&bookmarks, vec![TestCase::Sqlx, TestCase::Anyhow]);
     }
 
     #[tokio::test]
     async fn getting_bookmarks_by_a_tag_only_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
-        let uris = [
-            (
-                "https://github.com/launchbadge/sqlx",
-                None,
-                vec!["sql", "sqlite", "github"],
-            ),
-            (
-                "https://github.com/serde-rs/serde",
-                None,
-                vec!["serde", "github"],
-            ),
-            ("https://github.com/clap-rs/clap", None, vec!["cli", "clap"]),
-            (
-                "https://crates.io/crates/anyhow",
-                None,
-                vec!["github", "error-handling"],
-            ),
-            (
-                "https://crates.io/crates/thiserror",
-                None,
-                vec!["error-handling"],
-            ),
-        ];
-
-        for (uri, title, tags) in uris {
-            let draft_bookmark =
-                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
-                    .expect("draft bookmark should've been initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
-
-            create_or_update_bookmark(
-                &fixture.pool,
-                &draft_bookmark,
-                now,
-                SaveBookmarkOptions::default(),
-            )
-            .await
-            .expect("bookmark should be saved in db");
-        }
+        save_test_bookmarks(&fixture.pool).await;
 
         // WHEN
-        let tags_query = vec!["error-handling".into()];
+        let tags_query = vec!["serde".into()];
         let bookmarks = get_bookmarks(&fixture.pool, None, None, tags_query, 10)
             .await
             .unwrap();
 
         // THEN
-        println!("bookmarks: {:?}", bookmarks);
-        assert_eq!(bookmarks.len(), 2);
-
-        let bookmark_uris: Vec<&str> = bookmarks.iter().map(|b| b.uri.as_str()).collect();
-
-        assert!(bookmark_uris.contains(&"https://crates.io/crates/anyhow"));
-        assert!(bookmark_uris.contains(&"https://crates.io/crates/thiserror"));
+        check_bookmarks(&bookmarks, vec![TestCase::Serde]);
     }
 
     #[tokio::test]
     async fn getting_bookmarks_by_multiple_tags_only_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
-        let uris = [
-            (
-                "https://github.com/launchbadge/sqlx",
-                None,
-                vec!["sql", "sqlite", "github", "crate"],
-            ),
-            (
-                "https://github.com/serde-rs/serde",
-                None,
-                vec!["serde", "github"],
-            ),
-            ("https://github.com/clap-rs/clap", None, vec!["cli", "clap"]),
-            (
-                "https://crates.io/crates/anyhow",
-                None,
-                vec!["github", "error-handling", "crate"],
-            ),
-            (
-                "https://crates.io/crates/thiserror",
-                None,
-                vec!["error-handling", "github", "crate"],
-            ),
-        ];
-
-        for (uri, title, tags) in uris {
-            let draft_bookmark =
-                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
-                    .expect("draft bookmark should've been initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
-
-            create_or_update_bookmark(
-                &fixture.pool,
-                &draft_bookmark,
-                now,
-                SaveBookmarkOptions::default(),
-            )
-            .await
-            .expect("bookmark should be saved in db");
-        }
+        save_test_bookmarks(&fixture.pool).await;
 
         // WHEN
         let tags_query = vec!["github".into(), "crate".into()];
@@ -938,59 +854,17 @@ mod tests {
             .unwrap();
 
         // THEN
-        assert_eq!(bookmarks.len(), 3);
-
-        let bookmark_uris: Vec<&str> = bookmarks.iter().map(|b| b.uri.as_str()).collect();
-
-        assert!(bookmark_uris.contains(&"https://github.com/launchbadge/sqlx"));
-        assert!(bookmark_uris.contains(&"https://crates.io/crates/anyhow"));
-        assert!(bookmark_uris.contains(&"https://crates.io/crates/thiserror"));
+        check_bookmarks(
+            &bookmarks,
+            vec![TestCase::Sqlx, TestCase::Anyhow, TestCase::ThisError],
+        );
     }
 
     #[tokio::test]
-    async fn getting_bookmarks_by_both_uri_and_title_works() {
+    async fn getting_bookmarks_by_both_uri_and_tags_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
-        let uris = [
-            (
-                "https://github.com/launchbadge/sqlx",
-                None,
-                vec!["sql", "sqlite", "crate"],
-            ),
-            (
-                "https://github.com/serde-rs/serde",
-                None,
-                vec!["serde", "github"],
-            ),
-            ("https://github.com/clap-rs/clap", None, vec!["cli", "clap"]),
-            (
-                "https://crates.io/crates/anyhow",
-                None,
-                vec!["error-handling", "crate"],
-            ),
-            (
-                "https://crates.io/crates/thiserror",
-                None,
-                vec!["error-handling", "crate", "github"],
-            ),
-        ];
-
-        for (uri, title, tags) in uris {
-            let draft_bookmark =
-                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
-                    .expect("draft bookmark should be initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(
-                &fixture.pool,
-                &draft_bookmark,
-                now,
-                SaveBookmarkOptions::default(),
-            )
-            .await
-            .expect("bookmark should be saved in db");
-        }
+        save_test_bookmarks(&fixture.pool).await;
 
         // WHEN
         let uri_query = Some("crate".into());
@@ -1000,108 +874,31 @@ mod tests {
             .unwrap();
 
         // THEN
-        assert_eq!(bookmarks.len(), 1);
-
-        assert_eq!(
-            bookmarks[0].uri.as_str(),
-            "https://crates.io/crates/thiserror"
-        );
+        check_bookmarks(&bookmarks, vec![TestCase::Anyhow, TestCase::ThisError]);
     }
 
     #[tokio::test]
-    async fn getting_bookmarks_by_both_uri_and_tags_works() {
+    async fn getting_bookmarks_by_both_uri_and_title_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
-        let uris = [
-            (
-                "https://github.com/launchbadge/sqlx",
-                Some("sqlx crate on github"),
-            ),
-            ("https://github.com/serde-rs/serde", None),
-            ("https://crates.io/crates/clap", Some("clap on github")),
-            ("https://crates.io/crates/thiserror", None),
-        ];
-
-        for (uri, title) in uris {
-            let draft_bookmark =
-                DraftBookmark::try_from(PotentialBookmark::from((uri, title, None)))
-                    .expect("draft bookmark should be initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(
-                &fixture.pool,
-                &draft_bookmark,
-                now,
-                SaveBookmarkOptions::default(),
-            )
-            .await
-            .expect("bookmark should be saved in db");
-        }
+        save_test_bookmarks(&fixture.pool).await;
 
         // WHEN
         let uri_query = Some("github".into());
-        let title_query = Some("crate".into());
+        let title_query = Some("repository".into());
         let bookmarks = get_bookmarks(&fixture.pool, uri_query, title_query, Vec::new(), 10)
             .await
             .unwrap();
 
         // THEN
-        assert_eq!(
-            bookmarks.len(),
-            1,
-            "number of bookmarks in the db is not correct"
-        );
+        check_bookmarks(&bookmarks, vec![TestCase::Clap]);
     }
 
     #[tokio::test]
-    async fn getting_bookmarks_by_both_title_and_title_works() {
+    async fn getting_bookmarks_by_both_title_and_tags_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
-        let uris = [
-            (
-                "https://github.com/launchbadge/sqlx",
-                Some("sqlx's repository"),
-                vec!["sql", "sqlite", "crate"],
-            ),
-            (
-                "https://github.com/serde-rs/serde",
-                None,
-                vec!["serde", "github"],
-            ),
-            (
-                "https://github.com/clap-rs/clap",
-                Some("clap's github page"),
-                vec!["cli", "clap"],
-            ),
-            (
-                "https://crates.io/crates/anyhow",
-                None,
-                vec!["error-handling", "crate"],
-            ),
-            (
-                "https://crates.io/crates/thiserror",
-                Some("thiserror crate"),
-                vec!["error-handling", "crate", "github"],
-            ),
-        ];
-
-        for (uri, title, tags) in uris {
-            let draft_bookmark =
-                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
-                    .expect("draft bookmark should be initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(
-                &fixture.pool,
-                &draft_bookmark,
-                now,
-                SaveBookmarkOptions::default(),
-            )
-            .await
-            .expect("bookmark should be saved in db");
-        }
+        save_test_bookmarks(&fixture.pool).await;
 
         // WHEN
         let title_query = Some("crate".into());
@@ -1111,108 +908,32 @@ mod tests {
             .unwrap();
 
         // THEN
-        assert_eq!(bookmarks.len(), 1);
-
-        assert_eq!(
-            bookmarks[0].uri.as_str(),
-            "https://crates.io/crates/thiserror"
-        );
+        check_bookmarks(&bookmarks, vec![TestCase::Anyhow]);
     }
 
     #[tokio::test]
     async fn getting_bookmarks_by_all_three_attributes_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
-        let uris = [
-            (
-                "https://github.com/launchbadge/sqlx",
-                Some("sqlx's repository"),
-                vec!["sql", "sqlite", "crate"],
-            ),
-            (
-                "https://github.com/serde-rs/serde",
-                None,
-                vec!["serde", "github"],
-            ),
-            (
-                "https://github.com/clap-rs/clap",
-                Some("clap's repository on github"),
-                vec!["cli", "clap"],
-            ),
-            (
-                "https://crates.io/crates/anyhow",
-                None,
-                vec!["error-handling", "crate"],
-            ),
-            (
-                "https://crates.io/crates/thiserror",
-                Some("thiserror crate"),
-                vec!["error-handling", "crate", "github"],
-            ),
-        ];
-
-        for (uri, title, tags) in uris {
-            let draft_bookmark =
-                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
-                    .expect("draft bookmark should be initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(
-                &fixture.pool,
-                &draft_bookmark,
-                now,
-                SaveBookmarkOptions::default(),
-            )
-            .await
-            .expect("bookmark should be saved in db");
-        }
+        save_test_bookmarks(&fixture.pool).await;
 
         // WHEN
         let uri_query = Some("github".into());
-        let title_query = Some("repo".into());
-        let tags_query = vec!["crate".into()];
+        let title_query = Some("page".into());
+        let tags_query = vec!["sql".into(), "crate".into()];
         let bookmarks = get_bookmarks(&fixture.pool, uri_query, title_query, tags_query, 10)
             .await
             .unwrap();
 
         // THEN
-        assert_eq!(bookmarks.len(), 1);
-
-        assert_eq!(
-            bookmarks[0].uri.as_str(),
-            "https://github.com/launchbadge/sqlx"
-        );
+        check_bookmarks(&bookmarks, vec![TestCase::Sqlx]);
     }
 
     #[tokio::test]
     async fn limiting_search_results_works() {
         // GIVEN
         let fixture = DBPoolFixture::new().await;
-        let uris = [
-            "https://github.com/launchbadge/sqlx",
-            "https://github.com/serde-rs/serde",
-            "https://github.com/clap-rs/clap",
-            "https://crates.io/crates/anyhow",
-            "https://crates.io/crates/thiserror",
-        ];
-
-        for uri in uris {
-            let draft_bookmark =
-                DraftBookmark::try_from(PotentialBookmark::from((uri, None, None)))
-                    .expect("draft bookmark should be initialized");
-            let start = SystemTime::now();
-            let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
-            let now = since_the_epoch.as_secs() as i64;
-            create_or_update_bookmark(
-                &fixture.pool,
-                &draft_bookmark,
-                now,
-                SaveBookmarkOptions::default(),
-            )
-            .await
-            .expect("bookmark should be saved in db");
-        }
+        save_test_bookmarks(&fixture.pool).await;
 
         // WHEN
         let uri_query = Some("github.com".into());
@@ -1391,6 +1112,22 @@ mod tests {
                 &query
             );
         }
+    }
+
+    #[tokio::test]
+    async fn searching_bookmarks_by_query_returns_all_data_for_each_bookmark() {
+        // GIVEN
+        let fixture = DBPoolFixture::new().await;
+        save_test_bookmarks(&fixture.pool).await;
+
+        // WHEN
+        let search_terms = SearchTerms::try_from("crate page").unwrap();
+        let bookmarks = get_bookmarks_by_query(&fixture.pool, &search_terms, 10)
+            .await
+            .unwrap();
+
+        // THEN
+        check_bookmarks(&bookmarks, vec![TestCase::Sqlx, TestCase::Anyhow]);
     }
 
     #[tokio::test]

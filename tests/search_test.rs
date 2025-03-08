@@ -89,6 +89,50 @@ fn searching_bookmarks_by_tags_works() {
 }
 
 #[test]
+fn search_shows_all_details_for_each_bookmark() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut import_cmd = fixture.command();
+    import_cmd.args(["import", "tests/static/import/valid.json"]);
+    let import_output = import_cmd.output().expect("import command should've run");
+    assert!(import_output.status.success());
+
+    let mut cmd = fixture.command();
+    cmd.args(["search", "tools", "-f", "json"]);
+
+    // WHEN
+    let output = cmd.output().expect("command should've run");
+
+    // THEN
+    output.print_stderr_if_failed(None);
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
+    assert_eq!(
+        stdout.trim(),
+        r#"
+[
+  {
+    "uri": "https://github.com/dhth/omm",
+    "title": "GitHub - dhth/omm: on-my-mind: a keyboard-driven task manager for the command line",
+    "tags": "productivity,tools"
+  },
+  {
+    "uri": "https://github.com/dhth/hours",
+    "title": "GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds",
+    "tags": "productivity,tools"
+  },
+  {
+    "uri": "https://github.com/dhth/bmm",
+    "title": "GitHub - dhth/bmm: get to your bookmarks in a flash",
+    "tags": "tools"
+  }
+]
+"#
+        .trim()
+    );
+}
+
+#[test]
 fn searching_bookmarks_by_multiple_terms_works() {
     // GIVEN
     let fixture = Fixture::new();

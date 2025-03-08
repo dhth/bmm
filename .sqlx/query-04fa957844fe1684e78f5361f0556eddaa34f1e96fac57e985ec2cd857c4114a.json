@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "\nSELECT\n    uri,\n    title,\n    (\n        SELECT\n            GROUP_CONCAT(\n                t.name,\n                ','\n                ORDER BY\n                    t.name ASC\n            )\n        FROM\n            tags t\n            JOIN bookmark_tags bt ON t.id = bt.tag_id\n        WHERE\n            bt.bookmark_id = b.id\n    ) AS tags\nFROM\n    bookmarks b\nWHERE\n    title LIKE ?\nORDER BY\n    updated_at DESC\nLIMIT\n    ?\n",
+  "describe": {
+    "columns": [
+      {
+        "name": "uri",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "title",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "tags",
+        "ordinal": 2,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "04fa957844fe1684e78f5361f0556eddaa34f1e96fac57e985ec2cd857c4114a"
+}

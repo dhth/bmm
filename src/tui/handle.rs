@@ -2,6 +2,7 @@ use super::commands::Command;
 use super::message::{Message, UrlsOpenedResult};
 use crate::common::DEFAULT_LIMIT;
 use crate::persistence::{get_bookmarks, get_bookmarks_by_query, get_tags_with_stats};
+use arboard::Clipboard;
 use sqlx::{Pool, Sqlite};
 use tokio::sync::mpsc::Sender;
 
@@ -46,5 +47,20 @@ pub(super) async fn handle_command(
                 let _ = event_tx.try_send(message);
             });
         }
+        Command::CopyContentToClipboard(content) => {
+            tokio::task::spawn_blocking(move || {
+                let result = copy_content_to_clipboard(&content);
+                let _ = event_tx.try_send(Message::ContentCopiedToClipboard(result));
+            });
+        }
     }
+}
+
+fn copy_content_to_clipboard(content: &str) -> Result<(), String> {
+    let mut clipboard =
+        Clipboard::new().map_err(|e| format!("couldn't get system clipboard: {}", e))?;
+
+    clipboard.set_text(content).map_err(|e| e.to_string())?;
+
+    Ok(())
 }

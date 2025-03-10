@@ -6,7 +6,6 @@ use std::io::Error as IOError;
 
 pub enum Message {
     TerminalResize(u16, u16),
-    ClearUserMsg,
     GoToNextListItem,
     GoToPreviousListItem,
     GoToFirstListItem,
@@ -17,9 +16,12 @@ pub enum Message {
     TagsFetched(Result<Vec<TagStats>, DBError>),
     ShowView(ActivePane),
     SearchInputGotEvent(Event),
+    CopyURIToClipboard,
+    CopyURIsToClipboard,
     SubmitSearch,
     ShowBookmarksForTag,
     BookmarksForTagFetched(Result<Vec<SavedBookmark>, DBError>),
+    ContentCopiedToClipboard(Result<(), String>),
     GoBackOrQuit,
 }
 

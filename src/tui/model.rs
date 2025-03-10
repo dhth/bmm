@@ -9,7 +9,6 @@ use ratatui::{
     widgets::{ListItem, ListState},
 };
 use sqlx::{Pool, Sqlite};
-use std::time::Instant;
 use tui_input::Input;
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -38,17 +37,36 @@ pub(crate) struct TagItems {
 }
 
 #[derive(Debug)]
-pub(crate) enum UserMessage {
-    Info(String, Instant),
-    Error(String, Instant),
+pub enum MessageKind {
+    Info,
+    Error,
+}
+
+pub struct UserMessage {
+    pub frames_left: u8,
+    pub value: String,
+    pub kind: MessageKind,
 }
 
 impl UserMessage {
     pub(super) fn info(message: &str) -> Self {
-        UserMessage::Info(message.to_string(), Instant::now())
+        UserMessage {
+            frames_left: 1,
+            value: message.to_string(),
+            kind: MessageKind::Info,
+        }
     }
     pub(super) fn error(message: &str) -> Self {
-        UserMessage::Error(message.to_string(), Instant::now())
+        UserMessage {
+            frames_left: 4,
+            value: message.to_string(),
+            kind: MessageKind::Error,
+        }
+    }
+
+    pub(super) fn with_frames_left(mut self, frames_left: u8) -> Self {
+        self.frames_left = frames_left;
+        self
     }
 }
 
@@ -282,5 +300,17 @@ impl Model {
         };
 
         Some(Command::OpenInBrowser(url))
+    }
+
+    pub(super) fn get_uri_under_cursor(&self) -> Option<String> {
+        if let ActivePane::List = self.active_pane {
+            self.bookmark_items
+                .state
+                .selected()
+                .and_then(|i| self.bookmark_items.items.get(i))
+                .map(|bi| bi.bookmark.uri.clone())
+        } else {
+            None
+        }
     }
 }

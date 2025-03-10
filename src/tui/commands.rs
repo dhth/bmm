@@ -6,4 +6,5 @@ pub(super) enum Command {
     SearchBookmarks(SearchTerms),
     FetchTags,
     FetchBookmarksForTag(String),
+    CopyContentToClipboard(String),
 }

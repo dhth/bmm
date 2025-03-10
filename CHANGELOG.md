@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Allow ignoring attribute errors while saving/importing bookmarks (longer
     titles will be trimmed, some invalid tags will be corrected)
+- Allow copying URI(s) to the system clipboard via the TUI
 
 ### Fixed
 

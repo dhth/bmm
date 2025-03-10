@@ -1,6 +1,3 @@
-Views
----
-
 bmm has three views.
 
 - Bookmarks List View
@@ -20,7 +17,9 @@ Bookmarks List View
     s                    show search input
     Enter                submit search query
     t                    show Tags List View (when search is not active)
-    o                    open uri in browser
+    o                    open URI in browser
+    y                    copy URI under cursor to system clipboard
+    Y                    copy all URIs to system clipboard
 
 Tags List View
     Enter                show bookmarks that are tagged with the one under cursor

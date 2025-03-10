@@ -10,7 +10,7 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind};
 use sqlx::{Pool, Sqlite};
 use std::io::Error as IOError;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::error::TrySendError;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -57,8 +57,6 @@ impl AppTuiError {
     }
 }
 
-const CLEAR_USER_MESSAGE_LOOP_INTERVAL_SECS: u64 = 10;
-
 struct AppTui {
     pub(super) terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     pub(super) event_tx: Sender<Message>,
@@ -100,8 +98,6 @@ impl AppTui {
     }
 
     pub async fn run(&mut self) -> Result<(), AppTuiError> {
-        let message_clear_duration = Duration::from_secs(CLEAR_USER_MESSAGE_LOOP_INTERVAL_SECS);
-        let mut message_clear_interval = tokio::time::interval(message_clear_duration);
         let _ = self.terminal.clear();
 
         for cmd in &self.initial_commands {
@@ -116,12 +112,6 @@ impl AppTui {
 
         loop {
             tokio::select! {
-                _instant = message_clear_interval.tick() => {
-                    if self.model.user_message.is_some() {
-                        _ = self.event_tx.try_send(Message::ClearUserMsg);
-                    }
-                }
-
                 Some(message) = self.event_rx.recv() => {
                     let cmds = self.update(message).await;
 
@@ -179,6 +169,8 @@ impl AppTui {
                             KeyCode::Char('t') | KeyCode::Tab => {
                                 Some(Message::ShowView(ActivePane::TagsList))
                             }
+                            KeyCode::Char('y') => Some(Message::CopyURIToClipboard),
+                            KeyCode::Char('Y') => Some(Message::CopyURIsToClipboard),
                             KeyCode::Esc | KeyCode::Char('q') => Some(Message::GoBackOrQuit),
                             KeyCode::Char('?') => Some(Message::ShowView(ActivePane::Help)),
                             _ => None,
@@ -288,26 +280,6 @@ impl AppTui {
                     Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
                 }
             }
-            Message::ClearUserMsg => {
-                let now = Instant::now();
-                let reset_message = match &self.model.user_message {
-                    Some(message) => match message {
-                        UserMessage::Info(_, instant) => {
-                            now.saturating_duration_since(instant.to_owned()).as_secs()
-                                > CLEAR_USER_MESSAGE_LOOP_INTERVAL_SECS
-                        }
-                        UserMessage::Error(_, instant) => {
-                            now.saturating_duration_since(instant.to_owned()).as_secs()
-                                > CLEAR_USER_MESSAGE_LOOP_INTERVAL_SECS
-                        }
-                    },
-                    None => false,
-                };
-
-                if reset_message {
-                    self.model.user_message = None;
-                }
-            }
             Message::TerminalResize(width, height) => {
                 self.model.terminal_dimensions = TerminalDimensions { width, height };
                 self.model.terminal_too_small =
@@ -327,6 +299,48 @@ impl AppTui {
                 }
                 Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
             },
+            Message::CopyURIToClipboard => {
+                if let Some(uri) = self.model.get_uri_under_cursor() {
+                    cmds.push(Command::CopyContentToClipboard(uri));
+                }
+            }
+            Message::CopyURIsToClipboard => {
+                let uris = self
+                    .model
+                    .bookmark_items
+                    .items
+                    .iter()
+                    .map(|bi| bi.bookmark.uri.as_str())
+                    .collect::<Vec<_>>();
+
+                if !uris.is_empty() {
+                    cmds.push(Command::CopyContentToClipboard(uris.join("\n")));
+                }
+            }
+            Message::ContentCopiedToClipboard(result) => {
+                if let Err(error) = result {
+                    self.model.user_message = Some(UserMessage::error(&format!(
+                        "couldn't copy uri to clipboard: {}",
+                        error
+                    )));
+                } else {
+                    self.model.user_message =
+                        Some(UserMessage::info("copied!").with_frames_left(1));
+                }
+            }
+        }
+
+        if let Some(message) = &mut self.model.user_message {
+            let clear = if message.frames_left == 0 {
+                true
+            } else {
+                message.frames_left -= 1;
+                false
+            };
+
+            if clear {
+                self.model.user_message = None;
+            }
         }
 
         cmds

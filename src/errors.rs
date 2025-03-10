@@ -10,6 +10,8 @@ use crate::utils::DataDirError;
 use std::io::Error as IOError;
 
 const IMPORT_EXAMPLE_JSON: &str = include_str!("static/import-example.json");
+const IGNORE_ERRORS_MESSAGE: &str = "Possible workaround: running with -i/--ignore-attribute-errors will fix some attribute errors.
+If a title is too long, it'll will be trimmed, and some invalid tags might be transformed to fit bmm's requirements.";
 
 #[derive(thiserror::Error, Debug)]
 pub enum AppError {
@@ -157,9 +159,7 @@ Read more here: https://specifications.freedesktop.org/basedir-spec/latest/#basi
             },
             AppError::CouldntImportBookmarks(e) => match e {
                 ImportError::FileHasNoExtension => Some(format!("bmm can only import from files with one of these extensions: {:?}", IMPORT_FILE_FORMATS)),
-                ImportError::ValidationError { .. } => Some(
-                    "Suggestion: running with --ignore-attribute-errors/-i will ignore some attribute errors".into(),
-                ),
+                ImportError::ValidationError { .. } => Some(IGNORE_ERRORS_MESSAGE.into()),
                 ImportError::CouldntDeserializeJSONInput(_) =>
                     Some(format!("Suggestion: ensure the file is valid JSON and looks like the following:
 
@@ -167,8 +167,7 @@ Read more here: https://specifications.freedesktop.org/basedir-spec/latest/#basi
                 _ => None,
             },
             AppError::CouldntSaveBookmark(e) => match e {
-                SaveBookmarkError::BookmarkDetailsAreInvalid(_) =>
-                    Some("Suggestion: running with --ignore-attribute-errors/-i will ignore some attribute errors".into()),
+                SaveBookmarkError::BookmarkDetailsAreInvalid(_) => Some(IGNORE_ERRORS_MESSAGE.into()),
                 SaveBookmarkError::CouldntUseTextEditor(se) => match se {
                     CouldntGetDetailsViaEditorError::NoEditorConfigured =>
                         Some(format!("Suggestion: set the environment variables {} or {} to use this feature", ENV_VAR_BMM_EDITOR, ENV_VAR_EDITOR)),
@@ -179,8 +178,7 @@ Read more here: https://specifications.freedesktop.org/basedir-spec/latest/#basi
                 SaveBookmarkError::UnexpectedError(_) => None,
                 _ => None,
             },
-            AppError::CouldntSaveBookmarks(SaveBookmarksError::ValidationError { .. }) =>
-                    Some( "Suggestion: running with --ignore-attribute-errors/-i will ignore some attribute errors".into()),
+            AppError::CouldntSaveBookmarks(SaveBookmarksError::ValidationError { .. }) => Some(IGNORE_ERRORS_MESSAGE.into()),
             _ => None,
         }
     }

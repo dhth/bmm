@@ -116,7 +116,11 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
             )
             .await?;
             if let Some(stats) = result {
-                println!("saved {} bookmarks", stats.num_bookmarks);
+                if stats.num_bookmarks == 1 {
+                    println!("saved 1 bookmark");
+                } else {
+                    println!("saved {} bookmarks", stats.num_bookmarks);
+                }
             }
         }
 

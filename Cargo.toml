@@ -23,7 +23,7 @@ exclude = [
 
 [dependencies]
 arboard = "3.4.1"
-clap = { version = "4.5.30", features = ["derive"] }
+clap = { version = "4.5.31", features = ["derive"] }
 csv = "1.3.1"
 dirs = "6.0.0"
 lazy_static = "1.5.0"
@@ -32,12 +32,12 @@ open = "5.3.2"
 ratatui = "0.29.0"
 regex = "1.11.1"
 select = "0.6.0"
-serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.138"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 sqlx = { version = "0.8.3", features = ["runtime-tokio", "sqlite"] }
-tempfile = "3.17.1"
-thiserror = "2.0.11"
-tokio = { version = "1.43.0", features = ["full"] }
+tempfile = "3.18.0"
+thiserror = "2.0.12"
+tokio = { version = "1.44.0", features = ["full"] }
 tui-input = "0.11.1"
 url = { version= "2.5.4", features = ["serde"] }
 which = "7.0.2"

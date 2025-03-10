@@ -99,7 +99,13 @@ input formats:
 ```bash
 bmm import firefox.html
 bmm import bookmarks.json --dry-run
+
+# overwrite already saved attributes (title and tags) while importing
 bmm import bookmarks.txt --reset-missing-details
+
+# ignore errors related to bookmark title and tags
+# if title is too long, it'll be trimmed, some invalid tags will be corrected
+bmm import bookmarks.txt --ignore-attribute-errors
 ```
 
 <details><summary> An example HTML file</summary>
@@ -277,6 +283,36 @@ Feature requests for the TUI can be submitted via `bmm`'s [issues
 page](https://github.com/dhth/bmm/issues).
 
 ![tui](https://github.com/user-attachments/assets/6ca63039-8872-4520-93da-1576cc0cf8ec)
+
+### TUI Reference Manual
+
+```text
+bmm has three views.
+
+- Bookmarks List View
+- Tags List View
+- Help View
+
+Keymaps
+---
+
+General
+    ?                    show/hide help view
+    Esc / q              go back/reset input/exit
+    j / Down             go down in a list
+    k / Up               go up in a list
+
+Bookmarks List View
+    s                    show search input
+    Enter                submit search query
+    t                    show Tags List View (when search is not active)
+    o                    open URI in browser
+    y                    copy URI under cursor to system clipboard
+    Y                    copy all URIs to system clipboard
+
+Tags List View
+    Enter                show bookmarks that are tagged with the one under cursor
+```
 
 🔐 Verifying release artifacts
 ---

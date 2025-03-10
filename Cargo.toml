@@ -1,6 +1,6 @@
 [package]
 name = "bmm"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 authors = ["Dhruv Thakur"]
 repository = "https://github.com/dhth/bmm"

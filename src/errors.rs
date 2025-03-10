@@ -3,10 +3,13 @@ use crate::cli::{
     ListBookmarksError, ListTagsError, ParsingTempFileContentError, RenameTagError,
     SaveBookmarkError, SaveBookmarksError, SearchBookmarksError, ShowBookmarkError,
 };
+use crate::common::{ENV_VAR_BMM_EDITOR, ENV_VAR_EDITOR, IMPORT_FILE_FORMATS};
 use crate::persistence::DBError;
 use crate::tui::AppTuiError;
 use crate::utils::DataDirError;
 use std::io::Error as IOError;
+
+const IMPORT_EXAMPLE_JSON: &str = include_str!("static/import-example.json");
 
 #[derive(thiserror::Error, Debug)]
 pub enum AppError {
@@ -139,6 +142,46 @@ impl AppError {
                 SearchBookmarksError::CouldntDisplayResults(_) => Some(3001),
                 SearchBookmarksError::CouldntRunTui(e) => Some(e.code()),
             },
+        }
+    }
+
+    pub fn follow_up(&self) -> Option<String> {
+        match self {
+            AppError::CouldntGetDataDirectory(e) => match e {
+                #[cfg(target_family = "unix")]
+                DataDirError::XDGDataHomeNotAbsolute =>
+                    Some("Reason: XDG specifications dictate that XDG_DATA_HOME must be an absolute path.
+Read more here: https://specifications.freedesktop.org/basedir-spec/latest/#basics".into()),
+                DataDirError::CouldntGetDataDir =>
+                    Some("Short term workaround: manually specify the path for bmm's database using --db-path".into())
+            },
+            AppError::CouldntImportBookmarks(e) => match e {
+                ImportError::FileHasNoExtension => Some(format!("bmm can only import from files with one of these extensions: {:?}", IMPORT_FILE_FORMATS)),
+                ImportError::ValidationError { .. } => Some(
+                    "Suggestion: running with --ignore-attribute-errors/-i will ignore some attribute errors".into(),
+                ),
+                ImportError::CouldntDeserializeJSONInput(_) =>
+                    Some(format!("Suggestion: ensure the file is valid JSON and looks like the following:
+
+{}", IMPORT_EXAMPLE_JSON )),
+                _ => None,
+            },
+            AppError::CouldntSaveBookmark(e) => match e {
+                SaveBookmarkError::BookmarkDetailsAreInvalid(_) =>
+                    Some("Suggestion: running with --ignore-attribute-errors/-i will ignore some attribute errors".into()),
+                SaveBookmarkError::CouldntUseTextEditor(se) => match se {
+                    CouldntGetDetailsViaEditorError::NoEditorConfigured =>
+                        Some(format!("Suggestion: set the environment variables {} or {} to use this feature", ENV_VAR_BMM_EDITOR, ENV_VAR_EDITOR)),
+                    CouldntGetDetailsViaEditorError::ParsingEditorText(ParsingTempFileContentError::InputMissing) =>
+                        Some("Suggestion: enter the details between the >>>/<<< markers without changing the structure of the document".into()),
+                        _ => None,
+                },
+                SaveBookmarkError::UnexpectedError(_) => None,
+                _ => None,
+            },
+            AppError::CouldntSaveBookmarks(SaveBookmarksError::ValidationError { .. }) =>
+                    Some( "Suggestion: running with --ignore-attribute-errors/-i will ignore some attribute errors".into()),
+            _ => None,
         }
     }
 }

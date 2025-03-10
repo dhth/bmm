@@ -1,3 +1,4 @@
+use crate::common::{ENV_VAR_BMM_EDITOR, ENV_VAR_EDITOR};
 use crate::domain::{DraftBookmark, DraftBookmarkError, PotentialBookmark, SavedBookmark};
 use crate::persistence::{
     DBError, SaveBookmarkOptions, create_or_update_bookmark, get_bookmark_with_exact_uri,
@@ -11,9 +12,6 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tempfile::tempdir;
 use which::{Error as WhichError, which};
-
-const ENV_VAR_BMM_EDITOR: &str = "BMM_EDITOR";
-const ENV_VAR_EDITOR: &str = "EDITOR";
 
 #[derive(thiserror::Error, Debug)]
 pub enum SaveBookmarkError {

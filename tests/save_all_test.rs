@@ -1,6 +1,7 @@
 mod common;
-use common::{ExpectedFailure, ExpectedSuccess, Fixture};
-use pretty_assertions::assert_eq;
+use common::Fixture;
+use predicates::boolean::PredicateBooleanExt;
+use predicates::str::contains;
 
 const URI_ONE: &str = "https://github.com/dhth/bmm";
 const URI_TWO: &str = "https://github.com/dhth/omm";
@@ -18,31 +19,21 @@ fn saving_multiple_bookmarks_works() {
     cmd.args(["save-all", URI_ONE, URI_TWO, URI_THREE]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "saved 3 bookmarks");
-
+    cmd.assert().success().stdout(contains("saved 3 bookmarks"));
     let mut list_cmd = fixture.command();
     list_cmd.arg("list");
-    let list_output = list_cmd.output().expect("list command should've run");
-    assert!(list_output.status.success());
-    let list_stdout = String::from_utf8(list_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(
-        list_stdout.trim(),
+    list_cmd.assert().success().stdout(contains(
         format!(
             "
 {}
 {}
 {}
 ",
-            URI_ONE, URI_TWO, URI_THREE
+            URI_ONE, URI_TWO, URI_THREE,
         )
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 #[test]
@@ -60,30 +51,18 @@ fn saving_multiple_bookmarks_with_tags_works() {
     ]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "saved 3 bookmarks");
+    cmd.assert().success().stdout(contains("saved 3 bookmarks"));
 
     let mut list_tags_cmd = fixture.command();
     list_tags_cmd.args(["tags", "list"]);
-    let list_tags_output = list_tags_cmd
-        .output()
-        .expect("list tags command should've run");
-    assert!(list_tags_output.status.success());
-    let list_tags_stdout =
-        String::from_utf8(list_tags_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(
-        list_tags_stdout.trim(),
+    list_tags_cmd.assert().success().stdout(contains(
         "
 productivity
 tools
 "
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 #[test]
@@ -106,19 +85,12 @@ fn saving_multiple_bookmarks_extends_previously_saved_tags() {
     cmd.args(["save-all", URI_ONE, URI_TWO, URI_THREE, "-t", "tools"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert().success();
 
     let mut show_cmd = fixture.command();
     show_cmd.args(["show", URI_ONE]);
-    let show_output = show_cmd.output().expect("list command should've run");
-    assert!(show_output.status.success());
-    let show_stdout = String::from_utf8(show_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(
-        show_stdout.trim(),
+    show_cmd.assert().success().stdout(contains(
         format!(
             r#"
 Bookmark details
@@ -130,8 +102,8 @@ Tags : productivity,tools
 "#,
             URI_ONE
         )
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 #[test]
@@ -154,19 +126,12 @@ fn saving_multiple_bookmarks_resets_previously_saved_tags_if_requested() {
     cmd.args(["save-all", URI_ONE, URI_TWO, URI_THREE, "-t", "tools", "-r"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert().success();
 
     let mut show_cmd = fixture.command();
     show_cmd.args(["show", URI_ONE]);
-    let show_output = show_cmd.output().expect("list command should've run");
-    assert!(show_output.status.success());
-    let show_stdout = String::from_utf8(show_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(
-        show_stdout.trim(),
+    show_cmd.assert().success().stdout(contains(
         format!(
             r#"
 Bookmark details
@@ -178,8 +143,8 @@ Tags : tools
 "#,
             URI_ONE
         )
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 #[test]
@@ -198,31 +163,19 @@ fn force_saving_multiple_bookmarks_with_invalid_tags_works() {
     ]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "saved 3 bookmarks");
+    cmd.assert().success().stdout(contains("saved 3 bookmarks"));
 
     let mut list_tags_cmd = fixture.command();
     list_tags_cmd.args(["tags", "list"]);
-    let list_tags_output = list_tags_cmd
-        .output()
-        .expect("list tags command should've run");
-    assert!(list_tags_output.status.success());
-    let list_tags_stdout =
-        String::from_utf8(list_tags_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(
-        list_tags_stdout.trim(),
+    list_tags_cmd.assert().success().stdout(contains(
         "
 another-invalid-tag
 invalid-tag
 tag1
 "
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 //------------//
@@ -242,12 +195,9 @@ fn saving_multiple_bookmarks_fails_for_incorrect_uris() {
     ]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stdout_if_succeeded(None);
-    assert!(!output.status.success());
-    let stderr = String::from_utf8(output.stderr).expect("invalid utf-8 stderr");
-    assert!(stderr.contains("- entry 1: couldn't parse provided uri value"));
-    assert!(stderr.contains("- entry 3: couldn't parse provided uri value"));
+    cmd.assert().failure().stderr(
+        contains("- entry 1: couldn't parse provided uri value")
+            .and(contains("- entry 3: couldn't parse provided uri value")),
+    );
 }

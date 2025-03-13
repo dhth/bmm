@@ -1,6 +1,6 @@
 mod common;
-use common::{ExpectedFailure, ExpectedSuccess, Fixture};
-use pretty_assertions::assert_eq;
+use common::Fixture;
+use predicates::str::contains;
 
 //-------------//
 //  SUCCESSES  //
@@ -14,13 +14,10 @@ fn importing_from_an_html_file_works() {
     cmd.args(["import", "tests/static/import/valid.html"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "imported 4 bookmarks");
+    cmd.assert()
+        .success()
+        .stdout(contains("imported 4 bookmarks"));
 }
 
 #[test]
@@ -31,13 +28,10 @@ fn importing_from_an_invalid_html_file_doesnt_fail() {
     cmd.args(["import", "tests/static/import/invalid.html"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "imported 0 bookmarks");
+    cmd.assert()
+        .success()
+        .stdout(contains("imported 0 bookmarks"));
 }
 
 #[test]
@@ -52,13 +46,10 @@ fn force_importing_from_an_html_file_with_some_invalid_attrs_works() {
     ]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "imported 4 bookmarks");
+    cmd.assert()
+        .success()
+        .stdout(contains("imported 4 bookmarks"));
 }
 
 #[test]
@@ -69,13 +60,10 @@ fn importing_from_a_valid_json_file_works() {
     cmd.args(["import", "tests/static/import/valid.json"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "imported 4 bookmarks");
+    cmd.assert()
+        .success()
+        .stdout(contains("imported 4 bookmarks"));
 }
 
 #[test]
@@ -86,13 +74,10 @@ fn importing_from_a_json_file_with_only_mandatory_details_works() {
     cmd.args(["import", "tests/static/import/only-mandatory.json"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "imported 2 bookmarks");
+    cmd.assert()
+        .success()
+        .stdout(contains("imported 2 bookmarks"));
 }
 
 #[test]
@@ -107,13 +92,10 @@ fn force_importing_from_a_json_file_with_some_invalid_attrs_works() {
     ]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "imported 4 bookmarks");
+    cmd.assert()
+        .success()
+        .stdout(contains("imported 4 bookmarks"));
 }
 
 #[test]
@@ -124,13 +106,10 @@ fn importing_from_a_valid_txt_file_works() {
     cmd.args(["import", "tests/static/import/valid.txt"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), "imported 4 bookmarks");
+    cmd.assert()
+        .success()
+        .stdout(contains("imported 4 bookmarks"));
 }
 
 #[test]
@@ -153,19 +132,12 @@ fn importing_extends_previously_saved_info() {
     cmd.args(["import", "tests/static/import/valid.json"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert().success();
 
     let mut show_cmd = fixture.command();
     show_cmd.args(["show", uri]);
-    let show_output = show_cmd.output().expect("list command should've run");
-    assert!(show_output.status.success());
-    let show_stdout = String::from_utf8(show_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(
-        show_stdout.trim(),
+    show_cmd.assert().success().stdout(contains(
         format!(
             r#"
 Bookmark details
@@ -177,8 +149,8 @@ Tags : productivity,tools
 "#,
             uri
         )
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 #[test]
@@ -201,19 +173,14 @@ fn importing_resets_previously_saved_info_if_requested() {
     cmd.args(["import", "tests/static/import/only-mandatory.json", "-r"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert()
+        .success()
+        .stdout(contains("imported 2 bookmarks"));
 
     let mut show_cmd = fixture.command();
     show_cmd.args(["show", uri]);
-    let show_output = show_cmd.output().expect("list command should've run");
-    assert!(show_output.status.success());
-    let show_stdout = String::from_utf8(show_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(
-        show_stdout.trim(),
+    show_cmd.assert().success().stdout(contains(
         format!(
             r#"
 Bookmark details
@@ -225,8 +192,8 @@ Tags : <NOT SET>
 "#,
             uri
         )
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 //------------//
@@ -241,13 +208,10 @@ fn importing_from_an_invalid_json_file_fails() {
     cmd.args(["import", "tests/static/import/invalid.json"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stdout_if_succeeded(None);
-    assert!(!output.status.success());
-    let stderr = String::from_utf8(output.stderr).expect("invalid utf-8 stderr");
-    assert!(stderr.contains("couldn't parse JSON input"));
+    cmd.assert()
+        .failure()
+        .stderr(contains("couldn't parse JSON input"));
 }
 
 #[test]
@@ -258,13 +222,10 @@ fn importing_from_a_json_file_fails_if_missing_uri() {
     cmd.args(["import", "tests/static/import/missing-uri.json"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stdout_if_succeeded(None);
-    assert!(!output.status.success());
-    let stderr = String::from_utf8(output.stderr).expect("invalid utf-8 stderr");
-    assert!(stderr.contains("missing field `uri`"));
+    cmd.assert()
+        .failure()
+        .stderr(contains("missing field `uri`"));
 }
 
 #[test]
@@ -275,11 +236,8 @@ fn importing_from_a_json_file_fails_if_missing_uri_even_when_forced() {
     cmd.args(["import", "tests/static/import/missing-uri.json", "-i"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stdout_if_succeeded(None);
-    assert!(!output.status.success());
-    let stderr = String::from_utf8(output.stderr).expect("invalid utf-8 stderr");
-    assert!(stderr.contains("missing field `uri`"));
+    cmd.assert()
+        .failure()
+        .stderr(contains("missing field `uri`"));
 }

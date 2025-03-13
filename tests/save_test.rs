@@ -1,6 +1,7 @@
 mod common;
-use common::{ExpectedFailure, ExpectedSuccess, Fixture};
-use pretty_assertions::assert_eq;
+use common::Fixture;
+use predicates::prelude::PredicateBooleanExt;
+use predicates::str::contains;
 
 const URI_ONE: &str = "https://github.com/dhth/bmm";
 
@@ -16,18 +17,12 @@ fn saving_a_new_bookmark_works() {
     cmd.args(["save", URI_ONE]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert().success();
 
     let mut list_cmd = fixture.command();
     list_cmd.arg("list");
-    let list_output = list_cmd.output().expect("list command should've run");
-    assert!(list_output.status.success());
-    let list_stdout = String::from_utf8(list_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(list_stdout.trim(), URI_ONE);
+    list_cmd.assert().success().stdout(contains(URI_ONE));
 }
 
 #[test]
@@ -45,18 +40,12 @@ fn saving_a_new_bookmark_with_title_and_tags_works() {
     ]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert().success();
 
     let mut list_cmd = fixture.command();
     list_cmd.args(["list", "-f", "delimited"]);
-    let list_output = list_cmd.output().expect("list command should've run");
-    assert!(list_output.status.success());
-    let list_stdout = String::from_utf8(list_output.stdout).expect("invalid utf-8 list_stdout");
-    assert!(list_stdout.contains(&format!(
+    list_cmd.assert().success().stdout(contains(format!(
         r#"{},bmm's github page,"productivity,tools"#,
         URI_ONE
     )));
@@ -76,22 +65,16 @@ fn extending_tags_for_a_saved_bookmark_works() {
         "tools,productivity",
     ]);
     create_cmd.output().expect("command should've run");
-
-    // WHEN
     let mut cmd = fixture.command();
     cmd.args(["save", URI_ONE, "--tags", "bookmarks"]);
-    let output = cmd.output().expect("command should've run");
 
+    // WHEN
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert().success();
 
     let mut list_cmd = fixture.command();
     list_cmd.args(["list", "-f", "delimited"]);
-    let list_output = list_cmd.output().expect("list command should've run");
-    assert!(list_output.status.success());
-    let list_stdout = String::from_utf8(list_output.stdout).expect("invalid utf-8 list_stdout");
-    assert!(list_stdout.contains(&format!(
+    list_cmd.assert().success().stdout(contains(format!(
         r#"{},bmm's github page,"bookmarks,productivity,tools"#,
         URI_ONE
     )));
@@ -111,22 +94,19 @@ fn resetting_properties_on_bookmark_update_works() {
         "tools,productivity",
     ]);
     create_cmd.output().expect("command should've run");
-
-    // WHEN
     let mut cmd = fixture.command();
     cmd.args(["save", URI_ONE, "--tags", "cli,bookmarks", "-r"]);
-    let output = cmd.output().expect("command should've run");
 
+    // WHEN
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert().success();
 
     let mut list_cmd = fixture.command();
     list_cmd.args(["list", "-f", "delimited"]);
-    let list_output = list_cmd.output().expect("list command should've run");
-    assert!(list_output.status.success());
-    let list_stdout = String::from_utf8(list_output.stdout).expect("invalid utf-8 list_stdout");
-    assert!(list_stdout.contains(&format!(r#"{},,"bookmarks,cli"#, URI_ONE)));
+    list_cmd
+        .assert()
+        .success()
+        .stdout(contains(format!(r#"{},,"bookmarks,cli"#, URI_ONE)));
 }
 
 #[test]
@@ -138,19 +118,12 @@ fn force_saving_a_new_bookmark_with_a_long_title_works() {
     cmd.args(["save", URI_ONE, "--title", title.as_str(), "-i"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert().success();
 
     let mut show_cmd = fixture.command();
     show_cmd.args(["show", URI_ONE]);
-    let show_output = show_cmd.output().expect("show command should've run");
-    assert!(show_output.status.success());
-    let list_stdout = String::from_utf8(show_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(
-        list_stdout.trim(),
+    show_cmd.assert().success().stdout(contains(
         format!(
             r#"
 Bookmark details
@@ -163,8 +136,8 @@ Tags : <NOT SET>
             "a".repeat(500),
             URI_ONE
         )
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 #[test]
@@ -181,19 +154,12 @@ fn force_saving_a_new_bookmark_with_invalid_tags_works() {
     ]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
+    cmd.assert().success();
 
     let mut show_cmd = fixture.command();
     show_cmd.args(["show", URI_ONE]);
-    let show_output = show_cmd.output().expect("show command should've run");
-    assert!(show_output.status.success());
-    let list_stdout = String::from_utf8(show_output.stdout).expect("invalid utf-8 list_stdout");
-    assert_eq!(
-        list_stdout.trim(),
+    show_cmd.assert().success().stdout(contains(
         format!(
             r#"
 Bookmark details
@@ -205,8 +171,8 @@ Tags : another-invalid-tag,invalid-tag,tag1
         "#,
             URI_ONE
         )
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 //------------//
@@ -222,13 +188,8 @@ fn saving_a_new_bookmark_with_a_long_title_fails() {
     cmd.args(["save", URI_ONE, "--title", title.as_str()]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stdout_if_succeeded(None);
-    assert!(!output.status.success());
-    let stderr = String::from_utf8(output.stderr).expect("invalid utf-8 list_stderr");
-    assert!(stderr.contains("title is too long"))
+    cmd.assert().failure().stderr(contains("title is too long"));
 }
 
 #[test]
@@ -244,11 +205,42 @@ fn saving_a_new_bookmark_with_an_invalid_tag_fails() {
     ]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stdout_if_succeeded(None);
-    assert!(!output.status.success());
-    let stderr = String::from_utf8(output.stderr).expect("invalid utf-8 list_stderr");
-    assert!(stderr.contains(r#"tags ["invalid tag", " another    invalid\t\ttag "] are invalid"#))
+    cmd.assert().failure().stderr(contains(
+        r#"tags ["invalid tag", " another    invalid\t\ttag "] are invalid"#,
+    ));
+}
+
+#[test]
+fn saving_a_new_bookmark_with_no_text_editor_configured_fails() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut cmd = fixture.command();
+    cmd.args(["save", URI_ONE, "-e"]);
+    cmd.env("BMM_EDITOR", "");
+    cmd.env("EDITOR", "");
+
+    // WHEN
+    // THEN
+    cmd.assert()
+        .failure()
+        .stderr(contains("no editor configured").and(contains(
+            "Suggestion: set the environment variables BMM_EDITOR or EDITOR to use this feature",
+        )));
+}
+
+#[test]
+fn saving_a_new_bookmark_with_incorrect_text_editor_configured_fails() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut cmd = fixture.command();
+    cmd.args(["save", URI_ONE, "-e"]);
+    cmd.env("BMM_EDITOR", "non-existent-4d56150d");
+    cmd.env("EDITOR", "non-existent-4d56150d");
+
+    // WHEN
+    // THEN
+    cmd.assert()
+        .failure()
+        .stderr(contains("cannot find binary path"));
 }

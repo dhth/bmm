@@ -10,7 +10,7 @@ use crate::utils::DataDirError;
 use std::io::Error as IOError;
 
 const IMPORT_EXAMPLE_JSON: &str = include_str!("static/import-example.json");
-const IGNORE_ERRORS_MESSAGE: &str = "Possible workaround: running with -i/--ignore-attribute-errors will fix some attribute errors.
+const IGNORE_ERRORS_MESSAGE: &str = "Possible workaround: running with -i/--ignore-attribute-errors might fix some attribute errors.
 If a title is too long, it'll will be trimmed, and some invalid tags might be transformed to fit bmm's requirements.";
 
 #[derive(thiserror::Error, Debug)]
@@ -152,7 +152,7 @@ impl AppError {
             AppError::CouldntGetDataDirectory(e) => match e {
                 #[cfg(target_family = "unix")]
                 DataDirError::XDGDataHomeNotAbsolute =>
-                    Some("Reason: XDG specifications dictate that XDG_DATA_HOME must be an absolute path.
+                    Some("Context: XDG specifications dictate that XDG_DATA_HOME must be an absolute path.
 Read more here: https://specifications.freedesktop.org/basedir-spec/latest/#basics".into()),
                 DataDirError::CouldntGetDataDir =>
                     Some("Possible workaround: manually specify the path for bmm's database using --db-path".into())

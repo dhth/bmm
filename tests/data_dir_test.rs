@@ -59,5 +59,5 @@ fn fails_if_xdg_data_home_is_non_absolute() {
     // THEN
     cmd.assert()
         .failure()
-        .stderr(contains("XDG_DATA_HOME is not an absolute path").and(contains("Reason: ")));
+        .stderr(contains("XDG_DATA_HOME is not an absolute path").and(contains("Context: ")));
 }

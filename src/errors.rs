@@ -91,7 +91,7 @@ impl AppError {
                     CouldntGetDetailsViaEditorError::CreateTempFile(_) => Some(550),
                     CouldntGetDetailsViaEditorError::OpenTempFile(_) => Some(551),
                     CouldntGetDetailsViaEditorError::WriteToTempFile(_) => Some(552),
-                    CouldntGetDetailsViaEditorError::CouldntFindEditorExe(_) => None,
+                    CouldntGetDetailsViaEditorError::CouldntFindEditorExe(..) => None,
                     CouldntGetDetailsViaEditorError::OpenTextEditor(_, _) => Some(553),
                     CouldntGetDetailsViaEditorError::ReadTempFileContents(_) => Some(554),
                     CouldntGetDetailsViaEditorError::InvalidEditorEnvVar(_) => None,
@@ -155,7 +155,7 @@ impl AppError {
                     Some("Reason: XDG specifications dictate that XDG_DATA_HOME must be an absolute path.
 Read more here: https://specifications.freedesktop.org/basedir-spec/latest/#basics".into()),
                 DataDirError::CouldntGetDataDir =>
-                    Some("Short term workaround: manually specify the path for bmm's database using --db-path".into())
+                    Some("Possible workaround: manually specify the path for bmm's database using --db-path".into())
             },
             AppError::CouldntImportBookmarks(e) => match e {
                 ImportError::FileHasNoExtension => Some(format!("bmm can only import from files with one of these extensions: {:?}", IMPORT_FILE_FORMATS)),
@@ -169,6 +169,9 @@ Read more here: https://specifications.freedesktop.org/basedir-spec/latest/#basi
             AppError::CouldntSaveBookmark(e) => match e {
                 SaveBookmarkError::BookmarkDetailsAreInvalid(_) => Some(IGNORE_ERRORS_MESSAGE.into()),
                 SaveBookmarkError::CouldntUseTextEditor(se) => match se {
+                    CouldntGetDetailsViaEditorError::CouldntFindEditorExe(editor_exe, env_var_used, _) =>
+                        Some(format!(r#"Context: bmm used the environment variable {} to determine your text editor.
+Check if "{}" actually points to your text editor's executable."#, env_var_used, editor_exe)),
                     CouldntGetDetailsViaEditorError::NoEditorConfigured =>
                         Some(format!("Suggestion: set the environment variables {} or {} to use this feature", ENV_VAR_BMM_EDITOR, ENV_VAR_EDITOR)),
                     CouldntGetDetailsViaEditorError::ParsingEditorText(ParsingTempFileContentError::InputMissing) =>

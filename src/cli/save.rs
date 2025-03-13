@@ -37,15 +37,15 @@ pub enum CouldntGetDetailsViaEditorError {
     OpenTempFile(std::io::Error),
     #[error("couldn't write contents to temporary file (to be opened in text editor): {0}")]
     WriteToTempFile(std::io::Error),
-    #[error("couldn't find editor executable: {0}")]
-    CouldntFindEditorExe(#[from] WhichError),
+    #[error("couldn't find editor executable \"{0}\": {2}")]
+    CouldntFindEditorExe(String, String, WhichError),
     #[error("couldn't open text editor ({0}): {1}")]
     OpenTextEditor(PathBuf, std::io::Error),
     #[error("couldn't read contents of temporary file: {0}")]
     ReadTempFileContents(std::io::Error),
     #[error("editor environment variable \"{0}\" is invalid")]
     InvalidEditorEnvVar(String),
-    #[error("no EDITOR configured")]
+    #[error("no editor configured")]
     NoEditorConfigured,
     #[error("couldn't parse text entered via editor: {0}")]
     ParsingEditorText(#[from] ParsingTempFileContentError),
@@ -143,23 +143,11 @@ fn get_bookmark_update_details_from_temp_file(
     file.write_all(file_contents.as_bytes())
         .map_err(CouldntGetDetailsViaEditorError::WriteToTempFile)?;
 
-    let text_editor = std::env::var(ENV_VAR_BMM_EDITOR).or_else(|err| match err {
-        std::env::VarError::NotPresent => std::env::var(ENV_VAR_EDITOR).map_err(|err| match err {
-            std::env::VarError::NotPresent => CouldntGetDetailsViaEditorError::NoEditorConfigured,
-            _ => CouldntGetDetailsViaEditorError::InvalidEditorEnvVar(ENV_VAR_EDITOR.into()),
-        }),
-        _ => Err(CouldntGetDetailsViaEditorError::InvalidEditorEnvVar(
-            ENV_VAR_BMM_EDITOR.into(),
-        )),
+    let (editor_exe, env_var_used) = get_text_editor_exe()?;
+
+    let editor_exe_path = which(&editor_exe).map_err(|e| {
+        CouldntGetDetailsViaEditorError::CouldntFindEditorExe(editor_exe, env_var_used, e)
     })?;
-
-    if text_editor.trim().is_empty() {
-        return Err(CouldntGetDetailsViaEditorError::InvalidEditorEnvVar(
-            text_editor.to_string(),
-        ));
-    }
-
-    let editor_exe_path = which(&text_editor)?;
 
     let _ = Command::new(&editor_exe_path)
         .arg(&tmp_file_path)
@@ -194,17 +182,11 @@ fn get_new_bookmark_details_from_temp_file(
     file.write_all(file_contents.as_bytes())
         .map_err(CouldntGetDetailsViaEditorError::WriteToTempFile)?;
 
-    let text_editor = std::env::var(ENV_VAR_BMM_EDITOR).or_else(|err| match err {
-        std::env::VarError::NotPresent => std::env::var(ENV_VAR_EDITOR).map_err(|err| match err {
-            std::env::VarError::NotPresent => CouldntGetDetailsViaEditorError::NoEditorConfigured,
-            _ => CouldntGetDetailsViaEditorError::InvalidEditorEnvVar(ENV_VAR_EDITOR.into()),
-        }),
-        _ => Err(CouldntGetDetailsViaEditorError::InvalidEditorEnvVar(
-            ENV_VAR_BMM_EDITOR.into(),
-        )),
-    })?;
+    let (editor_exe, env_var_used) = get_text_editor_exe()?;
 
-    let editor_exe_path = which(&text_editor)?;
+    let editor_exe_path = which(&editor_exe).map_err(|e| {
+        CouldntGetDetailsViaEditorError::CouldntFindEditorExe(editor_exe, env_var_used, e)
+    })?;
 
     let _ = Command::new(&editor_exe_path)
         .arg(&tmp_file_path)
@@ -224,6 +206,30 @@ fn get_new_bookmark_details_from_temp_file(
         title.as_ref(),
         tags.as_ref(),
     )))
+}
+
+fn get_text_editor_exe() -> Result<(String, String), CouldntGetDetailsViaEditorError> {
+    fn get_env_var(key: &str) -> Result<String, CouldntGetDetailsViaEditorError> {
+        match std::env::var(key) {
+            Ok(v) => Ok(v),
+            Err(std::env::VarError::NotPresent) => Ok("".to_string()),
+            Err(std::env::VarError::NotUnicode(_)) => Err(
+                CouldntGetDetailsViaEditorError::InvalidEditorEnvVar(key.into()),
+            ),
+        }
+    }
+
+    let bmm_text_editor = get_env_var(ENV_VAR_BMM_EDITOR)?;
+    if !bmm_text_editor.trim().is_empty() {
+        return Ok((bmm_text_editor, ENV_VAR_BMM_EDITOR.to_string()));
+    }
+
+    let text_editor = get_env_var(ENV_VAR_EDITOR)?;
+    if !text_editor.trim().is_empty() {
+        return Ok((text_editor, ENV_VAR_EDITOR.to_string()));
+    }
+
+    Err(CouldntGetDetailsViaEditorError::NoEditorConfigured)
 }
 
 fn get_update_bookmark_tmp_file_contents(bookmark: &SavedBookmark) -> String {

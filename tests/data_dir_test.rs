@@ -1,6 +1,7 @@
 mod common;
 use assert_cmd::Command;
-use common::{ExpectedFailure, ExpectedSuccess};
+use predicates::prelude::PredicateBooleanExt;
+use predicates::str::contains;
 use tempfile::tempdir;
 
 const URI: &str = "https://crates.io/crates/sqlx";
@@ -35,14 +36,9 @@ fn xdg_data_home_is_respected() {
     cmd.env("XDG_DATA_HOME", &data_dir_path);
 
     // WHEN
-    let output_for_without_env_var = cmd_without_env_var.output().expect("command should've run");
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output_for_without_env_var.print_stdout_if_succeeded(Some("without env var"));
-    output.print_stderr_if_failed(Some("with env var"));
-    assert!(!output_for_without_env_var.status.success());
-    assert!(output.status.success());
+    cmd_without_env_var.assert().failure();
+    cmd.assert().success();
 }
 
 //------------//
@@ -53,17 +49,15 @@ fn xdg_data_home_is_respected() {
 #[test]
 fn fails_if_xdg_data_home_is_non_absolute() {
     // GIVEN
+
     let mut cmd =
         Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("command should've been created");
     cmd.args(["show", URI]);
     cmd.env("XDG_DATA_HOME", "../not/an/absolute/path");
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stdout_if_succeeded(None);
-    assert!(!output.status.success());
-    let stderr = String::from_utf8(output.stderr).expect("invalid utf-8 stderr");
-    assert!(stderr.contains("XDG_DATA_HOME is not an absolute path"));
+    cmd.assert()
+        .failure()
+        .stderr(contains("XDG_DATA_HOME is not an absolute path").and(contains("Reason: ")));
 }

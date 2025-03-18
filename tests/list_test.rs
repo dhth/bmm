@@ -1,6 +1,6 @@
 mod common;
-use common::{ExpectedSuccess, Fixture};
-use pretty_assertions::assert_eq;
+use common::Fixture;
+use predicates::str::contains;
 
 const URI_ONE: &str = "https://github.com/dhth/bmm";
 const URI_TWO: &str = "https://github.com/dhth/omm";
@@ -23,14 +23,8 @@ fn listing_bookmarks_works() {
     cmd.arg("list");
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(
-        stdout.trim(),
+    cmd.assert().success().stdout(contains(
         format!(
             "
 {}
@@ -39,8 +33,8 @@ fn listing_bookmarks_works() {
 ",
             URI_ONE, URI_TWO, URI_THREE
         )
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 #[test]
@@ -64,13 +58,8 @@ fn listing_bookmarks_with_queries_works() {
     ]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(stdout.trim(), URI_TWO);
+    cmd.assert().success().stdout(contains(URI_TWO));
 }
 
 #[test]
@@ -86,14 +75,8 @@ fn listing_bookmarks_fetches_all_data_for_each_bookmark() {
     cmd.args(["list", "--tags", "tools", "-f", "json"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    assert_eq!(
-        stdout.trim(),
+    cmd.assert().success().stdout(contains(
         r#"
 [
   {
@@ -113,8 +96,8 @@ fn listing_bookmarks_fetches_all_data_for_each_bookmark() {
   }
 ]
 "#
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 #[test]
@@ -130,15 +113,8 @@ fn listing_bookmarks_in_json_format_works() {
     cmd.args(["list", "--uri", "hours", "-f", "json"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    println!("stdout: {:?}", stdout);
-    assert_eq!(
-        stdout.trim(),
+    cmd.assert().success().stdout(contains(
         r#"
 [
   {
@@ -148,8 +124,8 @@ fn listing_bookmarks_in_json_format_works() {
   }
 ]
 "#
-        .trim()
-    );
+        .trim(),
+    ));
 }
 
 #[test]
@@ -165,18 +141,9 @@ fn listing_bookmarks_in_delimited_format_works() {
     cmd.args(["list", "--uri", "hours", "-f", "delimited"]);
 
     // WHEN
-    let output = cmd.output().expect("command should've run");
-
     // THEN
-    output.print_stderr_if_failed(None);
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).expect("invalid utf-8 stdout");
-    println!("stdout: {:?}", stdout);
-    assert_eq!(
-        stdout.trim(),
-        r#"
+    cmd.assert().success().stdout(contains(r#"
 uri,title,tags
 https://github.com/dhth/hours,GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds,"productivity,tools"
-"#.trim()
-    );
+"#.trim()));
 }

@@ -29,6 +29,14 @@ Let @dhth know about this via https://github.com/dhth/bmm/issues (mention the er
                 c
             );
         }
+
+        if let Some(follow_up) = error.follow_up() {
+            eprintln!(
+                "
+{}",
+                follow_up
+            );
+        }
         std::process::exit(1);
     }
 }

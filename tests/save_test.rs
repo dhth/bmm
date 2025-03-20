@@ -52,6 +52,37 @@ fn saving_a_new_bookmark_with_title_and_tags_works() {
 }
 
 #[test]
+fn updating_bookmarks_with_no_new_data_works() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut create_cmd = fixture.command();
+    create_cmd.args([
+        "save",
+        URI_ONE,
+        "--title",
+        "bmm's github page",
+        "--tags",
+        "tools,productivity",
+    ]);
+    create_cmd.output().expect("command should've run");
+    let mut cmd = fixture.command();
+    cmd.args(["save", URI_ONE]);
+
+    // WHEN
+    // THEN
+    cmd.assert()
+        .success()
+        .stdout(contains("nothing to update!"));
+
+    let mut list_cmd = fixture.command();
+    list_cmd.args(["list", "-f", "delimited"]);
+    list_cmd.assert().success().stdout(contains(format!(
+        r#"{},bmm's github page,"productivity,tools"#,
+        URI_ONE
+    )));
+}
+
+#[test]
 fn extending_tags_for_a_saved_bookmark_works() {
     // GIVEN
     let fixture = Fixture::new();
@@ -81,7 +112,7 @@ fn extending_tags_for_a_saved_bookmark_works() {
 }
 
 #[test]
-fn resetting_properties_on_bookmark_update_works() {
+fn resetting_all_data_for_a_bookmark_works() {
     // GIVEN
     let fixture = Fixture::new();
     let mut create_cmd = fixture.command();
@@ -95,7 +126,7 @@ fn resetting_properties_on_bookmark_update_works() {
     ]);
     create_cmd.output().expect("command should've run");
     let mut cmd = fixture.command();
-    cmd.args(["save", URI_ONE, "--tags", "cli,bookmarks", "-r"]);
+    cmd.args(["save", URI_ONE, "-r"]);
 
     // WHEN
     // THEN
@@ -106,7 +137,65 @@ fn resetting_properties_on_bookmark_update_works() {
     list_cmd
         .assert()
         .success()
-        .stdout(contains(format!(r#"{},,"bookmarks,cli"#, URI_ONE)));
+        .stdout(contains(format!("{},,", URI_ONE)));
+}
+
+#[test]
+fn resetting_title_on_bookmark_update_works() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut create_cmd = fixture.command();
+    create_cmd.args([
+        "save",
+        URI_ONE,
+        "--title",
+        "bmm's github page",
+        "--tags",
+        "tools,productivity",
+    ]);
+    create_cmd.output().expect("command should've run");
+    let mut cmd = fixture.command();
+    cmd.args(["save", URI_ONE, "--tags", "updated,tags", "-r"]);
+
+    // WHEN
+    // THEN
+    cmd.assert().success();
+
+    let mut list_cmd = fixture.command();
+    list_cmd.args(["list", "-f", "delimited"]);
+    list_cmd
+        .assert()
+        .success()
+        .stdout(contains(format!(r#"{},,"tags,updated"#, URI_ONE)));
+}
+
+#[test]
+fn resetting_tags_on_bookmark_update_works() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut create_cmd = fixture.command();
+    create_cmd.args([
+        "save",
+        URI_ONE,
+        "--title",
+        "bmm's github page",
+        "--tags",
+        "tools,productivity",
+    ]);
+    create_cmd.output().expect("command should've run");
+    let mut cmd = fixture.command();
+    cmd.args(["save", URI_ONE, "--title", "updated title", "-r"]);
+
+    // WHEN
+    // THEN
+    cmd.assert().success();
+
+    let mut list_cmd = fixture.command();
+    list_cmd.args(["list", "-f", "delimited"]);
+    list_cmd
+        .assert()
+        .success()
+        .stdout(contains(format!("{},updated title,", URI_ONE)));
 }
 
 #[test]
@@ -209,6 +298,21 @@ fn saving_a_new_bookmark_with_an_invalid_tag_fails() {
     cmd.assert().failure().stderr(contains(
         r#"tags ["invalid tag", " another    invalid\t\ttag "] are invalid"#,
     ));
+}
+
+#[test]
+fn updating_a_bookmarks_with_no_new_details_fails_if_requested() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut create_cmd = fixture.command();
+    create_cmd.args(["save", URI_ONE]);
+    create_cmd.output().expect("command should've run");
+    let mut cmd = fixture.command();
+    cmd.args(["save", URI_ONE, "-f"]);
+
+    // WHEN
+    // THEN
+    cmd.assert().failure().stderr(contains("uri already saved"));
 }
 
 #[test]

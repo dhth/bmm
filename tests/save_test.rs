@@ -4,6 +4,7 @@ use predicates::prelude::PredicateBooleanExt;
 use predicates::str::contains;
 
 const URI_ONE: &str = "https://github.com/dhth/bmm";
+pub const LOCAL_SERVER_ADDRESS: &str = "http://127.0.0.1:8200";
 
 //-------------//
 //  SUCCESSES  //
@@ -264,6 +265,37 @@ Tags : another-invalid-tag,invalid-tag,tag1
     ));
 }
 
+#[test]
+#[ignore = "requires a local http server"]
+fn fetching_title_from_remote_server_works() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut cmd = fixture.command();
+    let uri = format!("{}/simple.html", LOCAL_SERVER_ADDRESS);
+    cmd.args(["save", &uri, "--tags", "auto,fetch", "-F"]);
+
+    // WHEN
+    // THEN
+    cmd.assert().success();
+
+    let mut show_cmd = fixture.command();
+    show_cmd.args(["show", &uri]);
+    show_cmd.assert().success().stdout(contains(
+        format!(
+            r#"
+Bookmark details
+---
+
+Title: dhth/bmm: get to your bookmarks in a flash
+URI  : {}
+Tags : auto,fetch
+        "#,
+            uri,
+        )
+        .trim(),
+    ));
+}
+
 //------------//
 //  FAILURES  //
 //------------//
@@ -347,4 +379,20 @@ fn saving_a_new_bookmark_with_incorrect_text_editor_configured_fails() {
     cmd.assert()
         .failure()
         .stderr(contains("cannot find binary path"));
+}
+
+#[test]
+#[ignore = "sends an HTTP request to localhost"]
+fn fetching_details_for_non_existent_uri_should_fail() {
+    // GIVEN
+    let fixture = Fixture::new();
+    let mut cmd = fixture.command();
+    let uri = "http://127.0.0.1:9999/non-existent.html";
+    cmd.args(["save", uri, "-F"]);
+
+    // WHEN
+    // THEN
+    cmd.assert()
+        .failure()
+        .stderr(contains("couldn't fetch details"));
 }

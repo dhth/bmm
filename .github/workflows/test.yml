@@ -25,6 +25,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install miniserve
+        uses: jaxxstorm/action-install-gh-release@4304621e8c48d66093a8a214af5d5b5bc3b3d943
+        with:
+          repo: svenstaro/miniserve
+          tag: v0.29.0
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
       - name: Create test database
@@ -33,5 +38,11 @@ jobs:
           cargo sqlx database create
           cargo sqlx migrate run
           cargo sqlx prepare --check
+      - name: Start local http server
+        run: |
+          miniserve tests/static/local-server --index empty.html --port 8200 &
+          sleep 3
       - name: Run tests
-        run: cargo test
+        run: cargo test -- --include-ignored
+      - name: Kill local server
+        run: pkill miniserve

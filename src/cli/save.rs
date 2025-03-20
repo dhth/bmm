@@ -28,7 +28,7 @@ pub enum SaveBookmarkError {
     CouldntSaveBookmark(DBError),
     #[error("something unexpected happened: {0}")]
     UnexpectedError(String),
-    #[error(transparent)]
+    #[error("couldn't fetch details: {0}")]
     CouldntFetchDetails(#[from] FetchUriDetailsError),
     #[error("no details fetched from remote server")]
     NoDetailsFetched,

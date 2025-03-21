@@ -39,7 +39,7 @@ jobs:
           cargo sqlx prepare --check
       - name: Start local http server
         run: |
-          miniserve tests/static/local-server --index empty.html --port 8200 &
+          miniserve tests/static/local-server --port 8200 &
           sleep 3
       - name: Run tests
         run: cargo test -- --include-ignored

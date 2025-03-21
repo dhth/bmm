@@ -1,8 +1,9 @@
 use crate::common::{ENV_VAR_BMM_EDITOR, ENV_VAR_EDITOR};
-use crate::domain::{DraftBookmark, DraftBookmarkError, PotentialBookmark, SavedBookmark};
+use crate::domain::{DraftBookmark, DraftBookmarkError, PotentialBookmark};
 use crate::persistence::{
     DBError, SaveBookmarkOptions, create_or_update_bookmark, get_bookmark_with_exact_uri,
 };
+use crate::service::{FetchUriDetailsError, fetch_uri_details};
 use regex::{Error as RegexError, Regex};
 use sqlx::{Pool, Sqlite};
 use std::fs::{File, OpenOptions};
@@ -27,6 +28,10 @@ pub enum SaveBookmarkError {
     CouldntSaveBookmark(DBError),
     #[error("something unexpected happened: {0}")]
     UnexpectedError(String),
+    #[error("couldn't fetch details: {0}")]
+    CouldntFetchDetails(#[from] FetchUriDetailsError),
+    #[error("no details fetched from remote server")]
+    NoDetailsFetched,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -59,55 +64,103 @@ pub enum ParsingTempFileContentError {
     InputMissing,
 }
 
+pub struct SaveConfig {
+    pub use_editor: bool,
+    pub fail_if_uri_already_saved: bool,
+    pub reset_missing: bool,
+    pub ignore_attribute_errors: bool,
+    pub fetch: bool,
+}
+
 pub async fn save_bookmark(
     pool: &Pool<Sqlite>,
-    potential_bookmark: PotentialBookmark,
-    use_editor: bool,
-    fail_if_uri_saved: bool,
-    reset_missing: bool,
-    ignore_attribute_errors: bool,
+    uri: String,
+    title: Option<String>,
+    tags: &[String],
+    save_config: SaveConfig,
 ) -> Result<(), SaveBookmarkError> {
-    let maybe_existing_bookmark = get_bookmark_with_exact_uri(pool, &potential_bookmark.uri)
+    let maybe_existing_bookmark = get_bookmark_with_exact_uri(pool, &uri)
         .await
         .map_err(SaveBookmarkError::CouldntCheckIfBookmarkExists)?;
 
-    if fail_if_uri_saved && maybe_existing_bookmark.is_some() {
+    let bookmark_exists = maybe_existing_bookmark.is_some();
+
+    if save_config.fail_if_uri_already_saved && bookmark_exists {
         return Err(SaveBookmarkError::UriAlreadySaved);
     }
 
     if maybe_existing_bookmark.is_some()
-        && !use_editor
-        && potential_bookmark.title.is_none()
-        && potential_bookmark.tags.is_empty()
+        && !save_config.fetch
+        && !save_config.use_editor
+        && !save_config.reset_missing
+        && title.is_none()
+        && tags.is_empty()
     {
         println!("nothing to update!");
         return Ok(());
     }
 
-    let draft_bookmark = match use_editor {
-        true => match maybe_existing_bookmark {
-            Some(existing_bookmark) => {
-                let (title, tags) = get_bookmark_update_details_from_temp_file(&existing_bookmark)?;
-
-                let potential_bookmark = PotentialBookmark::from((
-                    potential_bookmark.uri.as_str(),
-                    title.as_deref(),
-                    tags.as_deref(),
-                ));
-
-                DraftBookmark::try_from((potential_bookmark, ignore_attribute_errors))?
+    let title_to_use = match title {
+        Some(t) => Some(t),
+        None => {
+            if save_config.fetch {
+                fetch_uri_details(&uri).await?
+            } else if save_config.reset_missing {
+                None
+            } else if save_config.use_editor {
+                maybe_existing_bookmark
+                    .as_ref()
+                    .and_then(|b| b.title.clone())
+            } else {
+                None
             }
-            None => {
-                let potential_bookmark =
-                    get_new_bookmark_details_from_temp_file(&potential_bookmark.uri)?;
-
-                DraftBookmark::try_from((potential_bookmark, ignore_attribute_errors))?
-            }
-        },
-        false => DraftBookmark::try_from((potential_bookmark, ignore_attribute_errors))?,
+        }
     };
 
-    let reset_missing = if use_editor { true } else { reset_missing };
+    if !save_config.use_editor && save_config.fetch && title_to_use.is_none() {
+        return Err(SaveBookmarkError::NoDetailsFetched);
+    }
+
+    let tags_to_use = if !tags.is_empty() {
+        Some(tags.join(",").to_string())
+    } else if save_config.reset_missing {
+        None
+    } else if save_config.use_editor {
+        maybe_existing_bookmark.and_then(|b| b.tags)
+    } else {
+        None
+    };
+
+    let draft_bookmark = match save_config.use_editor {
+        true => match bookmark_exists {
+            true => {
+                let (title, tags) = get_bookmark_update_details_from_temp_file(
+                    uri.as_str(),
+                    title_to_use.as_deref(),
+                    tags_to_use.as_deref(),
+                )?;
+
+                let potential_bookmark =
+                    PotentialBookmark::from((uri.as_str(), title.as_deref(), tags.as_deref()));
+
+                DraftBookmark::try_from((potential_bookmark, save_config.ignore_attribute_errors))?
+            }
+            false => {
+                let potential_bookmark = get_new_bookmark_details_from_temp_file(
+                    &uri,
+                    title_to_use.as_deref(),
+                    tags_to_use.as_deref(),
+                )?;
+
+                DraftBookmark::try_from((potential_bookmark, save_config.ignore_attribute_errors))?
+            }
+        },
+        false => {
+            let potential_bookmark =
+                PotentialBookmark::from((uri.clone(), title_to_use, tags_to_use));
+            DraftBookmark::try_from((potential_bookmark, save_config.ignore_attribute_errors))?
+        }
+    };
 
     let start = SystemTime::now();
     let since_the_epoch = start
@@ -115,8 +168,8 @@ pub async fn save_bookmark(
         .map_err(|e| SaveBookmarkError::UnexpectedError(format!("system time error: {}", e)))?;
     let now = since_the_epoch.as_secs() as i64;
     let save_options = SaveBookmarkOptions {
-        reset_missing_attributes: reset_missing,
-        reset_tags: reset_missing,
+        reset_missing_attributes: save_config.reset_missing,
+        reset_tags: save_config.reset_missing,
     };
     create_or_update_bookmark(pool, &draft_bookmark, now, save_options)
         .await
@@ -126,7 +179,9 @@ pub async fn save_bookmark(
 }
 
 fn get_bookmark_update_details_from_temp_file(
-    bookmark: &SavedBookmark,
+    uri: &str,
+    title: Option<&str>,
+    tags: Option<&str>,
 ) -> Result<(Option<String>, Option<String>), CouldntGetDetailsViaEditorError> {
     let tmp_dir = tempdir().map_err(CouldntGetDetailsViaEditorError::CreateTempFile)?;
 
@@ -139,7 +194,7 @@ fn get_bookmark_update_details_from_temp_file(
         .open(&tmp_file_path)
         .map_err(CouldntGetDetailsViaEditorError::OpenTempFile)?;
 
-    let file_contents = get_update_bookmark_tmp_file_contents(bookmark);
+    let file_contents = get_update_bookmark_tmp_file_contents(uri, title, tags);
     file.write_all(file_contents.as_bytes())
         .map_err(CouldntGetDetailsViaEditorError::WriteToTempFile)?;
 
@@ -166,6 +221,8 @@ fn get_bookmark_update_details_from_temp_file(
 
 fn get_new_bookmark_details_from_temp_file(
     uri: &str,
+    title: Option<&str>,
+    tags: Option<&str>,
 ) -> Result<PotentialBookmark, CouldntGetDetailsViaEditorError> {
     let tmp_dir = tempdir().map_err(CouldntGetDetailsViaEditorError::CreateTempFile)?;
 
@@ -178,7 +235,7 @@ fn get_new_bookmark_details_from_temp_file(
         .open(&tmp_file_path)
         .map_err(CouldntGetDetailsViaEditorError::OpenTempFile)?;
 
-    let file_contents = get_create_bookmark_tmp_file_contents(uri);
+    let file_contents = get_create_bookmark_tmp_file_contents(uri, title, tags);
     file.write_all(file_contents.as_bytes())
         .map_err(CouldntGetDetailsViaEditorError::WriteToTempFile)?;
 
@@ -232,7 +289,11 @@ fn get_text_editor_exe() -> Result<(String, String), CouldntGetDetailsViaEditorE
     Err(CouldntGetDetailsViaEditorError::NoEditorConfigured)
 }
 
-fn get_update_bookmark_tmp_file_contents(bookmark: &SavedBookmark) -> String {
+fn get_update_bookmark_tmp_file_contents(
+    uri: &str,
+    title: Option<&str>,
+    tags: Option<&str>,
+) -> String {
     format!(
         r#"
        __             
@@ -257,13 +318,17 @@ Comma separate tags:
 {}
 <<<
 "#,
-        bookmark.uri,
-        bookmark.title.as_deref().unwrap_or_default(),
-        bookmark.tags.as_deref().unwrap_or_default(),
+        uri,
+        title.unwrap_or_default(),
+        tags.unwrap_or_default(),
     )
 }
 
-fn get_create_bookmark_tmp_file_contents(uri: &str) -> String {
+fn get_create_bookmark_tmp_file_contents(
+    uri: &str,
+    title: Option<&str>,
+    tags: Option<&str>,
+) -> String {
     format!(
         r#"
        __             
@@ -282,15 +347,17 @@ URI:
 
 Title: 
 >>>
-
+{}
 <<<
 
 Comma separated tags:
 >>>
-
+{}
 <<<
 "#,
-        uri
+        uri,
+        title.unwrap_or_default(),
+        tags.unwrap_or_default(),
     )
 }
 

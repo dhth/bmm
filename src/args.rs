@@ -108,6 +108,9 @@ pub enum BmmCommand {
         /// Ignore errors related to bookmark title and tags; if title is too long, it'll be trimmed, some invalid tags will be corrected
         #[arg(short = 'i', long = "ignore-attribute-errors")]
         ignore_attribute_errors: bool,
+        /// Whether to fetch bookmark title automatically
+        #[arg(short = 'F', long = "fetch")]
+        fetch: bool,
     },
     /// Save/update multiple bookmarks
     SaveAll {
@@ -294,16 +297,18 @@ ignore attribute errors   : {}
                 fail_if_uri_already_saved,
                 reset_missing,
                 ignore_attribute_errors,
+                fetch,
             } => format!(
                 r#"
-command                   : Save/update bookmark
-URI                       : {}
-title                     : {}
-tags                      : {}
-use editor                : {}
-fail if URI already saved : {}
-reset missing             : {}
-ignore attribute errors   : {}
+command                      : Save/update bookmark
+URI                          : {}
+title                        : {}
+tags                         : {}
+use editor                   : {}
+fail if URI already saved    : {}
+reset missing                : {}
+ignore attribute errors      : {}
+fetch details automatically  : {}
 "#,
                 uri,
                 title.as_deref().unwrap_or(NOT_PROVIDED),
@@ -312,6 +317,7 @@ ignore attribute errors   : {}
                 fail_if_uri_already_saved,
                 reset_missing,
                 ignore_attribute_errors,
+                fetch,
             ),
             BmmCommand::SaveAll {
                 uris,

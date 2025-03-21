@@ -102,6 +102,8 @@ impl AppError {
                     },
                 },
                 SaveBookmarkError::UnexpectedError(_) => Some(580),
+                SaveBookmarkError::CouldntFetchDetails(_) => None,
+                SaveBookmarkError::NoDetailsFetched => None,
             },
             AppError::CouldntShowBookmark(e) => match e {
                 ShowBookmarkError::CouldntGetBookmarkFromDB(_) => Some(600),

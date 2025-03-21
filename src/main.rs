@@ -5,6 +5,7 @@ mod domain;
 mod errors;
 mod handle;
 mod persistence;
+mod service;
 mod tui;
 mod utils;
 

@@ -25,6 +25,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install miniserve
+        uses: taiki-e/install-action@351cce3d3afa3dbd66bbe6d30df1d481b1448522
+        with:
+          tool: miniserve
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
       - name: Create test database
@@ -33,5 +37,11 @@ jobs:
           cargo sqlx database create
           cargo sqlx migrate run
           cargo sqlx prepare --check
+      - name: Start local http server
+        run: |
+          miniserve tests/static/local-server --port 8200 &
+          sleep 3
       - name: Run tests
-        run: cargo test
+        run: cargo test -- --include-ignored
+      - name: Kill local server
+        run: pkill miniserve

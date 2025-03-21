@@ -29,6 +29,7 @@ jobs:
         uses: jaxxstorm/action-install-gh-release@4304621e8c48d66093a8a214af5d5b5bc3b3d943
         with:
           repo: svenstaro/miniserve
+          asset-name: miniserve-0.29.0
           tag: 0.29.0
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked

@@ -26,11 +26,9 @@ jobs:
       - name: Install toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Install miniserve
-        uses: jaxxstorm/action-install-gh-release@4304621e8c48d66093a8a214af5d5b5bc3b3d943
+        uses: taiki-e/install-action@351cce3d3afa3dbd66bbe6d30df1d481b1448522
         with:
-          repo: svenstaro/miniserve
-          asset-name: miniserve-0.29.0
-          tag: 0.29.0
+          tool: miniserve
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
       - name: Create test database

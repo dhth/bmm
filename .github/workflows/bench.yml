@@ -21,7 +21,7 @@ jobs:
       - name: Install buku
         run: uv tool install buku
       - name: Install hyperfine
-        uses: jaxxstorm/action-install-gh-release@cd6b2b78ad38bdd294341cda064ec0692b06215b # v1.14.0
+        uses: jaxxstorm/action-install-gh-release@4304621e8c48d66093a8a214af5d5b5bc3b3d943 # v2.0.0
         with:
           repo: sharkdp/hyperfine
       - name: Run benchmarks

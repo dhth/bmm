@@ -1,10 +1,10 @@
 [workspace]
 members = ["cargo:."]
 
-# Config for 'cargo dist'
+# Config for 'dist'
 [dist]
-# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.23.0"
+# The preferred dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.28.4"
 # CI backends to support
 ci = "github"
 # The installers to generate for each app
@@ -12,15 +12,14 @@ installers = ["shell", "homebrew"]
 # A GitHub repo to push Homebrew formulas to
 tap = "dhth/homebrew-tap"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl"]
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl"]
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
 # Whether to install an updater program
 install-updater = false
-# Custom jobs to run after the "announce" phase
-# https://opensource.axo.dev/cargo-dist/book/reference/config.html#post-announce-jobs
+# Post-announce jobs to run in CI
 post-announce-jobs = ["./publish-crates"]
 # Whether to enable GitHub Attestations
 github-attestations = true

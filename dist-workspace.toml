@@ -23,4 +23,3 @@ install-updater = false
 post-announce-jobs = ["./publish-crates"]
 # Whether to enable GitHub Attestations
 github-attestations = true
-pr-run-mode = "upload"

@@ -106,6 +106,8 @@ jobs:
         run: cargo test
 
   back-compat:
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
     runs-on: ubuntu-latest
     env:
       SQLX_OFFLINE: true

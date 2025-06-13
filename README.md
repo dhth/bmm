@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">bmm</h1>
   <p align="center">
-    <a href="https://github.com/dhth/bmm/actions/workflows/build.yml"><img alt="GitHub release" src="https://img.shields.io/github/actions/workflow/status/dhth/bmm/build.yml?style=flat-square"></a>
+    <a href="https://github.com/dhth/bmm/actions/workflows/main.yml"><img alt="GitHub release" src="https://img.shields.io/github/actions/workflow/status/dhth/bmm/main.yml?style=flat-square"></a>
     <a href="https://crates.io/crates/bmm"><img alt="GitHub release" src="https://img.shields.io/crates/v/bmm?style=flat-square"></a>
     <a href="https://github.com/dhth/bmm/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/release/dhth/bmm.svg?style=flat-square"></a>
     <a href="https://github.com/dhth/bmm/releases"><img alt="Commits since latest release" src="https://img.shields.io/github/commits-since/dhth/bmm/latest?style=flat-square"></a>

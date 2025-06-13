@@ -1,0 +1,174 @@
+name: pr
+
+on:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+      shell: ${{ steps.filter.outputs.shell }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+      yml: ${{ steps.filter.outputs.yml }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            rust:
+              - ".sqlx/**"
+              - "migrations/**"
+              - "src/**"
+              - "tests/**"
+              - "**/*.rs"
+              - Cargo.*
+              - clippy.toml
+              - dist-workspace.toml
+              - rust-toolchain.toml
+              - ".github/actions/**/*.yml"
+              - ".github/workflows/pr.yml"
+            shell:
+              - "**.sh"
+              - ".github/workflows/pr.yml"
+            workflows:
+              - ".github/**/*.yml"
+            yml:
+              - "**.yml"
+              - "**.yaml"
+
+  lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    env:
+      SQLX_OFFLINE: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy, rustfmt
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Lint
+        run: cargo clippy
+
+  build:
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      SQLX_OFFLINE: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build
+        run: cargo build
+
+  test:
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    env:
+      SQLX_VERSION: 0.8.3
+      SQLX_FEATURES: sqlite
+      DATABASE_URL: sqlite://testdb/db.db
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
+      - name: Create test database
+        run: |
+          mkdir testdb
+          cargo sqlx database create
+          cargo sqlx migrate run
+          cargo sqlx prepare --check
+      - name: Run tests
+        run: cargo test
+
+  back-compat:
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SQLX_OFFLINE: true
+    steps:
+      - name: Install rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Build main
+        run: cargo build --target-dir /var/tmp/main
+      - name: Save bookmarks with bmm on main
+        run: /var/tmp/main/debug/bmm save https://github.com/dhth/bmm
+      - uses: actions/checkout@v4
+      - name: Build head
+        run: cargo build --target-dir /var/tmp/head
+      - name: Run bmm on head
+        run: /var/tmp/head/debug/bmm list -f json
+
+  lint-sh:
+    needs: changes
+    if: ${{ needs.changes.outputs.shell == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dhth/composite-actions/.github/actions/lint-sh@main
+
+  lint-workflows:
+    needs: changes
+    if: ${{ needs.changes.outputs.workflows == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dhth/composite-actions/.github/actions/lint-actions@main
+
+  lint-yaml:
+    needs: changes
+    if: ${{ needs.changes.outputs.yml == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dhth/composite-actions/.github/actions/lint-yaml@main
+
+  dstlled-diff:
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: get-dstlled-diff
+        uses: dhth/dstlled-diff-action@0ab616345f8816e9046fdefec81b14ada815aaca # v0.2.0
+        with:
+          pattern: '**.rs'
+          starting-commit: ${{ github.event.pull_request.base.sha }}
+          ending-commit: ${{ github.event.pull_request.head.sha }}
+          post-comment-on-pr: 'true'

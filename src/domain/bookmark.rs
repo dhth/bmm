@@ -290,11 +290,6 @@ pub struct SavedBookmark {
     pub tags: Option<String>,
 }
 
-#[allow(dead_code)]
-fn dummy_fn(input: &str) -> String {
-    input.to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

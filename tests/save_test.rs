@@ -46,8 +46,7 @@ fn saving_a_new_bookmark_with_title_and_tags_works() {
     let mut list_cmd = fixture.command();
     list_cmd.args(["list", "-f", "delimited"]);
     list_cmd.assert().success().stdout(contains(format!(
-        r#"{},bmm's github page,"productivity,tools"#,
-        URI_ONE
+        r#"{URI_ONE},bmm's github page,"productivity,tools"#
     )));
 }
 
@@ -75,8 +74,7 @@ fn extending_tags_for_a_saved_bookmark_works() {
     let mut list_cmd = fixture.command();
     list_cmd.args(["list", "-f", "delimited"]);
     list_cmd.assert().success().stdout(contains(format!(
-        r#"{},bmm's github page,"bookmarks,productivity,tools"#,
-        URI_ONE
+        r#"{URI_ONE},bmm's github page,"bookmarks,productivity,tools"#
     )));
 }
 
@@ -106,7 +104,7 @@ fn resetting_properties_on_bookmark_update_works() {
     list_cmd
         .assert()
         .success()
-        .stdout(contains(format!(r#"{},,"bookmarks,cli"#, URI_ONE)));
+        .stdout(contains(format!(r#"{URI_ONE},,"bookmarks,cli"#)));
 }
 
 #[test]
@@ -166,10 +164,9 @@ Bookmark details
 ---
 
 Title: <NOT SET>
-URI  : {}
+URI  : {URI_ONE}
 Tags : another-invalid-tag,invalid-tag,tag1
-        "#,
-            URI_ONE
+        "#
         )
         .trim(),
     ));

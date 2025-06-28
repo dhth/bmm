@@ -48,7 +48,7 @@ pub async fn delete_bookmarks(
     match num_bookmarks {
         0 => println!("nothing got deleted"),
         1 => println!("deleted 1 bookmark"),
-        n => println!("deleted {} bookmarks", n),
+        n => println!("deleted {n} bookmarks"),
     }
 
     Ok(())

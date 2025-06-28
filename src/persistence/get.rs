@@ -148,7 +148,7 @@ LIMIT
         .await
         .map_err(|e| DBError::CouldntExecuteQuery("query bookmarks".into(), e)),
         (Some(u), None, []) => {
-            let uri_query = format!("%{}%", u);
+            let uri_query = format!("%{u}%");
 
             sqlx::query_as!(
                 SavedBookmark,
@@ -187,7 +187,7 @@ LIMIT
             .map_err(|e| DBError::CouldntExecuteQuery("query bookmarks by uri".into(), e))
         }
         (None, Some(d), []) => {
-            let title_query = format!("%{}%", d);
+            let title_query = format!("%{d}%");
 
             sqlx::query_as!(
                 SavedBookmark,
@@ -281,8 +281,8 @@ LIMIT
             Ok(bookmarks)
         }
         (Some(u), Some(d), []) => {
-            let uri_query = format!("%{}%", u);
-            let title_query = format!("%{}%", d);
+            let uri_query = format!("%{u}%");
+            let title_query = format!("%{d}%");
 
             sqlx::query_as!(
                 SavedBookmark,
@@ -364,7 +364,7 @@ LIMIT
                 tags.iter().map(|_| "?").collect::<Vec<&str>>().join(", ")
             );
             let mut query_builder = sqlx::query_as::<_, SavedBookmark>(&query);
-            query_builder = query_builder.bind(format!("%{}%", u));
+            query_builder = query_builder.bind(format!("%{u}%"));
             for tag in tags {
                 query_builder = query_builder.bind(tag);
             }
@@ -420,7 +420,7 @@ LIMIT
                 tags.iter().map(|_| "?").collect::<Vec<&str>>().join(", ")
             );
             let mut query_builder = sqlx::query_as::<_, SavedBookmark>(&query);
-            query_builder = query_builder.bind(format!("%{}%", d));
+            query_builder = query_builder.bind(format!("%{d}%"));
             for tag in tags {
                 query_builder = query_builder.bind(tag);
             }
@@ -477,8 +477,8 @@ LIMIT
                 tags.iter().map(|_| "?").collect::<Vec<&str>>().join(", ")
             );
             let mut query_builder = sqlx::query_as::<_, SavedBookmark>(&query);
-            query_builder = query_builder.bind(format!("%{}%", u));
-            query_builder = query_builder.bind(format!("%{}%", d));
+            query_builder = query_builder.bind(format!("%{u}%"));
+            query_builder = query_builder.bind(format!("%{d}%"));
             for tag in tags {
                 query_builder = query_builder.bind(tag);
             }
@@ -538,7 +538,7 @@ LIMIT
 
     let search_terms_with_like_markers = search_terms
         .iter()
-        .map(|t| format!("%{}%", t))
+        .map(|t| format!("%{t}%"))
         .collect::<Vec<_>>();
 
     for term in search_terms_with_like_markers.iter() {

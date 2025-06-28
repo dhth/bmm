@@ -112,7 +112,7 @@ mod tests {
         let num_bookmarks = 10;
 
         for i in 1..=num_bookmarks {
-            let uri = format!("https://uri-{}.com", i);
+            let uri = format!("https://uri-{i}.com");
             let draft_bookmark =
                 DraftBookmark::try_from(PotentialBookmark::from((uri.as_str(), None, &vec![])))
                     .expect("draft bookmark should've been created");

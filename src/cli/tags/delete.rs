@@ -64,7 +64,7 @@ pub async fn delete_tags(
 
     match num_tags_deleted {
         1 => println!("deleted 1 tag"),
-        n => println!("deleted {} tags", n),
+        n => println!("deleted {n} tags"),
     }
 
     Ok(())

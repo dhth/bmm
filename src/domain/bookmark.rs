@@ -113,7 +113,7 @@ impl DraftBookmarkErrors {
         if num_errors == 1 {
             "there was 1 validation error".into()
         } else {
-            format!("there were {} validation errors", num_errors)
+            format!("there were {num_errors} validation errors")
         }
     }
 }
@@ -405,7 +405,7 @@ mod tests {
             // THEN
             match result {
                 Err(DraftBookmarkError::CouldntParseUri(_)) => (),
-                _ => panic!("result is incorrect for {}", uri),
+                _ => panic!("result is incorrect for {uri}"),
             }
         }
     }
@@ -423,7 +423,7 @@ mod tests {
         // THEN
         match result {
             Err(DraftBookmarkError::TitleTooLong(_)) => (),
-            _ => panic!("result is incorrect for {}", uri),
+            _ => panic!("result is incorrect for {uri}"),
         }
     }
 
@@ -447,7 +447,7 @@ mod tests {
             // THEN
             match result {
                 Err(DraftBookmarkError::TagIsInvalid(_)) => (),
-                _ => panic!("result is incorrect for {}", uri),
+                _ => panic!("result is incorrect for {uri}"),
             }
         }
     }

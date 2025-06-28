@@ -14,6 +14,7 @@ jobs:
     permissions:
       contents: read
     outputs:
+      deps: ${{ steps.filter.outputs.deps }}
       rust: ${{ steps.filter.outputs.rust }}
       shell: ${{ steps.filter.outputs.shell }}
       workflows: ${{ steps.filter.outputs.workflows }}
@@ -25,6 +26,11 @@ jobs:
         id: filter
         with:
           filters: |
+            deps:
+              - "Cargo.toml"
+              - "Cargo.lock"
+              - "deny.toml"
+              - ".github/workflows/main.yml"
             rust:
               - ".sqlx/**"
               - "migrations/**"
@@ -173,3 +179,12 @@ jobs:
           starting-commit: ${{ github.event.pull_request.base.sha }}
           ending-commit: ${{ github.event.pull_request.head.sha }}
           post-comment-on-pr: 'true'
+
+  audit:
+    needs: changes
+    if: ${{ needs.changes.outputs.deps == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dhth/composite-actions/.github/actions/cargo-deny@main

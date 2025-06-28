@@ -217,10 +217,8 @@ impl AppTui {
             }
             Message::UrlsOpenedInBrowser(result) => {
                 if let UrlsOpenedResult::Failure(e) = result {
-                    self.model.user_message = Some(UserMessage::error(&format!(
-                        "urls couldn't be opened: {}",
-                        e
-                    )));
+                    self.model.user_message =
+                        Some(UserMessage::error(&format!("urls couldn't be opened: {e}")));
                 }
             }
             Message::GoBackOrQuit => self.model.go_back_or_quit(),
@@ -252,14 +250,14 @@ impl AppTui {
                         }
                     }
                 }
-                Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
+                Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{e}"))),
             },
             Message::TagsFetched(result) => match result {
                 Ok(t) => {
                     self.model.tag_items = TagItems::from(t);
                     self.model.active_pane = ActivePane::TagsList;
                 }
-                Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
+                Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{e}"))),
             },
             Message::SearchInputGotEvent(event) => {
                 self.model.search_input.handle_event(&event);
@@ -277,7 +275,7 @@ impl AppTui {
                         self.model.search_input.reset();
                         self.model.active_pane = ActivePane::List;
                     }
-                    Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
+                    Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{e}"))),
                 }
             }
             Message::TerminalResize(width, height) => {
@@ -297,7 +295,7 @@ impl AppTui {
                     self.model.bookmark_items = BookmarkItems::from(bookmarks);
                     self.model.active_pane = ActivePane::List;
                 }
-                Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{}", e))),
+                Err(e) => self.model.user_message = Some(UserMessage::error(&format!("{e}"))),
             },
             Message::CopyURIToClipboard => {
                 if let Some(uri) = self.model.get_uri_under_cursor() {
@@ -320,8 +318,7 @@ impl AppTui {
             Message::ContentCopiedToClipboard(result) => {
                 if let Err(error) = result {
                     self.model.user_message = Some(UserMessage::error(&format!(
-                        "couldn't copy uri to clipboard: {}",
-                        error
+                        "couldn't copy uri to clipboard: {error}"
                     )));
                 } else {
                     self.model.user_message =

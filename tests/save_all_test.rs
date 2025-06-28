@@ -26,11 +26,10 @@ fn saving_multiple_bookmarks_works() {
     list_cmd.assert().success().stdout(contains(
         format!(
             "
-{}
-{}
-{}
+{URI_ONE}
+{URI_TWO}
+{URI_THREE}
 ",
-            URI_ONE, URI_TWO, URI_THREE,
         )
         .trim(),
     ));
@@ -97,10 +96,9 @@ Bookmark details
 ---
 
 Title: bmm's github page
-URI  : {}
+URI  : {URI_ONE}
 Tags : productivity,tools
-"#,
-            URI_ONE
+"#
         )
         .trim(),
     ));
@@ -138,10 +136,9 @@ Bookmark details
 ---
 
 Title: bmm's github page
-URI  : {}
+URI  : {URI_ONE}
 Tags : tools
-"#,
-            URI_ONE
+"#
         )
         .trim(),
     ));

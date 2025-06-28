@@ -144,10 +144,9 @@ Bookmark details
 ---
 
 Title: GitHub - dhth/bmm: get to your bookmarks in a flash
-URI  : {}
+URI  : {uri}
 Tags : productivity,tools
-"#,
-            uri
+"#
         )
         .trim(),
     ));
@@ -187,10 +186,9 @@ Bookmark details
 ---
 
 Title: <NOT SET>
-URI  : {}
+URI  : {uri}
 Tags : <NOT SET>
-"#,
-            uri
+"#
         )
         .trim(),
     ));

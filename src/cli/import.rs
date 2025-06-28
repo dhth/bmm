@@ -110,11 +110,10 @@ pub async fn import_bookmarks(
     if dry_run {
         let output = serde_json::to_string_pretty(&draft_bookmarks).map_err(|e| {
             ImportError::UnexpectedError(format!(
-                "couldn't serialize list of bookmarks to JSON: {}",
-                e
+                "couldn't serialize list of bookmarks to JSON: {e}"
             ))
         })?;
-        println!("{}", output);
+        println!("{output}");
 
         return Ok(None);
     }
@@ -122,7 +121,7 @@ pub async fn import_bookmarks(
     let start = SystemTime::now();
     let since_the_epoch = start
         .duration_since(UNIX_EPOCH)
-        .map_err(|e| ImportError::UnexpectedError(format!("system time error: {}", e)))?;
+        .map_err(|e| ImportError::UnexpectedError(format!("system time error: {e}")))?;
     let now = since_the_epoch.as_secs() as i64;
     let save_options = SaveBookmarkOptions {
         reset_missing_attributes: reset_missing,

@@ -58,7 +58,7 @@ pub(super) async fn handle_command(
 
 fn copy_content_to_clipboard(content: &str) -> Result<(), String> {
     let mut clipboard =
-        Clipboard::new().map_err(|e| format!("couldn't get system clipboard: {}", e))?;
+        Clipboard::new().map_err(|e| format!("couldn't get system clipboard: {e}"))?;
 
     clipboard.set_text(content).map_err(|e| e.to_string())?;
 

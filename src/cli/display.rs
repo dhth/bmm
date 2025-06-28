@@ -29,7 +29,7 @@ pub fn display_bookmarks(
         OutputFormat::Json => {
             let output = serde_json::to_string_pretty(&bookmarks)
                 .map_err(DisplayError::CouldntSerializeToJSON)?;
-            println!("{}", output);
+            println!("{output}");
         }
         OutputFormat::Delimited => {
             let mut wtr = csv::Writer::from_writer(std::io::stdout());
@@ -64,7 +64,7 @@ pub fn display_tags(tags: &Vec<String>, format: &OutputFormat) -> Result<(), Dis
         }
         OutputFormat::Json => {
             let output = serde_json::to_string_pretty(tags)?;
-            println!("{}", output);
+            println!("{output}");
         }
         OutputFormat::Delimited => {
             let mut wtr = csv::Writer::from_writer(std::io::stdout());
@@ -85,12 +85,12 @@ pub fn display_tags_with_stats(
     match format {
         OutputFormat::Plain => {
             for t in tags {
-                println!("{}", t);
+                println!("{t}");
             }
         }
         OutputFormat::Json => {
             let output = serde_json::to_string_pretty(tags)?;
-            println!("{}", output);
+            println!("{output}");
         }
         OutputFormat::Delimited => {
             let mut wtr = csv::Writer::from_writer(std::io::stdout());
@@ -108,10 +108,9 @@ pub fn display_debug_info(args: &Args, db_path: &str) {
     println!(
         r#"DEBUG INFO:
 
-<your arguments>{}
+<your arguments>{args}
 <computed config>
-db path: {}
-"#,
-        args, db_path
+db path: {db_path}
+"#
     )
 }

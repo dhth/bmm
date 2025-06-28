@@ -27,11 +27,10 @@ fn listing_bookmarks_works() {
     cmd.assert().success().stdout(contains(
         format!(
             "
-{}
-{}
-{}
-",
-            URI_ONE, URI_TWO, URI_THREE
+{URI_ONE}
+{URI_TWO}
+{URI_THREE}
+"
         )
         .trim(),
     ));

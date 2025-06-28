@@ -229,7 +229,7 @@ impl std::fmt::Display for OutputFormat {
             OutputFormat::Delimited => "delimited",
         };
 
-        write!(f, "{}", value)?;
+        write!(f, "{value}")?;
 
         Ok(())
     }
@@ -279,12 +279,11 @@ limit             : {}
             } => format!(
                 r#"
 command       : Import bookmarks
-file          : {}
-dry run       : {}
-reset missing : {}
-ignore attribute errors   : {}
+file          : {file}
+dry run       : {dry_run}
+reset missing : {reset_missing}
+ignore attribute errors   : {ignore_attribute_errors}
 "#,
-                file, dry_run, reset_missing, ignore_attribute_errors,
             ),
             BmmCommand::Save {
                 uri,
@@ -342,19 +341,17 @@ ignore attribute errors   : {}
             } => format!(
                 r#"
 command     : Search bookmarks
-query terms : {:?}
-format      : {}
-limit       : {}
-tui         : {}
-"#,
-                query_terms, format, limit, tui
+query terms : {query_terms:?}
+format      : {format}
+limit       : {limit}
+tui         : {tui}
+"#
             ),
             BmmCommand::Show { uri } => format!(
                 r#"
 command     : Show bookmarks
-URI         : {}
-"#,
-                uri
+URI         : {uri}
+"#
             ),
             BmmCommand::Tags { tags_command } => match tags_command {
                 TagsCommand::List {
@@ -364,11 +361,10 @@ URI         : {}
                 } => format!(
                     r#"
 command      : List Tags
-format       : {}
-show stats   : {}
-run tui      : {}
+format       : {format}
+show stats   : {show_stats}
+run tui      : {tui}
 "#,
-                    format, show_stats, tui,
                 ),
                 TagsCommand::Rename {
                     source_tag,
@@ -376,10 +372,9 @@ run tui      : {}
                 } => format!(
                     r#"
 command      : Rename Tag
-source tag   : {}
-target tag   : {}
+source tag   : {source_tag}
+target tag   : {target_tag}
 "#,
-                    source_tag, target_tag,
                 ),
                 TagsCommand::Delete {
                     tags,
@@ -387,10 +382,9 @@ target tag   : {}
                 } => format!(
                     r#"
 command          : Delete Tags
-tags             : {:?}
-skip confirmation: {}
+tags             : {tags:?}
+skip confirmation: {skip_confirmation}
 "#,
-                    tags, skip_confirmation,
                 ),
             },
             BmmCommand::Tui => r#"
@@ -410,22 +404,19 @@ fn validate_import_file(file: &str) -> Result<String, String> {
             Some(ext) => {
                 if !IMPORT_FILE_FORMATS.contains(&ext) {
                     return Err(format!(
-                        "only the following file formats are supported for import: {:?}",
-                        IMPORT_FILE_FORMATS
+                        "only the following file formats are supported for import: {IMPORT_FILE_FORMATS:?}"
                     ));
                 }
             }
             None => {
                 return Err(format!(
-                    "file has invalid extension; supported extensions: {:?}",
-                    IMPORT_FILE_FORMATS
+                    "file has invalid extension; supported extensions: {IMPORT_FILE_FORMATS:?}"
                 ));
             }
         },
         None => {
             return Err(format!(
-                "file has no extension; supported extensions: {:?}",
-                IMPORT_FILE_FORMATS
+                "file has no extension; supported extensions: {IMPORT_FILE_FORMATS:?}"
             ));
         }
     }

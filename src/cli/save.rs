@@ -112,7 +112,7 @@ pub async fn save_bookmark(
     let start = SystemTime::now();
     let since_the_epoch = start
         .duration_since(UNIX_EPOCH)
-        .map_err(|e| SaveBookmarkError::UnexpectedError(format!("system time error: {}", e)))?;
+        .map_err(|e| SaveBookmarkError::UnexpectedError(format!("system time error: {e}")))?;
     let now = since_the_epoch.as_secs() as i64;
     let save_options = SaveBookmarkOptions {
         reset_missing_attributes: reset_missing,
@@ -277,7 +277,7 @@ fn get_create_bookmark_tmp_file_contents(uri: &str) -> String {
 
 URI: 
 >>>
-{}
+{uri}
 <<<
 
 Title: 
@@ -289,8 +289,7 @@ Comma separated tags:
 >>>
 
 <<<
-"#,
-        uri
+"#
     )
 }
 

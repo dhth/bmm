@@ -158,22 +158,22 @@ Read more here: https://specifications.freedesktop.org/basedir-spec/latest/#basi
                     Some("Possible workaround: manually specify the path for bmm's database using --db-path".into())
             },
             AppError::CouldntImportBookmarks(e) => match e {
-                ImportError::FileHasNoExtension => Some(format!("bmm can only import from files with one of these extensions: {:?}", IMPORT_FILE_FORMATS)),
+                ImportError::FileHasNoExtension => Some(format!("bmm can only import from files with one of these extensions: {IMPORT_FILE_FORMATS:?}")),
                 ImportError::ValidationError { .. } => Some(IGNORE_ERRORS_MESSAGE.into()),
                 ImportError::CouldntDeserializeJSONInput(_) =>
                     Some(format!("Suggestion: ensure the file is valid JSON and looks like the following:
 
-{}", IMPORT_EXAMPLE_JSON )),
+{IMPORT_EXAMPLE_JSON}" )),
                 _ => None,
             },
             AppError::CouldntSaveBookmark(e) => match e {
                 SaveBookmarkError::BookmarkDetailsAreInvalid(_) => Some(IGNORE_ERRORS_MESSAGE.into()),
                 SaveBookmarkError::CouldntUseTextEditor(se) => match se {
                     CouldntGetDetailsViaEditorError::CouldntFindEditorExe(editor_exe, env_var_used, _) =>
-                        Some(format!(r#"Context: bmm used the environment variable {} to determine your text editor.
-Check if "{}" actually points to your text editor's executable."#, env_var_used, editor_exe)),
+                        Some(format!(r#"Context: bmm used the environment variable {env_var_used} to determine your text editor.
+Check if "{editor_exe}" actually points to your text editor's executable."#)),
                     CouldntGetDetailsViaEditorError::NoEditorConfigured =>
-                        Some(format!("Suggestion: set the environment variables {} or {} to use this feature", ENV_VAR_BMM_EDITOR, ENV_VAR_EDITOR)),
+                        Some(format!("Suggestion: set the environment variables {ENV_VAR_BMM_EDITOR} or {ENV_VAR_EDITOR} to use this feature")),
                     CouldntGetDetailsViaEditorError::ParsingEditorText(ParsingTempFileContentError::InputMissing) =>
                         Some("Suggestion: enter the details between the >>>/<<< markers without changing the structure of the document".into()),
                         _ => None,

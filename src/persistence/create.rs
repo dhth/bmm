@@ -410,7 +410,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 
@@ -445,7 +445,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 
@@ -481,7 +481,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 
@@ -530,7 +530,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 
@@ -587,7 +587,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 
@@ -651,7 +651,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 
@@ -706,7 +706,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 
@@ -757,7 +757,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 
@@ -806,7 +806,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 
@@ -859,7 +859,7 @@ mod tests {
 
         // THEN
         if let Err(error) = &result {
-            println!("error: {}", error);
+            println!("error: {error}");
         }
         assert!(result.is_ok(), "result is not ok");
 

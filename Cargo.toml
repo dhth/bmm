@@ -52,8 +52,9 @@ unwrap_used = "deny"
 expect_used = "deny"
 
 [profile.release]
-lto = "fat"
 codegen-units = 1
+lto = "fat"
+strip = "symbols"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

@@ -13,6 +13,7 @@ jobs:
       pull-requests: read
     outputs:
       deps: ${{ steps.filter.outputs.deps }}
+      code: ${{ steps.filter.outputs.code }}
       rust: ${{ steps.filter.outputs.rust }}
       shell: ${{ steps.filter.outputs.shell }}
       workflows: ${{ steps.filter.outputs.workflows }}
@@ -29,7 +30,7 @@ jobs:
               - "Cargo.lock"
               - "deny.toml"
               - ".github/workflows/pr.yml"
-            rust:
+            code:
               - ".sqlx/**"
               - "migrations/**"
               - "src/**"
@@ -41,6 +42,8 @@ jobs:
               - rust-toolchain.toml
               - ".github/actions/**/*.yml"
               - ".github/workflows/pr.yml"
+            rust:
+              - "**/*.rs"
             shell:
               - "**.sh"
               - ".github/workflows/pr.yml"
@@ -52,7 +55,7 @@ jobs:
 
   lint:
     needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     env:
       SQLX_OFFLINE: true
@@ -69,7 +72,7 @@ jobs:
 
   build:
     needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -85,7 +88,7 @@ jobs:
 
   test:
     needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -111,7 +114,7 @@ jobs:
 
   back-compat:
     needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

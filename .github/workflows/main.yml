@@ -15,7 +15,7 @@ jobs:
       contents: read
     outputs:
       deps: ${{ steps.filter.outputs.deps }}
-      rust: ${{ steps.filter.outputs.rust }}
+      code: ${{ steps.filter.outputs.code }}
       shell: ${{ steps.filter.outputs.shell }}
       workflows: ${{ steps.filter.outputs.workflows }}
       yml: ${{ steps.filter.outputs.yml }}
@@ -31,7 +31,7 @@ jobs:
               - "Cargo.lock"
               - "deny.toml"
               - ".github/workflows/main.yml"
-            rust:
+            code:
               - ".sqlx/**"
               - "migrations/**"
               - "src/**"
@@ -54,7 +54,7 @@ jobs:
 
   lint:
     needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     env:
       SQLX_OFFLINE: true
@@ -71,7 +71,7 @@ jobs:
 
   build:
     needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -87,7 +87,7 @@ jobs:
 
   test:
     needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -113,7 +113,7 @@ jobs:
 
   back-compat:
     needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
+    if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     env:
       SQLX_OFFLINE: true
@@ -160,25 +160,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: dhth/composite-actions/.github/actions/lint-yaml@main
-
-  dstlled-diff:
-    needs: changes
-    if: ${{ needs.changes.outputs.rust == 'true' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - id: get-dstlled-diff
-        uses: dhth/dstlled-diff-action@0ab616345f8816e9046fdefec81b14ada815aaca # v0.2.0
-        with:
-          pattern: '**.rs'
-          starting-commit: ${{ github.event.pull_request.base.sha }}
-          ending-commit: ${{ github.event.pull_request.head.sha }}
-          post-comment-on-pr: 'true'
 
   audit:
     needs: changes

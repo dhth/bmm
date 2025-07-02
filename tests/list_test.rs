@@ -1,6 +1,7 @@
 mod common;
+
 use common::Fixture;
-use predicates::str::contains;
+use insta_cmd::assert_cmd_snapshot;
 
 const URI_ONE: &str = "https://github.com/dhth/bmm";
 const URI_TWO: &str = "https://github.com/dhth/omm";
@@ -13,40 +14,48 @@ const URI_THREE: &str = "https://github.com/dhth/hours";
 #[test]
 fn listing_bookmarks_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut save_cmd = fixture.command();
-    save_cmd.args(["save-all", URI_ONE, URI_TWO, URI_THREE]);
-    let save_output = save_cmd.output().expect("save command should've run");
-    assert!(save_output.status.success());
+    let fx = Fixture::new();
+    let mut save_cmd = fx.cmd(["save-all", URI_ONE, URI_TWO, URI_THREE]);
+    assert_cmd_snapshot!(save_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    saved 3 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.arg("list");
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["list"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(
-        format!(
-            "
-{URI_ONE}
-{URI_TWO}
-{URI_THREE}
-"
-        )
-        .trim(),
-    ));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://github.com/dhth/bmm
+    https://github.com/dhth/omm
+    https://github.com/dhth/hours
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn listing_bookmarks_with_queries_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args([
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd([
         "list",
         "--uri",
         "github.com",
@@ -58,91 +67,119 @@ fn listing_bookmarks_with_queries_works() {
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(URI_TWO));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://github.com/dhth/omm
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn listing_bookmarks_fetches_all_data_for_each_bookmark() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["list", "--tags", "tools", "-f", "json"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["list", "--tags", "tools", "--format", "json"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(
-        r#"
-[
-  {
-    "uri": "https://github.com/dhth/omm",
-    "title": "GitHub - dhth/omm: on-my-mind: a keyboard-driven task manager for the command line",
-    "tags": "productivity,tools"
-  },
-  {
-    "uri": "https://github.com/dhth/hours",
-    "title": "GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds",
-    "tags": "productivity,tools"
-  },
-  {
-    "uri": "https://github.com/dhth/bmm",
-    "title": "GitHub - dhth/bmm: get to your bookmarks in a flash",
-    "tags": "tools"
-  }
-]
-"#
-        .trim(),
-    ));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    [
+      {
+        "uri": "https://github.com/dhth/omm",
+        "title": "GitHub - dhth/omm: on-my-mind: a keyboard-driven task manager for the command line",
+        "tags": "productivity,tools"
+      },
+      {
+        "uri": "https://github.com/dhth/hours",
+        "title": "GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds",
+        "tags": "productivity,tools"
+      },
+      {
+        "uri": "https://github.com/dhth/bmm",
+        "title": "GitHub - dhth/bmm: get to your bookmarks in a flash",
+        "tags": "tools"
+      }
+    ]
+
+    ----- stderr -----
+    "#);
 }
 
 #[test]
 fn listing_bookmarks_in_json_format_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut save_cmd = fixture.command();
-    save_cmd.args(["save-all", URI_ONE, URI_TWO, URI_THREE]);
-    let save_output = save_cmd.output().expect("save command should've run");
-    assert!(save_output.status.success());
+    let fx = Fixture::new();
+    let mut save_cmd = fx.cmd(["save-all", URI_ONE, URI_TWO, URI_THREE]);
+    assert_cmd_snapshot!(save_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    saved 3 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["list", "--uri", "hours", "-f", "json"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["list", "--uri", "hours", "--format", "json"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(
-        r#"
-[
-  {
-    "uri": "https://github.com/dhth/hours",
-    "title": null,
-    "tags": null
-  }
-]
-"#
-        .trim(),
-    ));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    [
+      {
+        "uri": "https://github.com/dhth/hours",
+        "title": null,
+        "tags": null
+      }
+    ]
+
+    ----- stderr -----
+    "#);
 }
 
 #[test]
 fn listing_bookmarks_in_delimited_format_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["list", "--uri", "hours", "-f", "delimited"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["list", "--uri", "hours", "--format", "delimited"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(r#"
-uri,title,tags
-https://github.com/dhth/hours,GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds,"productivity,tools"
-"#.trim()));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    uri,title,tags
+    https://github.com/dhth/hours,GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds,"productivity,tools"
+
+    ----- stderr -----
+    "#);
 }

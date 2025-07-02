@@ -1,11 +1,7 @@
 mod common;
-use common::Fixture;
-use predicates::str::contains;
 
-const URI_ONE: &str = "https://crates.io/crates/sqlx";
-const URI_TWO: &str = "https://github.com/dhth/omm";
-const URI_THREE: &str = "https://github.com/dhth/hours";
-const URI_FOUR: &str = "https://github.com/dhth/bmm";
+use common::Fixture;
+use insta_cmd::assert_cmd_snapshot;
 
 //-------------//
 //  SUCCESSES  //
@@ -14,112 +10,148 @@ const URI_FOUR: &str = "https://github.com/dhth/bmm";
 #[test]
 fn searching_bookmarks_by_uri_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["search", "crates"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["search", "crates"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(URI_ONE));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://crates.io/crates/sqlx
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn searching_bookmarks_by_title_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["search", "keyboard-driven"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["search", "keyboard-driven"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(URI_TWO));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://github.com/dhth/omm
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn searching_bookmarks_by_tags_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["search", "tools"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["search", "tools"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(
-        format!(
-            "
-{URI_TWO}
-{URI_THREE}
-{URI_FOUR}
-"
-        )
-        .trim(),
-    ));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://github.com/dhth/omm
+    https://github.com/dhth/hours
+    https://github.com/dhth/bmm
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn search_shows_all_details_for_each_bookmark() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["search", "tools", "-f", "json"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["search", "tools", "--format", "json"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(
-        r#"
-[
-  {
-    "uri": "https://github.com/dhth/omm",
-    "title": "GitHub - dhth/omm: on-my-mind: a keyboard-driven task manager for the command line",
-    "tags": "productivity,tools"
-  },
-  {
-    "uri": "https://github.com/dhth/hours",
-    "title": "GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds",
-    "tags": "productivity,tools"
-  },
-  {
-    "uri": "https://github.com/dhth/bmm",
-    "title": "GitHub - dhth/bmm: get to your bookmarks in a flash",
-    "tags": "tools"
-  }
-]
-"#
-        .trim(),
-    ));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    [
+      {
+        "uri": "https://github.com/dhth/omm",
+        "title": "GitHub - dhth/omm: on-my-mind: a keyboard-driven task manager for the command line",
+        "tags": "productivity,tools"
+      },
+      {
+        "uri": "https://github.com/dhth/hours",
+        "title": "GitHub - dhth/hours: A no-frills time tracking toolkit for command line nerds",
+        "tags": "productivity,tools"
+      },
+      {
+        "uri": "https://github.com/dhth/bmm",
+        "title": "GitHub - dhth/bmm: get to your bookmarks in a flash",
+        "tags": "tools"
+      }
+    ]
+
+    ----- stderr -----
+    "#);
 }
 
 #[test]
 fn searching_bookmarks_by_multiple_terms_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args([
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd([
         "search",
         "github",
         "tools",
@@ -130,7 +162,14 @@ fn searching_bookmarks_by_multiple_terms_works() {
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(URI_THREE));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://github.com/dhth/hours
+
+    ----- stderr -----
+    ");
 }
 
 //------------//
@@ -140,34 +179,56 @@ fn searching_bookmarks_by_multiple_terms_works() {
 #[test]
 fn searching_bookmarks_fails_if_search_terms_exceeds_limit() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.arg("search");
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["search"]);
     cmd.args((1..=11).map(|i| format!("term-{i}")).collect::<Vec<_>>());
 
     // WHEN
     // THEN
-    cmd.assert().failure().stderr(contains("too many terms"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't search bookmarks: search query is invalid: too many terms (maximum allowed: 10)
+    ");
 }
 
 #[test]
 fn searching_bookmarks_fails_if_search_query_empty() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    let import_output = import_cmd.output().expect("import command should've run");
-    assert!(import_output.status.success());
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["search"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["search"]);
 
     // WHEN
     // THEN
-    cmd.assert().failure().stderr(contains("query is empty"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't search bookmarks: search query is invalid: query is empty
+    ");
 }

@@ -1,6 +1,7 @@
 mod common;
+
 use common::Fixture;
-use predicates::str::contains;
+use insta_cmd::assert_cmd_snapshot;
 
 //-------------//
 //  SUCCESSES  //
@@ -9,103 +10,141 @@ use predicates::str::contains;
 #[test]
 fn listing_tags_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    import_cmd.assert().success();
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["tags", "list"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["tags", "list"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(
-        "
-crates
-productivity
-rust
-tools
-"
-        .trim(),
-    ));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    crates
+    productivity
+    rust
+    tools
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn listing_tags_with_stats_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    import_cmd.assert().success();
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["tags", "list", "-s"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["tags", "list", "--show-stats"]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains(
-        "
-crates (1 bookmark)
-productivity (2 bookmarks)
-rust (1 bookmark)
-tools (3 bookmarks)
-"
-        .trim(),
-    ));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    crates (1 bookmark)
+    productivity (2 bookmarks)
+    rust (1 bookmark)
+    tools (3 bookmarks)
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn deleting_tags_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    import_cmd.assert().success();
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["tags", "delete", "--yes", "productivity", "crates"]);
+    ----- stderr -----
+    ");
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    let mut cmd = fx.cmd(["tags", "delete", "--yes", "productivity", "crates"]);
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    deleted 2 tags
 
-    let mut list_cmd = fixture.command();
-    list_cmd.args(["tags", "list"]);
-    list_cmd.assert().success().stdout(contains(
-        "
-rust
-tools
-"
-        .trim(),
-    ));
+    ----- stderr -----
+    ");
+
+    let mut list_cmd = fx.cmd(["tags", "list"]);
+    assert_cmd_snapshot!(list_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    rust
+    tools
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn renaming_tags_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    import_cmd.assert().success();
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["tags", "rename", "tools", "cli-tools"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["tags", "rename", "tools", "cli-tools"]);
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut list_cmd = fixture.command();
-    list_cmd.args(["tags", "list"]);
-    list_cmd.assert().success().stdout(contains(
-        "
-cli-tools
-crates
-productivity
-rust
-"
-        .trim(),
-    ));
+    ----- stderr -----
+    ");
+
+    let mut list_cmd = fx.cmd(["tags", "list"]);
+    assert_cmd_snapshot!(list_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    cli-tools
+    crates
+    productivity
+    rust
+
+    ----- stderr -----
+    ");
 }
 
 //------------//
@@ -115,33 +154,55 @@ rust
 #[test]
 fn deleting_tags_fails_if_tag_doesnt_exist() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    import_cmd.assert().success();
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["tags", "delete", "--yes", "productivity", "absent"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["tags", "delete", "--yes", "productivity", "absent"]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .failure()
-        .stderr(contains(r#"tags do not exist: ["absent"]"#));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't delete tag(s): tags do not exist: ["absent"]
+    "#);
 }
 
 #[test]
 fn renaming_tags_fails_if_tag_doesnt_exist() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut import_cmd = fixture.command();
-    import_cmd.args(["import", "tests/static/import/valid.json"]);
-    import_cmd.assert().success();
+    let fx = Fixture::new();
+    let mut import_cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
+    assert_cmd_snapshot!(import_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut cmd = fixture.command();
-    cmd.args(["tags", "rename", "absent", "target"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["tags", "rename", "absent", "target"]);
 
     // WHEN
     // THEN
-    cmd.assert().failure().stderr(contains("no such tag"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't rename tag: no such tag
+    ");
 }

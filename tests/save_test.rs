@@ -1,7 +1,7 @@
 mod common;
+
 use common::Fixture;
-use predicates::prelude::PredicateBooleanExt;
-use predicates::str::contains;
+use insta_cmd::assert_cmd_snapshot;
 
 const URI_ONE: &str = "https://github.com/dhth/bmm";
 
@@ -12,25 +12,35 @@ const URI_ONE: &str = "https://github.com/dhth/bmm";
 #[test]
 fn saving_a_new_bookmark_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["save", URI_ONE]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["save", URI_ONE]);
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut list_cmd = fixture.command();
-    list_cmd.arg("list");
-    list_cmd.assert().success().stdout(contains(URI_ONE));
+    ----- stderr -----
+    ");
+
+    let mut list_cmd = fx.cmd(["list"]);
+    assert_cmd_snapshot!(list_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://github.com/dhth/bmm
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn saving_a_new_bookmark_with_title_and_tags_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args([
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd([
         "save",
         URI_ONE,
         "--title",
@@ -41,21 +51,31 @@ fn saving_a_new_bookmark_with_title_and_tags_works() {
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut list_cmd = fixture.command();
-    list_cmd.args(["list", "-f", "delimited"]);
-    list_cmd.assert().success().stdout(contains(format!(
-        r#"{URI_ONE},bmm's github page,"productivity,tools"#
-    )));
+    ----- stderr -----
+    ");
+
+    let mut list_cmd = fx.cmd(["list", "--format", "delimited"]);
+    assert_cmd_snapshot!(list_cmd, @r#"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    uri,title,tags
+    https://github.com/dhth/bmm,bmm's github page,"productivity,tools"
+
+    ----- stderr -----
+    "#);
 }
 
 #[test]
 fn extending_tags_for_a_saved_bookmark_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut create_cmd = fixture.command();
-    create_cmd.args([
+    let fx = Fixture::new();
+    let mut create_cmd = fx.cmd([
         "save",
         URI_ONE,
         "--title",
@@ -63,27 +83,43 @@ fn extending_tags_for_a_saved_bookmark_works() {
         "--tags",
         "tools,productivity",
     ]);
-    create_cmd.output().expect("command should've run");
-    let mut cmd = fixture.command();
-    cmd.args(["save", URI_ONE, "--tags", "bookmarks"]);
+    assert_cmd_snapshot!(create_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["save", URI_ONE, "--tags", "bookmarks"]);
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut list_cmd = fixture.command();
-    list_cmd.args(["list", "-f", "delimited"]);
-    list_cmd.assert().success().stdout(contains(format!(
-        r#"{URI_ONE},bmm's github page,"bookmarks,productivity,tools"#
-    )));
+    ----- stderr -----
+    ");
+
+    let mut list_cmd = fx.cmd(["list", "--format", "delimited"]);
+    assert_cmd_snapshot!(list_cmd, @r#"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    uri,title,tags
+    https://github.com/dhth/bmm,bmm's github page,"bookmarks,productivity,tools"
+
+    ----- stderr -----
+    "#);
 }
 
 #[test]
 fn resetting_properties_on_bookmark_update_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut create_cmd = fixture.command();
-    create_cmd.args([
+    let fx = Fixture::new();
+    let mut create_cmd = fx.cmd([
         "save",
         URI_ONE,
         "--title",
@@ -91,85 +127,119 @@ fn resetting_properties_on_bookmark_update_works() {
         "--tags",
         "tools,productivity",
     ]);
-    create_cmd.output().expect("command should've run");
-    let mut cmd = fixture.command();
-    cmd.args(["save", URI_ONE, "--tags", "cli,bookmarks", "-r"]);
+    assert_cmd_snapshot!(create_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd([
+        "save",
+        URI_ONE,
+        "--tags",
+        "cli,bookmarks",
+        "--reset-missing-details",
+    ]);
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut list_cmd = fixture.command();
-    list_cmd.args(["list", "-f", "delimited"]);
-    list_cmd
-        .assert()
-        .success()
-        .stdout(contains(format!(r#"{URI_ONE},,"bookmarks,cli"#)));
+    ----- stderr -----
+    ");
+
+    let mut list_cmd = fx.cmd(["list", "--format", "delimited"]);
+    assert_cmd_snapshot!(list_cmd, @r#"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    uri,title,tags
+    https://github.com/dhth/bmm,,"bookmarks,cli"
+
+    ----- stderr -----
+    "#);
 }
 
 #[test]
 fn force_saving_a_new_bookmark_with_a_long_title_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
+    let fx = Fixture::new();
     let title = "a".repeat(501);
-    cmd.args(["save", URI_ONE, "--title", title.as_str(), "-i"]);
+    let mut cmd = fx.cmd([
+        "save",
+        URI_ONE,
+        "--title",
+        title.as_str(),
+        "--ignore-attribute-errors",
+    ]);
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut show_cmd = fixture.command();
-    show_cmd.args(["show", URI_ONE]);
-    show_cmd.assert().success().stdout(contains(
-        format!(
-            r#"
-Bookmark details
----
+    ----- stderr -----
+    ");
 
-Title: {}
-URI  : {}
-Tags : <NOT SET>
-        "#,
-            "a".repeat(500),
-            URI_ONE
-        )
-        .trim(),
-    ));
+    let mut show_cmd = fx.cmd(["show", URI_ONE]);
+    assert_cmd_snapshot!(show_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Bookmark details
+    ---
+
+    Title: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    URI  : https://github.com/dhth/bmm
+    Tags : <NOT SET>
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn force_saving_a_new_bookmark_with_invalid_tags_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args([
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd([
         "save",
         URI_ONE,
         "--tags",
         "tag1,invalid tag, another    invalid\t\ttag ",
-        "-i",
+        "--ignore-attribute-errors",
     ]);
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut show_cmd = fixture.command();
-    show_cmd.args(["show", URI_ONE]);
-    show_cmd.assert().success().stdout(contains(
-        format!(
-            r#"
-Bookmark details
----
+    ----- stderr -----
+    ");
 
-Title: <NOT SET>
-URI  : {URI_ONE}
-Tags : another-invalid-tag,invalid-tag,tag1
-        "#
-        )
-        .trim(),
-    ));
+    let mut show_cmd = fx.cmd(["show", URI_ONE]);
+    assert_cmd_snapshot!(show_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Bookmark details
+    ---
+
+    Title: <NOT SET>
+    URI  : https://github.com/dhth/bmm
+    Tags : another-invalid-tag,invalid-tag,tag1
+
+    ----- stderr -----
+    ");
 }
 
 //------------//
@@ -179,22 +249,30 @@ Tags : another-invalid-tag,invalid-tag,tag1
 #[test]
 fn saving_a_new_bookmark_with_a_long_title_fails() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
+    let fx = Fixture::new();
     let title = "a".repeat(501);
-    cmd.args(["save", URI_ONE, "--title", title.as_str()]);
+    let mut cmd = fx.cmd(["save", URI_ONE, "--title", title.as_str()]);
 
     // WHEN
     // THEN
-    cmd.assert().failure().stderr(contains("title is too long"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't save bookmark: title is too long: 501 (max: 500)
+
+    Possible workaround: running with -i/--ignore-attribute-errors might fix some attribute errors.
+    If a title is too long, it'll will be trimmed, and some invalid tags might be transformed to fit bmm's requirements.
+    ");
 }
 
 #[test]
 fn saving_a_new_bookmark_with_an_invalid_tag_fails() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args([
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd([
         "save",
         URI_ONE,
         "--tags",
@@ -203,41 +281,60 @@ fn saving_a_new_bookmark_with_an_invalid_tag_fails() {
 
     // WHEN
     // THEN
-    cmd.assert().failure().stderr(contains(
-        r#"tags ["invalid tag", " another    invalid\t\ttag "] are invalid"#,
-    ));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't save bookmark: tags ["invalid tag", " another    invalid\t\ttag "] are invalid (valid regex: ^[a-zA-Z0-9_-]{1,30}$)
+
+    Possible workaround: running with -i/--ignore-attribute-errors might fix some attribute errors.
+    If a title is too long, it'll will be trimmed, and some invalid tags might be transformed to fit bmm's requirements.
+    "#);
 }
 
 #[test]
 fn saving_a_new_bookmark_with_no_text_editor_configured_fails() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["save", URI_ONE, "-e"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["save", URI_ONE, "--editor"]);
     cmd.env("BMM_EDITOR", "");
     cmd.env("EDITOR", "");
 
     // WHEN
     // THEN
-    cmd.assert()
-        .failure()
-        .stderr(contains("no editor configured").and(contains(
-            "Suggestion: set the environment variables BMM_EDITOR or EDITOR to use this feature",
-        )));
+    assert_cmd_snapshot!(cmd, @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't save bookmark: no editor configured
+
+    Suggestion: set the environment variables BMM_EDITOR or EDITOR to use this feature
+    ");
 }
 
 #[test]
 fn saving_a_new_bookmark_with_incorrect_text_editor_configured_fails() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["save", URI_ONE, "-e"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["save", URI_ONE, "--editor"]);
     cmd.env("BMM_EDITOR", "non-existent-4d56150d");
     cmd.env("EDITOR", "non-existent-4d56150d");
 
     // WHEN
     // THEN
-    cmd.assert()
-        .failure()
-        .stderr(contains("cannot find binary path"));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't save bookmark: couldn't find editor executable "non-existent-4d56150d": cannot find binary path
+
+    Context: bmm used the environment variable BMM_EDITOR to determine your text editor.
+    Check if "non-existent-4d56150d" actually points to your text editor's executable.
+    "#);
 }

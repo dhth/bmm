@@ -4,7 +4,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use url::{ParseError, Url};
 
-const TAG_TITLE_MAX_LENGTH: usize = 500;
+const TITLE_MAX_LENGTH: usize = 500;
 
 #[derive(Debug, Serialize)]
 pub struct DraftBookmark {
@@ -96,7 +96,7 @@ where
 pub enum DraftBookmarkError {
     #[error("couldn't parse provided uri value: {0}")]
     CouldntParseUri(ParseError),
-    #[error("title is too long: {0} (max: {TAG_TITLE_MAX_LENGTH})")]
+    #[error("title is too long: {0} (max: {TITLE_MAX_LENGTH})")]
     TitleTooLong(usize),
     #[error("tags {0:?} are invalid (valid regex: {TAG_REGEX_STR})")]
     TagIsInvalid(Vec<String>),
@@ -173,8 +173,8 @@ impl TryFrom<(PotentialBookmark, bool)> for DraftBookmark {
                 .and_then(|t| {
                     if t.is_empty() {
                         None
-                    } else if t.len() > TAG_TITLE_MAX_LENGTH {
-                        t.get(0..TAG_TITLE_MAX_LENGTH)
+                    } else if t.len() > TITLE_MAX_LENGTH {
+                        t.get(0..TITLE_MAX_LENGTH)
                     } else {
                         Some(t)
                     }
@@ -183,7 +183,7 @@ impl TryFrom<(PotentialBookmark, bool)> for DraftBookmark {
             false => {
                 if let Some(t) = &potential_bookmark.title {
                     let title_len = t.len();
-                    if title_len > TAG_TITLE_MAX_LENGTH {
+                    if title_len > TITLE_MAX_LENGTH {
                         return Err(DraftBookmarkError::TitleTooLong(title_len));
                     }
                 };
@@ -293,7 +293,7 @@ pub struct SavedBookmark {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pretty_assertions::assert_eq;
+    use insta::assert_yaml_snapshot;
 
     //-------------//
     //  SUCCESSES  //
@@ -308,10 +308,18 @@ mod tests {
         let potential_bookmark = PotentialBookmark::from((uri, Some(title), &tags));
 
         // WHEN
-        let result = DraftBookmark::try_from(potential_bookmark);
+        let draft_bookmark = DraftBookmark::try_from(potential_bookmark)
+            .expect("draft bookmark should've been created");
 
         // THEN
-        assert!(result.is_ok());
+        assert_yaml_snapshot!(draft_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github page"
+        tags:
+          - database-library-1
+          - rust
+          - sql
+        "#);
     }
 
     #[test]
@@ -323,11 +331,17 @@ mod tests {
         let potential_bookmark = PotentialBookmark::from((uri, Some(title), &tags));
 
         // WHEN
-        let result = DraftBookmark::try_from(potential_bookmark)
+        let draft_bookmark = DraftBookmark::try_from(potential_bookmark)
             .expect("draft bookmark should've been created");
 
         // THEN
-        assert_eq!(result.tags(), vec!["database-library", "sql"]);
+        assert_yaml_snapshot!(draft_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github page"
+        tags:
+          - database-library
+          - sql
+        "#);
     }
 
     #[test]
@@ -345,7 +359,7 @@ mod tests {
         // THEN
         assert_eq!(
             draft_bookmark.title.map(|t| t.len()),
-            Some(TAG_TITLE_MAX_LENGTH)
+            Some(TITLE_MAX_LENGTH)
         );
     }
 
@@ -371,16 +385,16 @@ mod tests {
             .expect("draft bookmark should've been created");
 
         // THEN
-        assert_eq!(
-            draft_bookmark.tags(),
-            vec![
-                "tag-with-spaces",
-                "tag-with-tabs",
-                "tag-with-trailing-space",
-                "tag-with-leading-space",
-                "tag-with-both-tabs-and-spaces"
-            ]
-        );
+        assert_yaml_snapshot!(draft_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: ~
+        tags:
+          - tag-with-spaces
+          - tag-with-tabs
+          - tag-with-trailing-space
+          - tag-with-leading-space
+          - tag-with-both-tabs-and-spaces
+        "#);
     }
 
     //------------//

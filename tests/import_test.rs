@@ -1,6 +1,7 @@
 mod common;
+
 use common::Fixture;
-use predicates::str::contains;
+use insta_cmd::assert_cmd_snapshot;
 
 //-------------//
 //  SUCCESSES  //
@@ -9,116 +10,143 @@ use predicates::str::contains;
 #[test]
 fn importing_from_an_html_file_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/valid.html"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["import", "tests/static/import/valid.html"]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .success()
-        .stdout(contains("imported 4 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn importing_from_an_invalid_html_file_doesnt_fail() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/invalid.html"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["import", "tests/static/import/invalid.html"]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .success()
-        .stdout(contains("imported 0 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 0 bookmarks
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn force_importing_from_an_html_file_with_some_invalid_attrs_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args([
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd([
         "import",
         "tests/static/import/valid-with-some-invalid-attributes.html",
-        "-i",
+        "--ignore-attribute-errors",
     ]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .success()
-        .stdout(contains("imported 4 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn importing_from_a_valid_json_file_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/valid.json"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .success()
-        .stdout(contains("imported 4 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn importing_from_a_json_file_with_only_mandatory_details_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/only-mandatory.json"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["import", "tests/static/import/only-mandatory.json"]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .success()
-        .stdout(contains("imported 2 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 2 bookmarks
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn force_importing_from_a_json_file_with_some_invalid_attrs_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args([
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd([
         "import",
         "tests/static/import/valid-with-some-invalid-attributes.json",
-        "-i",
+        "--ignore-attribute-errors",
     ]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .success()
-        .stdout(contains("imported 4 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn importing_from_a_valid_txt_file_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/valid.txt"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["import", "tests/static/import/valid.txt"]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .success()
-        .stdout(contains("imported 4 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn importing_extends_previously_saved_info() {
     // GIVEN
-    let fixture = Fixture::new();
     let uri = "https://github.com/dhth/bmm";
-    let mut create_cmd = fixture.command();
-    create_cmd.args([
+    let fx = Fixture::new();
+    let mut create_cmd = fx.cmd([
         "save",
         uri,
         "--title",
@@ -126,39 +154,50 @@ fn importing_extends_previously_saved_info() {
         "--tags",
         "productivity",
     ]);
-    create_cmd.output().expect("command should've run");
+    assert_cmd_snapshot!(create_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/valid.json"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["import", "tests/static/import/valid.json"]);
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 4 bookmarks
 
-    let mut show_cmd = fixture.command();
+    ----- stderr -----
+    ");
+
+    let mut show_cmd = fx.command();
     show_cmd.args(["show", uri]);
-    show_cmd.assert().success().stdout(contains(
-        format!(
-            r#"
-Bookmark details
----
+    assert_cmd_snapshot!(show_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Bookmark details
+    ---
 
-Title: GitHub - dhth/bmm: get to your bookmarks in a flash
-URI  : {uri}
-Tags : productivity,tools
-"#
-        )
-        .trim(),
-    ));
+    Title: GitHub - dhth/bmm: get to your bookmarks in a flash
+    URI  : https://github.com/dhth/bmm
+    Tags : productivity,tools
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn importing_resets_previously_saved_info_if_requested() {
     // GIVEN
-    let fixture = Fixture::new();
     let uri = "https://github.com/dhth/omm";
-    let mut create_cmd = fixture.command();
-    create_cmd.args([
+    let fx = Fixture::new();
+    let mut create_cmd = fx.cmd([
         "save",
         uri,
         "--title",
@@ -166,32 +205,41 @@ fn importing_resets_previously_saved_info_if_requested() {
         "--tags",
         "task-management,productivity",
     ]);
-    create_cmd.output().expect("command should've run");
+    assert_cmd_snapshot!(create_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/only-mandatory.json", "-r"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["import", "tests/static/import/only-mandatory.json", "-r"]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .success()
-        .stdout(contains("imported 2 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    imported 2 bookmarks
 
-    let mut show_cmd = fixture.command();
-    show_cmd.args(["show", uri]);
-    show_cmd.assert().success().stdout(contains(
-        format!(
-            r#"
-Bookmark details
----
+    ----- stderr -----
+    ");
 
-Title: <NOT SET>
-URI  : {uri}
-Tags : <NOT SET>
-"#
-        )
-        .trim(),
-    ));
+    let mut show_cmd = fx.cmd(["show", uri]);
+    assert_cmd_snapshot!(show_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Bookmark details
+    ---
+
+    Title: <NOT SET>
+    URI  : https://github.com/dhth/omm
+    Tags : <NOT SET>
+
+    ----- stderr -----
+    ");
 }
 
 //------------//
@@ -201,41 +249,102 @@ Tags : <NOT SET>
 #[test]
 fn importing_from_an_invalid_json_file_fails() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/invalid.json"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["import", "tests/static/import/invalid.json"]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .failure()
-        .stderr(contains("couldn't parse JSON input"));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't import bookmarks: couldn't parse JSON input: EOF while parsing a list at line 8 column 0
+
+    Suggestion: ensure the file is valid JSON and looks like the following:
+
+    [
+      {
+        "uri": "https://github.com/dhth/bmm",
+        "title": null,
+        "tags": "tools,bookmarks"
+      },
+      {
+        "uri": "https://github.com/dhth/omm",
+        "title": "on-my-mind: a keyboard-driven task manager for the command line",
+        "tags": "tools,productivity"
+      }
+    ]
+    "#);
 }
 
 #[test]
 fn importing_from_a_json_file_fails_if_missing_uri() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/missing-uri.json"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["import", "tests/static/import/missing-uri.json"]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .failure()
-        .stderr(contains("missing field `uri`"));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't import bookmarks: couldn't parse JSON input: missing field `uri` at line 12 column 3
+
+    Suggestion: ensure the file is valid JSON and looks like the following:
+
+    [
+      {
+        "uri": "https://github.com/dhth/bmm",
+        "title": null,
+        "tags": "tools,bookmarks"
+      },
+      {
+        "uri": "https://github.com/dhth/omm",
+        "title": "on-my-mind: a keyboard-driven task manager for the command line",
+        "tags": "tools,productivity"
+      }
+    ]
+    "#);
 }
 
 #[test]
 fn importing_from_a_json_file_fails_if_missing_uri_even_when_forced() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["import", "tests/static/import/missing-uri.json", "-i"]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd([
+        "import",
+        "tests/static/import/missing-uri.json",
+        "--ignore-attribute-errors",
+    ]);
 
     // WHEN
     // THEN
-    cmd.assert()
-        .failure()
-        .stderr(contains("missing field `uri`"));
+    assert_cmd_snapshot!(cmd, @r#"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't import bookmarks: couldn't parse JSON input: missing field `uri` at line 12 column 3
+
+    Suggestion: ensure the file is valid JSON and looks like the following:
+
+    [
+      {
+        "uri": "https://github.com/dhth/bmm",
+        "title": null,
+        "tags": "tools,bookmarks"
+      },
+      {
+        "uri": "https://github.com/dhth/omm",
+        "title": "on-my-mind: a keyboard-driven task manager for the command line",
+        "tags": "tools,productivity"
+      }
+    ]
+    "#);
 }

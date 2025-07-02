@@ -1,7 +1,7 @@
 mod common;
+
 use common::Fixture;
-use predicates::boolean::PredicateBooleanExt;
-use predicates::str::contains;
+use insta_cmd::assert_cmd_snapshot;
 
 const URI_ONE: &str = "https://github.com/dhth/bmm";
 const URI_TWO: &str = "https://github.com/dhth/omm";
@@ -14,165 +14,211 @@ const URI_THREE: &str = "https://github.com/dhth/hours";
 #[test]
 fn saving_multiple_bookmarks_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args(["save-all", URI_ONE, URI_TWO, URI_THREE]);
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd(["save-all", URI_ONE, URI_TWO, URI_THREE]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains("saved 3 bookmarks"));
-    let mut list_cmd = fixture.command();
-    list_cmd.arg("list");
-    list_cmd.assert().success().stdout(contains(
-        format!(
-            "
-{URI_ONE}
-{URI_TWO}
-{URI_THREE}
-",
-        )
-        .trim(),
-    ));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    saved 3 bookmarks
+
+    ----- stderr -----
+    ");
+
+    let mut list_cmd = fx.cmd(["list"]);
+    assert_cmd_snapshot!(list_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://github.com/dhth/bmm
+    https://github.com/dhth/omm
+    https://github.com/dhth/hours
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn saving_multiple_bookmarks_with_tags_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args([
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd([
         "save-all",
         URI_ONE,
         URI_TWO,
         URI_THREE,
-        "-t",
+        "--tags",
         "tools,productivity",
     ]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains("saved 3 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    saved 3 bookmarks
 
-    let mut list_tags_cmd = fixture.command();
-    list_tags_cmd.args(["tags", "list"]);
-    list_tags_cmd.assert().success().stdout(contains(
-        "
-productivity
-tools
-"
-        .trim(),
-    ));
+    ----- stderr -----
+    ");
+
+    let mut list_tags_cmd = fx.cmd(["tags", "list"]);
+    assert_cmd_snapshot!(list_tags_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    productivity
+    tools
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn saving_multiple_bookmarks_extends_previously_saved_tags() {
     // GIVEN
-    let fixture = Fixture::new();
-    let uri = "https://github.com/dhth/bmm";
-    let mut create_cmd = fixture.command();
-    create_cmd.args([
+    let fx = Fixture::new();
+    let mut create_cmd = fx.cmd([
         "save",
-        uri,
+        URI_ONE,
         "--title",
         "bmm's github page",
         "--tags",
         "productivity",
     ]);
-    create_cmd.output().expect("command should've run");
+    assert_cmd_snapshot!(create_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut cmd = fixture.command();
-    cmd.args(["save-all", URI_ONE, URI_TWO, URI_THREE, "-t", "tools"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["save-all", URI_ONE, URI_TWO, URI_THREE, "--tags", "tools"]);
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    saved 3 bookmarks
 
-    let mut show_cmd = fixture.command();
-    show_cmd.args(["show", URI_ONE]);
-    show_cmd.assert().success().stdout(contains(
-        format!(
-            r#"
-Bookmark details
----
+    ----- stderr -----
+    ");
 
-Title: bmm's github page
-URI  : {URI_ONE}
-Tags : productivity,tools
-"#
-        )
-        .trim(),
-    ));
+    let mut show_cmd = fx.cmd(["show", URI_ONE]);
+    assert_cmd_snapshot!(show_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Bookmark details
+    ---
+
+    Title: bmm's github page
+    URI  : https://github.com/dhth/bmm
+    Tags : productivity,tools
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn saving_multiple_bookmarks_resets_previously_saved_tags_if_requested() {
     // GIVEN
-    let fixture = Fixture::new();
-    let uri = "https://github.com/dhth/bmm";
-    let mut create_cmd = fixture.command();
-    create_cmd.args([
+    let fx = Fixture::new();
+    let mut create_cmd = fx.cmd([
         "save",
-        uri,
+        URI_ONE,
         "--title",
         "bmm's github page",
         "--tags",
         "productivity",
     ]);
-    create_cmd.output().expect("command should've run");
+    assert_cmd_snapshot!(create_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
 
-    let mut cmd = fixture.command();
-    cmd.args(["save-all", URI_ONE, URI_TWO, URI_THREE, "-t", "tools", "-r"]);
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd([
+        "save-all",
+        URI_ONE,
+        URI_TWO,
+        URI_THREE,
+        "--tags",
+        "tools",
+        "--reset-missing-details",
+    ]);
 
     // WHEN
     // THEN
-    cmd.assert().success();
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    saved 3 bookmarks
 
-    let mut show_cmd = fixture.command();
-    show_cmd.args(["show", URI_ONE]);
-    show_cmd.assert().success().stdout(contains(
-        format!(
-            r#"
-Bookmark details
----
+    ----- stderr -----
+    ");
 
-Title: bmm's github page
-URI  : {URI_ONE}
-Tags : tools
-"#
-        )
-        .trim(),
-    ));
+    let mut show_cmd = fx.cmd(["show", URI_ONE]);
+    assert_cmd_snapshot!(show_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Bookmark details
+    ---
+
+    Title: bmm's github page
+    URI  : https://github.com/dhth/bmm
+    Tags : tools
+
+    ----- stderr -----
+    ");
 }
 
 #[test]
 fn force_saving_multiple_bookmarks_with_invalid_tags_works() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args([
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd([
         "save-all",
         URI_ONE,
         URI_TWO,
         URI_THREE,
         "--tags",
         "tag1,invalid tag, another    invalid\t\ttag ",
-        "-i",
+        "--ignore-attribute-errors",
     ]);
 
     // WHEN
     // THEN
-    cmd.assert().success().stdout(contains("saved 3 bookmarks"));
+    assert_cmd_snapshot!(cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    saved 3 bookmarks
 
-    let mut list_tags_cmd = fixture.command();
-    list_tags_cmd.args(["tags", "list"]);
-    list_tags_cmd.assert().success().stdout(contains(
-        "
-another-invalid-tag
-invalid-tag
-tag1
-"
-        .trim(),
-    ));
+    ----- stderr -----
+    ");
+
+    let mut list_tags_cmd = fx.cmd(["tags", "list"]);
+    assert_cmd_snapshot!(list_tags_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    another-invalid-tag
+    invalid-tag
+    tag1
+
+    ----- stderr -----
+    ");
 }
 
 //------------//
@@ -182,9 +228,8 @@ tag1
 #[test]
 fn saving_multiple_bookmarks_fails_for_incorrect_uris() {
     // GIVEN
-    let fixture = Fixture::new();
-    let mut cmd = fixture.command();
-    cmd.args([
+    let fx = Fixture::new();
+    let mut cmd = fx.cmd([
         "save-all",
         "this is not a uri",
         URI_TWO,
@@ -193,8 +238,18 @@ fn saving_multiple_bookmarks_fails_for_incorrect_uris() {
 
     // WHEN
     // THEN
-    cmd.assert().failure().stderr(
-        contains("- entry 1: couldn't parse provided uri value")
-            .and(contains("- entry 3: couldn't parse provided uri value")),
-    );
+    assert_cmd_snapshot!(cmd, @r"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    Error: couldn't save bookmarks: there were 2 validation errors
+
+    - entry 1: couldn't parse provided uri value: relative URL without a base
+    - entry 3: couldn't parse provided uri value: invalid international domain name
+
+    Possible workaround: running with -i/--ignore-attribute-errors might fix some attribute errors.
+    If a title is too long, it'll will be trimmed, and some invalid tags might be transformed to fit bmm's requirements.
+    ");
 }

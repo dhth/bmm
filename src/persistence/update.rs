@@ -119,7 +119,7 @@ WHERE
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
+
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::*;
@@ -128,6 +128,7 @@ mod tests {
     use crate::persistence::{
         SaveBookmarkOptions, create_or_update_bookmark, get_bookmark_with_exact_uri, get_tags,
     };
+    use insta::assert_yaml_snapshot;
 
     //-------------//
     //  SUCCESSES  //
@@ -232,31 +233,51 @@ mod tests {
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
-        assert_eq!(bookmark_one.tags.as_deref(), Some("tag2,tag3"));
+        assert_yaml_snapshot!(bookmark_one, @r#"
+        uri: "https://uri-one.com"
+        title: ~
+        tags: "tag2,tag3"
+        "#);
 
         let bookmark_two = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-two.com")
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
-        assert_eq!(bookmark_two.tags.as_deref(), Some("tag2,tag4"));
+        assert_yaml_snapshot!(bookmark_two, @r#"
+        uri: "https://uri-two.com"
+        title: ~
+        tags: "tag2,tag4"
+        "#);
 
         let bookmark_three = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-three.com")
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
-        assert_eq!(bookmark_three.tags.as_deref(), Some("tag3"));
+        assert_yaml_snapshot!(bookmark_three, @r#"
+        uri: "https://uri-three.com"
+        title: ~
+        tags: tag3
+        "#);
 
         let bookmark_four = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-four.com")
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
-        assert_eq!(bookmark_four.tags.as_deref(), Some("tag3"));
+        assert_yaml_snapshot!(bookmark_four, @r#"
+        uri: "https://uri-four.com"
+        title: ~
+        tags: tag3
+        "#);
 
         let bookmark_five = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-five.com")
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
-        assert_eq!(bookmark_five.tags.as_deref(), Some("tag3"));
+        assert_yaml_snapshot!(bookmark_five, @r#"
+        uri: "https://uri-five.com"
+        title: ~
+        tags: tag3
+        "#);
     }
 
     #[tokio::test]

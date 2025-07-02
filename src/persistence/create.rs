@@ -382,7 +382,8 @@ mod tests {
     use super::super::test_fixtures::DBPoolFixture;
     use super::*;
     use crate::domain::PotentialBookmark;
-    use pretty_assertions::assert_eq;
+    use insta::assert_yaml_snapshot;
+
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[tokio::test]
@@ -418,8 +419,11 @@ mod tests {
             .await
             .expect("should have queried bookmark")
             .expect("queried result should've contained a bookmark");
-        assert_eq!(saved_bookmark.title, Some(title.into()));
-        assert_eq!(saved_bookmark.tags.as_deref(), Some("rust,sqlite"));
+        assert_yaml_snapshot!(saved_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github page"
+        tags: "rust,sqlite"
+        "#);
     }
 
     #[tokio::test]
@@ -453,8 +457,11 @@ mod tests {
             .await
             .expect("should have queried bookmark")
             .expect("queried result should've contained a bookmark");
-        assert!(saved_bookmark.title.is_none());
-        assert_eq!(saved_bookmark.tags.as_deref(), Some("rust,sqlite"));
+        assert_yaml_snapshot!(saved_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: ~
+        tags: "rust,sqlite"
+        "#);
     }
 
     #[tokio::test]
@@ -489,8 +496,11 @@ mod tests {
             .await
             .expect("should have queried bookmark")
             .expect("queried result should've contained a bookmark");
-        assert_eq!(saved_bookmark.title, Some(title.into()));
-        assert_eq!(saved_bookmark.tags, None);
+        assert_yaml_snapshot!(saved_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github page"
+        tags: ~
+        "#);
     }
 
     #[tokio::test]
@@ -544,8 +554,11 @@ mod tests {
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
 
-        assert_eq!(saved_bookmark.title, Some(title_old.into()));
-        assert_eq!(saved_bookmark.tags.as_deref(), Some("rust,sqlite"));
+        assert_yaml_snapshot!(saved_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github page"
+        tags: "rust,sqlite"
+        "#);
     }
 
     #[tokio::test]
@@ -601,11 +614,11 @@ mod tests {
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
 
-        assert_eq!(saved_bookmark.title, Some(title_old.into()));
-        assert_eq!(
-            saved_bookmark.tags.as_deref(),
-            Some("database,github,rust,sqlite")
-        );
+        assert_yaml_snapshot!(saved_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github page"
+        tags: "database,github,rust,sqlite"
+        "#);
 
         let tags = get_tags(&fixture.pool)
             .await
@@ -665,7 +678,11 @@ mod tests {
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
 
-        assert_eq!(saved_bookmark.title, Some(title_new.into()));
+        assert_yaml_snapshot!(saved_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github repository"
+        tags: "rust,sqlite"
+        "#);
     }
 
     #[tokio::test]
@@ -719,7 +736,11 @@ mod tests {
             .await
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
-        assert_eq!(saved_bookmark.tags.as_deref(), Some("database,github,rust"));
+        assert_yaml_snapshot!(saved_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github page"
+        tags: "database,github,rust"
+        "#);
     }
 
     #[tokio::test]
@@ -766,7 +787,11 @@ mod tests {
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
 
-        assert!(saved_bookmark.title.is_none());
+        assert_yaml_snapshot!(saved_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: ~
+        tags: ~
+        "#);
     }
 
     #[tokio::test]
@@ -819,7 +844,11 @@ mod tests {
             .await
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
-        assert!(saved_bookmark.tags.is_none());
+        assert_yaml_snapshot!(saved_bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github page"
+        tags: ~
+        "#);
     }
 
     #[tokio::test]
@@ -993,7 +1022,11 @@ mod tests {
             .await
             .expect("bookmark one should've been fetched")
             .expect("result should've contained a bookmark");
-        assert_eq!(bookmark_one.title.as_deref(), Some("title"));
+        assert_yaml_snapshot!(bookmark_one, @r#"
+        uri: "https://uri-one.com"
+        title: title
+        tags: "tag2,tag5"
+        "#);
     }
 
     #[tokio::test]
@@ -1068,7 +1101,11 @@ mod tests {
             .await
             .expect("bookmark one should've been fetched")
             .expect("result should've contained a bookmark");
-        assert_eq!(bookmark_one.title, None);
+        assert_yaml_snapshot!(bookmark_one, @r#"
+        uri: "https://uri-one.com"
+        title: ~
+        tags: "tag2,tag5"
+        "#);
     }
 
     #[tokio::test]
@@ -1143,6 +1180,10 @@ mod tests {
             .await
             .expect("bookmark one should've been fetched")
             .expect("result should've contained a bookmark");
-        assert_eq!(bookmark_one.title.as_deref(), Some("title"));
+        assert_yaml_snapshot!(bookmark_one, @r#"
+        uri: "https://uri-one.com"
+        title: title
+        tags: ~
+        "#);
     }
 }

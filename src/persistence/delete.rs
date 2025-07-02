@@ -95,7 +95,7 @@ mod tests {
     use super::*;
     use crate::domain::{DraftBookmark, PotentialBookmark};
     use crate::persistence::SaveBookmarkOptions;
-    use pretty_assertions::assert_eq;
+
     use std::time::{SystemTime, UNIX_EPOCH};
 
     //-------------//

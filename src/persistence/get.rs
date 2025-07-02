@@ -640,16 +640,9 @@ mod tests {
         domain::{DraftBookmark, PotentialBookmark},
         persistence::SaveBookmarkOptions,
     };
-    use pretty_assertions::assert_eq;
-    use std::time::{SystemTime, UNIX_EPOCH};
 
-    enum TestCase {
-        Sqlx,
-        Serde,
-        Clap,
-        Anyhow,
-        ThisError,
-    }
+    use insta::assert_yaml_snapshot;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     async fn save_test_bookmarks(pool: &Pool<Sqlite>) {
         let start = SystemTime::now();
@@ -699,53 +692,6 @@ mod tests {
         }
     }
 
-    fn check_bookmark(bookmark: &SavedBookmark, expected: &TestCase) {
-        match expected {
-            TestCase::Sqlx => {
-                assert_eq!(bookmark.uri.as_str(), "https://github.com/launchbadge/sqlx");
-                assert_eq!(bookmark.title.as_deref(), Some("sqlx's github page"));
-                assert_eq!(bookmark.tags.as_deref(), Some("crate,github,sql,sqlite"));
-            }
-            TestCase::Serde => {
-                assert_eq!(bookmark.uri.as_str(), "https://github.com/serde-rs/serde");
-                assert_eq!(bookmark.title, None);
-                assert_eq!(bookmark.tags.as_deref(), Some("github,serde"));
-            }
-            TestCase::Clap => {
-                assert_eq!(bookmark.uri.as_str(), "https://github.com/clap-rs/clap");
-                assert_eq!(bookmark.title.as_deref(), Some("clap repository on github"));
-                assert_eq!(bookmark.tags.as_deref(), Some("clap,cli"));
-            }
-            TestCase::Anyhow => {
-                assert_eq!(bookmark.uri.as_str(), "https://crates.io/crates/anyhow");
-                assert_eq!(bookmark.title.as_deref(), Some("anyhow on crates.io PaGe"));
-                assert_eq!(
-                    bookmark.tags.as_deref(),
-                    Some("crate,error-handling,github")
-                );
-            }
-            TestCase::ThisError => {
-                assert_eq!(bookmark.uri.as_str(), "https://crates.io/crates/thiserror");
-                assert_eq!(bookmark.title, None);
-                assert_eq!(
-                    bookmark.tags.as_deref(),
-                    Some("crate,error-handling,github")
-                );
-            }
-        }
-    }
-
-    fn check_bookmarks(bookmarks: &[SavedBookmark], expected: Vec<TestCase>) {
-        assert_eq!(
-            bookmarks.len(),
-            expected.len(),
-            "number of bookmarks and expected values are not equal"
-        );
-        for (bookmark, expected) in bookmarks.iter().zip(expected.iter()) {
-            check_bookmark(bookmark, expected);
-        }
-    }
-
     #[tokio::test]
     async fn get_bookmark_with_uri_returns_none_if_bookmark_doesnt_exist() {
         // GIVEN
@@ -788,9 +734,11 @@ mod tests {
             .expect("result should've been a bookmark");
 
         // THEN
-        assert_eq!(bookmark.uri.as_str(), uri);
-        assert_eq!(bookmark.title.as_deref(), title);
-        assert_eq!(bookmark.tags.as_deref(), Some("crate,github,sql"));
+        assert_yaml_snapshot!(bookmark, @r#"
+        uri: "https://github.com/launchbadge/sqlx"
+        title: "sqlx's github page"
+        tags: "crate,github,sql"
+        "#);
     }
 
     #[tokio::test]
@@ -806,7 +754,17 @@ mod tests {
             .unwrap();
 
         // THEN
-        assert_eq!(bookmarks.len(), 3);
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://github.com/launchbadge/sqlx"
+          title: "sqlx's github page"
+          tags: "crate,github,sql,sqlite"
+        - uri: "https://github.com/serde-rs/serde"
+          title: ~
+          tags: "github,serde"
+        - uri: "https://github.com/clap-rs/clap"
+          title: clap repository on github
+          tags: "clap,cli"
+        "#);
     }
 
     #[tokio::test]
@@ -822,7 +780,14 @@ mod tests {
             .unwrap();
 
         // THEN
-        check_bookmarks(&bookmarks, vec![TestCase::Sqlx, TestCase::Anyhow]);
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://github.com/launchbadge/sqlx"
+          title: "sqlx's github page"
+          tags: "crate,github,sql,sqlite"
+        - uri: "https://crates.io/crates/anyhow"
+          title: anyhow on crates.io PaGe
+          tags: "crate,error-handling,github"
+        "#);
     }
 
     #[tokio::test]
@@ -838,7 +803,11 @@ mod tests {
             .unwrap();
 
         // THEN
-        check_bookmarks(&bookmarks, vec![TestCase::Serde]);
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://github.com/serde-rs/serde"
+          title: ~
+          tags: "github,serde"
+        "#);
     }
 
     #[tokio::test]
@@ -854,10 +823,17 @@ mod tests {
             .unwrap();
 
         // THEN
-        check_bookmarks(
-            &bookmarks,
-            vec![TestCase::Sqlx, TestCase::Anyhow, TestCase::ThisError],
-        );
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://github.com/launchbadge/sqlx"
+          title: "sqlx's github page"
+          tags: "crate,github,sql,sqlite"
+        - uri: "https://crates.io/crates/anyhow"
+          title: anyhow on crates.io PaGe
+          tags: "crate,error-handling,github"
+        - uri: "https://crates.io/crates/thiserror"
+          title: ~
+          tags: "crate,error-handling,github"
+        "#);
     }
 
     #[tokio::test]
@@ -874,7 +850,14 @@ mod tests {
             .unwrap();
 
         // THEN
-        check_bookmarks(&bookmarks, vec![TestCase::Anyhow, TestCase::ThisError]);
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://crates.io/crates/anyhow"
+          title: anyhow on crates.io PaGe
+          tags: "crate,error-handling,github"
+        - uri: "https://crates.io/crates/thiserror"
+          title: ~
+          tags: "crate,error-handling,github"
+        "#);
     }
 
     #[tokio::test]
@@ -891,7 +874,11 @@ mod tests {
             .unwrap();
 
         // THEN
-        check_bookmarks(&bookmarks, vec![TestCase::Clap]);
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://github.com/clap-rs/clap"
+          title: clap repository on github
+          tags: "clap,cli"
+        "#);
     }
 
     #[tokio::test]
@@ -908,7 +895,11 @@ mod tests {
             .unwrap();
 
         // THEN
-        check_bookmarks(&bookmarks, vec![TestCase::Anyhow]);
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://crates.io/crates/anyhow"
+          title: anyhow on crates.io PaGe
+          tags: "crate,error-handling,github"
+        "#);
     }
 
     #[tokio::test]
@@ -926,7 +917,11 @@ mod tests {
             .unwrap();
 
         // THEN
-        check_bookmarks(&bookmarks, vec![TestCase::Sqlx]);
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://github.com/launchbadge/sqlx"
+          title: "sqlx's github page"
+          tags: "crate,github,sql,sqlite"
+        "#);
     }
 
     #[tokio::test]
@@ -942,7 +937,14 @@ mod tests {
             .unwrap();
 
         // THEN
-        assert_eq!(bookmarks.len(), 2, "number of bookmarks is incorrect");
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://github.com/launchbadge/sqlx"
+          title: "sqlx's github page"
+          tags: "crate,github,sql,sqlite"
+        - uri: "https://github.com/serde-rs/serde"
+          title: ~
+          tags: "github,serde"
+        "#);
     }
 
     #[tokio::test]
@@ -1017,18 +1019,17 @@ mod tests {
             .unwrap();
 
         // THEN
-        assert_eq!(bookmarks.len(), 3);
-        let mut got_uris = Vec::with_capacity(3);
-        let expected_uris = vec![
-            "https://github.com/clap-rs/clap",
-            "https://github.com/serde-rs/serde",
-            "https://github.com/launchbadge/sqlx",
-        ];
-        for b in bookmarks {
-            got_uris.push(b.uri)
-        }
-
-        assert_eq!(got_uris, expected_uris);
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://github.com/clap-rs/clap"
+          title: ~
+          tags: ~
+        - uri: "https://github.com/serde-rs/serde"
+          title: ~
+          tags: ~
+        - uri: "https://github.com/launchbadge/sqlx"
+          title: ~
+          tags: ~
+        "#);
     }
 
     #[tokio::test]
@@ -1127,7 +1128,14 @@ mod tests {
             .unwrap();
 
         // THEN
-        check_bookmarks(&bookmarks, vec![TestCase::Sqlx, TestCase::Anyhow]);
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://github.com/launchbadge/sqlx"
+          title: "sqlx's github page"
+          tags: "crate,github,sql,sqlite"
+        - uri: "https://crates.io/crates/anyhow"
+          title: anyhow on crates.io PaGe
+          tags: "crate,error-handling,github"
+        "#);
     }
 
     #[tokio::test]

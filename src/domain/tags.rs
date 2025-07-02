@@ -61,7 +61,6 @@ impl std::fmt::Display for TagStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pretty_assertions::assert_eq;
 
     //-------------//
     //  SUCCESSES  //

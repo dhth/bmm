@@ -102,6 +102,10 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Install sqlx-cli
         run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
+      - name: Install nextest
+        uses: taiki-e/install-action@a27ef18d36cfa66b0af3a360104621793b41c036 # v2.54.3
+        with:
+          tool: cargo-nextest
       - name: Create test database
         run: |
           mkdir testdb
@@ -109,7 +113,9 @@ jobs:
           cargo sqlx migrate run
           cargo sqlx prepare --check
       - name: Run tests
-        run: cargo test
+        env:
+          RUST_BACKTRACE: 0
+        run: cargo nextest run
 
   back-compat:
     needs: changes

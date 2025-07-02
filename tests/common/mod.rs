@@ -28,12 +28,6 @@ impl Fixture {
         }
     }
 
-    pub fn command(&self) -> Command {
-        let mut command = Command::new(&self._bin_path);
-        command.args(["--db-path", &self.data_file_path]);
-        command
-    }
-
     pub fn base_cmd(&self) -> Command {
         Command::new(&self._bin_path)
     }

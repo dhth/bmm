@@ -175,8 +175,7 @@ fn importing_extends_previously_saved_info() {
     ----- stderr -----
     ");
 
-    let mut show_cmd = fx.command();
-    show_cmd.args(["show", uri]);
+    let mut show_cmd = fx.cmd(["show", uri]);
     assert_cmd_snapshot!(show_cmd, @r"
     success: true
     exit_code: 0

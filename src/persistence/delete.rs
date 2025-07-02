@@ -95,6 +95,7 @@ mod tests {
     use super::*;
     use crate::domain::{DraftBookmark, PotentialBookmark};
     use crate::persistence::SaveBookmarkOptions;
+    use insta::assert_yaml_snapshot;
 
     use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -105,7 +106,7 @@ mod tests {
     #[tokio::test]
     async fn deleting_uris_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -118,7 +119,7 @@ mod tests {
                     .expect("draft bookmark should've been created");
             println!("draft_bookmark: {}", draft_bookmark.uri());
             create_or_update_bookmark(
-                &fixture.pool,
+                &fx.pool,
                 &draft_bookmark,
                 now,
                 SaveBookmarkOptions::default(),
@@ -130,12 +131,12 @@ mod tests {
         // WHEN
         let uris_to_delete = vec!["https://uri-1.com".into(), "https://uri-4.com".into()];
 
-        let result = delete_bookmarks_with_uris(&fixture.pool, &uris_to_delete)
+        let result = delete_bookmarks_with_uris(&fx.pool, &uris_to_delete)
             .await
             .expect("result should've been a success");
         assert_eq!(result, uris_to_delete.len() as u64);
 
-        let num_bookmarks_in_db = get_num_bookmarks(&fixture.pool)
+        let num_bookmarks_in_db = get_num_bookmarks(&fx.pool)
             .await
             .expect("number of bookmarks should've been fetched");
         assert_eq!(
@@ -147,7 +148,7 @@ mod tests {
     #[tokio::test]
     async fn deleting_uris_works_when_uris_dont_exist() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -157,7 +158,7 @@ mod tests {
             .expect("draft bookmark should've been created");
         println!("draft_bookmark: {}", draft_bookmark.uri());
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
@@ -171,12 +172,12 @@ mod tests {
             "https://unknown-uri-2.com".into(),
         ];
 
-        let result = delete_bookmarks_with_uris(&fixture.pool, &uris_to_delete)
+        let result = delete_bookmarks_with_uris(&fx.pool, &uris_to_delete)
             .await
             .expect("result should've been a success");
         assert_eq!(result, 0);
 
-        let num_bookmarks_in_db = get_num_bookmarks(&fixture.pool)
+        let num_bookmarks_in_db = get_num_bookmarks(&fx.pool)
             .await
             .expect("number of bookmarks should've been fetched");
         assert_eq!(num_bookmarks_in_db, 1);
@@ -185,7 +186,7 @@ mod tests {
     #[tokio::test]
     async fn deleting_uris_cleans_up_unused_tags() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
@@ -196,7 +197,7 @@ mod tests {
                 .expect("draft bookmark should've been created");
         println!("draft_bookmark: {}", draft_bookmark.uri());
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
@@ -207,21 +208,21 @@ mod tests {
         // WHEN
         let uris_to_delete = vec![uri.to_string()];
 
-        let result = delete_bookmarks_with_uris(&fixture.pool, &uris_to_delete)
+        let result = delete_bookmarks_with_uris(&fx.pool, &uris_to_delete)
             .await
             .expect("result should've been a success");
         assert_eq!(result, 1);
 
-        let tags_in_db = get_tags(&fixture.pool)
+        let tags_in_db = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
-        assert!(tags_in_db.is_empty());
+        assert_yaml_snapshot!(tags_in_db, @"[]");
     }
 
     #[tokio::test]
     async fn deleting_tags_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uris = [
             ("https://uri-one.com", None, vec!["tag5", "tag2"]),
             ("https://uri-two.com", None, vec!["tag2", "tag3"]),
@@ -239,7 +240,7 @@ mod tests {
                 DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmark should be initialized");
             create_or_update_bookmark(
-                &fixture.pool,
+                &fx.pool,
                 &draft_bookmark,
                 now,
                 SaveBookmarkOptions::default(),
@@ -253,20 +254,20 @@ mod tests {
             .iter()
             .map(|t| t.to_string())
             .collect::<Vec<_>>();
-        let num_rows_deleted = delete_tags_by_name(&fixture.pool, &tags_to_delete)
+        let num_rows_deleted = delete_tags_by_name(&fx.pool, &tags_to_delete)
             .await
             .expect("result should've been a success");
 
         // THEN
         assert_eq!(num_rows_deleted, 2);
 
-        let tags_left = get_tags(&fixture.pool)
+        let tags_left = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
-        assert_eq!(tags_left.len(), 3);
-        assert_eq!(
-            tags_left.iter().map(|t| t.as_str()).collect::<Vec<_>>(),
-            vec!["tag3", "tag4", "tag5"]
-        );
+        assert_yaml_snapshot!(tags_left, @r"
+        - tag3
+        - tag4
+        - tag5
+        ");
     }
 }

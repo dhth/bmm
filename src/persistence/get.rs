@@ -632,6 +632,11 @@ ORDER BY name
 }
 
 #[cfg(test)]
+pub async fn get_all_bookmarks(pool: &Pool<Sqlite>) -> Result<Vec<SavedBookmark>, DBError> {
+    get_bookmarks(pool, None, None, vec![], 1000).await
+}
+
+#[cfg(test)]
 mod tests {
     use super::super::create_or_update_bookmark;
     use super::super::test_fixtures::DBPoolFixture;
@@ -695,10 +700,10 @@ mod tests {
     #[tokio::test]
     async fn get_bookmark_with_uri_returns_none_if_bookmark_doesnt_exist() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
 
         // WHEN
-        let maybe_bookmark = get_bookmark_with_exact_uri(&fixture.pool, "https://blah.com")
+        let maybe_bookmark = get_bookmark_with_exact_uri(&fx.pool, "https://blah.com")
             .await
             .unwrap();
 
@@ -709,7 +714,7 @@ mod tests {
     #[tokio::test]
     async fn get_bookmark_with_uri_returns_bookmark_when_present() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title = Some("sqlx's github page");
         let tags = vec!["sql", "crate", "github"];
@@ -719,7 +724,7 @@ mod tests {
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
@@ -728,7 +733,7 @@ mod tests {
         .expect("bookmark should be saved in db");
 
         // WHEN
-        let bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .unwrap()
             .expect("result should've been a bookmark");
@@ -744,12 +749,12 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_uri_only_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let uri_query = Some("github.com".into());
-        let bookmarks = get_bookmarks(&fixture.pool, uri_query, None, Vec::new(), 10)
+        let bookmarks = get_bookmarks(&fx.pool, uri_query, None, Vec::new(), 10)
             .await
             .unwrap();
 
@@ -770,12 +775,12 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_title_only_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let title_query = Some("page".into());
-        let bookmarks = get_bookmarks(&fixture.pool, None, title_query, Vec::new(), 10)
+        let bookmarks = get_bookmarks(&fx.pool, None, title_query, Vec::new(), 10)
             .await
             .unwrap();
 
@@ -793,12 +798,12 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_a_tag_only_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let tags_query = vec!["serde".into()];
-        let bookmarks = get_bookmarks(&fixture.pool, None, None, tags_query, 10)
+        let bookmarks = get_bookmarks(&fx.pool, None, None, tags_query, 10)
             .await
             .unwrap();
 
@@ -813,12 +818,12 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_multiple_tags_only_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let tags_query = vec!["github".into(), "crate".into()];
-        let bookmarks = get_bookmarks(&fixture.pool, None, None, tags_query, 10)
+        let bookmarks = get_bookmarks(&fx.pool, None, None, tags_query, 10)
             .await
             .unwrap();
 
@@ -839,13 +844,13 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_both_uri_and_tags_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let uri_query = Some("crate".into());
         let tags_query = vec!["github".into()];
-        let bookmarks = get_bookmarks(&fixture.pool, uri_query, None, tags_query, 10)
+        let bookmarks = get_bookmarks(&fx.pool, uri_query, None, tags_query, 10)
             .await
             .unwrap();
 
@@ -863,13 +868,13 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_both_uri_and_title_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let uri_query = Some("github".into());
         let title_query = Some("repository".into());
-        let bookmarks = get_bookmarks(&fixture.pool, uri_query, title_query, Vec::new(), 10)
+        let bookmarks = get_bookmarks(&fx.pool, uri_query, title_query, Vec::new(), 10)
             .await
             .unwrap();
 
@@ -884,13 +889,13 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_both_title_and_tags_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let title_query = Some("crate".into());
         let tags_query = vec!["error-handling".into()];
-        let bookmarks = get_bookmarks(&fixture.pool, None, title_query, tags_query, 10)
+        let bookmarks = get_bookmarks(&fx.pool, None, title_query, tags_query, 10)
             .await
             .unwrap();
 
@@ -905,14 +910,14 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_all_three_attributes_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let uri_query = Some("github".into());
         let title_query = Some("page".into());
         let tags_query = vec!["sql".into(), "crate".into()];
-        let bookmarks = get_bookmarks(&fixture.pool, uri_query, title_query, tags_query, 10)
+        let bookmarks = get_bookmarks(&fx.pool, uri_query, title_query, tags_query, 10)
             .await
             .unwrap();
 
@@ -927,12 +932,12 @@ mod tests {
     #[tokio::test]
     async fn limiting_search_results_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let uri_query = Some("github.com".into());
-        let bookmarks = get_bookmarks(&fixture.pool, uri_query, None, Vec::new(), 2)
+        let bookmarks = get_bookmarks(&fx.pool, uri_query, None, Vec::new(), 2)
             .await
             .unwrap();
 
@@ -950,14 +955,14 @@ mod tests {
     #[tokio::test]
     async fn getting_returns_results_in_order_of_last_update() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
 
         let start = SystemTime::now();
         let since_the_epoch = start.duration_since(UNIX_EPOCH).unwrap();
         let now = since_the_epoch.as_secs() as i64;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &DraftBookmark::try_from(PotentialBookmark::from((
                 "https://github.com/launchbadge/sqlx",
                 None,
@@ -971,7 +976,7 @@ mod tests {
         .expect("bookmark 1 should be saved in db");
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &DraftBookmark::try_from(PotentialBookmark::from((
                 "https://github.com/serde-rs/serde",
                 None,
@@ -985,7 +990,7 @@ mod tests {
         .expect("bookmark 2 should be saved in db");
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &DraftBookmark::try_from(PotentialBookmark::from((
                 "https://github.com/clap-rs/clap",
                 None,
@@ -999,7 +1004,7 @@ mod tests {
         .expect("bookmark 3 should be saved in db");
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &DraftBookmark::try_from(PotentialBookmark::from((
                 "https://crates.io/crates/anyhow",
                 None,
@@ -1014,7 +1019,7 @@ mod tests {
 
         // WHEN
         let uri_query = Some("github.com".into());
-        let bookmarks = get_bookmarks(&fixture.pool, uri_query, None, Vec::new(), 10)
+        let bookmarks = get_bookmarks(&fx.pool, uri_query, None, Vec::new(), 10)
             .await
             .unwrap();
 
@@ -1035,7 +1040,7 @@ mod tests {
     #[tokio::test]
     async fn getting_bookmarks_by_query_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uris = [
             (
                 "https://uri-one-keyword1-keyword3.com",
@@ -1069,7 +1074,7 @@ mod tests {
                 DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmark should be initialized");
             create_or_update_bookmark(
-                &fixture.pool,
+                &fx.pool,
                 &draft_bookmark,
                 now,
                 SaveBookmarkOptions::default(),
@@ -1101,9 +1106,7 @@ mod tests {
 
         // WHEN
         for (query, expected_num_bookmarks) in test_cases {
-            let bookmarks = get_bookmarks_by_query(&fixture.pool, &query, 10)
-                .await
-                .unwrap();
+            let bookmarks = get_bookmarks_by_query(&fx.pool, &query, 10).await.unwrap();
 
             // THEN
             assert_eq!(
@@ -1118,12 +1121,12 @@ mod tests {
     #[tokio::test]
     async fn searching_bookmarks_by_query_returns_all_data_for_each_bookmark() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
-        save_test_bookmarks(&fixture.pool).await;
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
 
         // WHEN
         let search_terms = SearchTerms::try_from("crate page").unwrap();
-        let bookmarks = get_bookmarks_by_query(&fixture.pool, &search_terms, 10)
+        let bookmarks = get_bookmarks_by_query(&fx.pool, &search_terms, 10)
             .await
             .unwrap();
 
@@ -1141,7 +1144,7 @@ mod tests {
     #[tokio::test]
     async fn getting_tags_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uris = [
             ("https://uri-one.com", None, vec!["tag5", "tag2"]),
             ("https://uri-two.com", None, vec!["tag2", "tag3"]),
@@ -1159,7 +1162,7 @@ mod tests {
                 DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmark should be initialized");
             create_or_update_bookmark(
-                &fixture.pool,
+                &fx.pool,
                 &draft_bookmark,
                 now,
                 SaveBookmarkOptions::default(),
@@ -1169,7 +1172,7 @@ mod tests {
         }
 
         // WHEN
-        let tags = get_tags(&fixture.pool)
+        let tags = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
 
@@ -1184,7 +1187,7 @@ mod tests {
     #[tokio::test]
     async fn getting_tags_with_stats_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uris = [
             ("https://uri-one.com", None, vec!["tag5", "tag2"]),
             ("https://uri-two.com", None, vec!["tag2", "tag3"]),
@@ -1202,7 +1205,7 @@ mod tests {
                 DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmark should be initialized");
             create_or_update_bookmark(
-                &fixture.pool,
+                &fx.pool,
                 &draft_bookmark,
                 now,
                 SaveBookmarkOptions::default(),
@@ -1212,7 +1215,7 @@ mod tests {
         }
 
         // WHEN
-        let tags = get_tags_with_stats(&fixture.pool)
+        let tags = get_tags_with_stats(&fx.pool)
             .await
             .expect("tags should've been fetched");
 

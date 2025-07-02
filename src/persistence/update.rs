@@ -137,7 +137,7 @@ mod tests {
     #[tokio::test]
     async fn renaming_tag_works_when_new_tag_doesnt_exist() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((
             uri,
@@ -151,7 +151,7 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
@@ -162,25 +162,26 @@ mod tests {
         let new_tag = Tag::try_from("new-tag").expect("new tag should've been created");
 
         // WHEN
-        let rows_affected = rename_tag_name(&fixture.pool, "old-tag-1".to_string(), new_tag)
+        let rows_affected = rename_tag_name(&fx.pool, "old-tag-1".to_string(), new_tag)
             .await
             .expect("result should've been a success");
 
         // THEN
         assert_eq!(rows_affected, 1);
 
-        let tags = get_tags(&fixture.pool)
+        let tags = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
-        assert_eq!(tags.len(), 2);
-        assert!(tags.contains(&"new-tag".to_string()));
-        assert!(tags.contains(&"old-tag-2".to_string()));
+        assert_yaml_snapshot!(tags, @r"
+        - new-tag
+        - old-tag-2
+        ");
     }
 
     #[tokio::test]
     async fn renaming_tag_works_when_new_tag_already_exists() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uris = [
             ("https://uri-one.com", None, vec!["tag1", "tag2"]),
             ("https://uri-two.com", None, vec!["tag2", "tag4"]),
@@ -198,7 +199,7 @@ mod tests {
                 DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
                     .expect("draft bookmark should be initialized");
             create_or_update_bookmark(
-                &fixture.pool,
+                &fx.pool,
                 &draft_bookmark,
                 now,
                 SaveBookmarkOptions::default(),
@@ -208,28 +209,29 @@ mod tests {
         }
 
         let new_tag = Tag::try_from("tag3").expect("new tag should've been created");
-        let tags_before = get_tags(&fixture.pool)
+        let tags_before = get_tags(&fx.pool)
             .await
             .expect("tags before should've been fetched");
         assert_eq!(tags_before.len(), 4, "tags before wasn't what was expected");
 
         // WHEN
-        let rows_affected = rename_tag_name(&fixture.pool, "tag1".to_string(), new_tag)
+        let rows_affected = rename_tag_name(&fx.pool, "tag1".to_string(), new_tag)
             .await
             .expect("result should've been a success");
 
         // THEN
         assert_eq!(rows_affected, 1);
 
-        let tags = get_tags(&fixture.pool)
+        let tags = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
-        assert_eq!(
-            tags.iter().map(|t| t.as_str()).collect::<Vec<_>>(),
-            vec!["tag2", "tag3", "tag4"]
-        );
+        assert_yaml_snapshot!(tags, @r"
+        - tag2
+        - tag3
+        - tag4
+        ");
 
-        let bookmark_one = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-one.com")
+        let bookmark_one = get_bookmark_with_exact_uri(&fx.pool, "https://uri-one.com")
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
@@ -239,7 +241,7 @@ mod tests {
         tags: "tag2,tag3"
         "#);
 
-        let bookmark_two = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-two.com")
+        let bookmark_two = get_bookmark_with_exact_uri(&fx.pool, "https://uri-two.com")
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
@@ -249,7 +251,7 @@ mod tests {
         tags: "tag2,tag4"
         "#);
 
-        let bookmark_three = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-three.com")
+        let bookmark_three = get_bookmark_with_exact_uri(&fx.pool, "https://uri-three.com")
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
@@ -259,7 +261,7 @@ mod tests {
         tags: tag3
         "#);
 
-        let bookmark_four = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-four.com")
+        let bookmark_four = get_bookmark_with_exact_uri(&fx.pool, "https://uri-four.com")
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
@@ -269,7 +271,7 @@ mod tests {
         tags: tag3
         "#);
 
-        let bookmark_five = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-five.com")
+        let bookmark_five = get_bookmark_with_exact_uri(&fx.pool, "https://uri-five.com")
             .await
             .expect("bookmark should've been fetched")
             .expect("bookmark should've been present");
@@ -283,7 +285,7 @@ mod tests {
     #[tokio::test]
     async fn renaming_non_existent_tag_doesnt_fail() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((
             uri,
@@ -297,7 +299,7 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
@@ -307,7 +309,7 @@ mod tests {
         let new_tag = Tag::try_from("new-tag").expect("new tag should've been created");
 
         // WHEN
-        let rows_affected = rename_tag_name(&fixture.pool, "old-tag-3".to_string(), new_tag)
+        let rows_affected = rename_tag_name(&fx.pool, "old-tag-3".to_string(), new_tag)
             .await
             .expect("result should've been a success");
 

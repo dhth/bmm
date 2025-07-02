@@ -378,7 +378,9 @@ WHERE
 
 #[cfg(test)]
 mod tests {
-    use super::super::get::{get_bookmark_with_exact_uri, get_num_bookmarks, get_tags};
+    use super::super::get::{
+        get_all_bookmarks, get_bookmark_with_exact_uri, get_num_bookmarks, get_tags,
+    };
     use super::super::test_fixtures::DBPoolFixture;
     use super::*;
     use crate::domain::PotentialBookmark;
@@ -389,7 +391,7 @@ mod tests {
     #[tokio::test]
     async fn creating_a_bookmark_with_all_attributes_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
@@ -401,21 +403,17 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         // WHEN
-        let result = create_or_update_bookmark(
-            &fixture.pool,
+        create_or_update_bookmark(
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
         )
-        .await;
+        .await
+        .expect("bookmark should've been created");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let saved_bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .expect("should have queried bookmark")
             .expect("queried result should've contained a bookmark");
@@ -429,7 +427,7 @@ mod tests {
     #[tokio::test]
     async fn creating_a_bookmark_without_a_title_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, None, &tags)))
@@ -439,21 +437,17 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         // WHEN
-        let result = create_or_update_bookmark(
-            &fixture.pool,
+        create_or_update_bookmark(
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
         )
-        .await;
+        .await
+        .expect("bookmark should've been created");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let saved_bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .expect("should have queried bookmark")
             .expect("queried result should've contained a bookmark");
@@ -467,7 +461,7 @@ mod tests {
     #[tokio::test]
     async fn creating_a_bookmark_without_tags_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
         let draft_bookmark =
@@ -478,21 +472,17 @@ mod tests {
         let now = since_the_epoch.as_secs() as i64;
 
         // WHEN
-        let result = create_or_update_bookmark(
-            &fixture.pool,
+        create_or_update_bookmark(
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
         )
-        .await;
+        .await
+        .expect("bookmark should've been created");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let saved_bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .expect("should have queried bookmark")
             .expect("queried result should've contained a bookmark");
@@ -506,7 +496,7 @@ mod tests {
     #[tokio::test]
     async fn updating_a_bookmark_keeps_previous_data_if_requested() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
@@ -519,7 +509,7 @@ mod tests {
         let created_at = now - 60 * 60;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark_old,
             created_at,
             SaveBookmarkOptions::default(),
@@ -530,26 +520,22 @@ mod tests {
         // WHEN
         let draft_bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, None, None)))
             .expect("draft bookmark should've been created");
-        let result = create_or_update_bookmark(
-            &fixture.pool,
+        create_or_update_bookmark(
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
         )
-        .await;
+        .await
+        .expect("bookmark should've been updated");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+        let num_bookmarks = get_num_bookmarks(&fx.pool)
             .await
             .expect("number of bookmarks should've been fetched");
         assert_eq!(num_bookmarks, 1);
 
-        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let saved_bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
@@ -564,7 +550,7 @@ mod tests {
     #[tokio::test]
     async fn updating_a_bookmark_appends_to_previous_tags_if_requested() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
@@ -577,7 +563,7 @@ mod tests {
         let created_at = now - 60 * 60;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark_old,
             created_at,
             SaveBookmarkOptions::default(),
@@ -590,26 +576,22 @@ mod tests {
         let draft_bookmark =
             DraftBookmark::try_from(PotentialBookmark::from((uri, None, &new_tags)))
                 .expect("draft bookmark should've been created");
-        let result = create_or_update_bookmark(
-            &fixture.pool,
+        create_or_update_bookmark(
+            &fx.pool,
             &draft_bookmark,
             now,
             SaveBookmarkOptions::default(),
         )
-        .await;
+        .await
+        .expect("bookmark should've been updated");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+        let num_bookmarks = get_num_bookmarks(&fx.pool)
             .await
             .expect("number of bookmarks should've been fetched");
         assert_eq!(num_bookmarks, 1);
 
-        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let saved_bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
@@ -620,16 +602,21 @@ mod tests {
         tags: "database,github,rust,sqlite"
         "#);
 
-        let tags = get_tags(&fixture.pool)
+        let tags = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
-        assert_eq!(tags.len(), 4);
+        assert_yaml_snapshot!(tags, @r"
+        - database
+        - github
+        - rust
+        - sqlite
+        ");
     }
 
     #[tokio::test]
     async fn updating_a_bookmark_overwrites_previous_attributes_if_requested() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
@@ -642,7 +629,7 @@ mod tests {
         let created_at = now - 60 * 60;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark_old,
             created_at,
             SaveBookmarkOptions::default(),
@@ -659,21 +646,17 @@ mod tests {
             reset_missing_attributes: true,
             reset_tags: true,
         };
-        let result =
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
+        create_or_update_bookmark(&fx.pool, &draft_bookmark, now, save_options)
+            .await
+            .expect("bookmark should've been updated");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+        let num_bookmarks = get_num_bookmarks(&fx.pool)
             .await
             .expect("number of bookmarks should've been fetched");
         assert_eq!(num_bookmarks, 1);
 
-        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let saved_bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
@@ -688,7 +671,7 @@ mod tests {
     #[tokio::test]
     async fn updating_a_bookmark_overwrites_previous_tags_if_requested() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
@@ -701,7 +684,7 @@ mod tests {
         let created_at = now - 60 * 60;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark_old,
             created_at,
             SaveBookmarkOptions::default(),
@@ -718,21 +701,17 @@ mod tests {
             reset_missing_attributes: false,
             reset_tags: true,
         };
-        let result =
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
+        create_or_update_bookmark(&fx.pool, &draft_bookmark, now, save_options)
+            .await
+            .expect("bookmark should've been updated");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+        let num_bookmarks = get_num_bookmarks(&fx.pool)
             .await
             .expect("number of bookmarks should've been fetched");
         assert_eq!(num_bookmarks, 1);
 
-        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let saved_bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
@@ -746,7 +725,7 @@ mod tests {
     #[tokio::test]
     async fn removing_title_from_a_saved_bookmark_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uri = "https://github.com/launchbadge/sqlx";
         let title_old = "sqlx's github page";
         let draft_bookmark_old =
@@ -758,7 +737,7 @@ mod tests {
         let created_at = now - 60 * 60;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark_old,
             created_at,
             SaveBookmarkOptions::default(),
@@ -773,16 +752,12 @@ mod tests {
             reset_missing_attributes: true,
             reset_tags: false,
         };
-        let result =
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
+        create_or_update_bookmark(&fx.pool, &draft_bookmark, now, save_options)
+            .await
+            .expect("bookmark should've been updated");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let saved_bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
@@ -797,7 +772,7 @@ mod tests {
     #[tokio::test]
     async fn removing_tags_from_a_saved_bookmark_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
@@ -810,7 +785,7 @@ mod tests {
         let created_at = now - 60 * 60;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark_old,
             created_at,
             SaveBookmarkOptions::default(),
@@ -826,21 +801,17 @@ mod tests {
             reset_missing_attributes: false,
             reset_tags: true,
         };
-        let result =
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
+        create_or_update_bookmark(&fx.pool, &draft_bookmark, now, save_options)
+            .await
+            .expect("bookmark should've been updated");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+        let num_bookmarks = get_num_bookmarks(&fx.pool)
             .await
             .expect("number of bookmarks should've been fetched");
         assert_eq!(num_bookmarks, 1);
 
-        let saved_bookmark = get_bookmark_with_exact_uri(&fixture.pool, uri)
+        let saved_bookmark = get_bookmark_with_exact_uri(&fx.pool, uri)
             .await
             .expect("bookmark should've been queried")
             .expect("queried result should've contained a bookmark");
@@ -854,7 +825,7 @@ mod tests {
     #[tokio::test]
     async fn updating_bookmark_cleans_up_unused_tags() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let old_tags = vec!["rust", "sqlite"];
         let uri = "https://github.com/launchbadge/sqlx";
         let title = "sqlx's github page";
@@ -867,7 +838,7 @@ mod tests {
         let created_at = now - 60 * 60;
 
         create_or_update_bookmark(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmark_old,
             created_at,
             SaveBookmarkOptions::default(),
@@ -883,30 +854,22 @@ mod tests {
             reset_missing_attributes: false,
             reset_tags: true,
         };
-        let result =
-            create_or_update_bookmark(&fixture.pool, &draft_bookmark, now, save_options).await;
+        create_or_update_bookmark(&fx.pool, &draft_bookmark, now, save_options)
+            .await
+            .expect("bookmark should've been updated");
 
         // THEN
-        if let Err(error) = &result {
-            println!("error: {error}");
-        }
-        assert!(result.is_ok(), "result is not ok");
-
-        let all_tags = get_tags(&fixture.pool)
+        let all_tags = get_tags(&fx.pool)
             .await
             .expect("should have queried all tags");
 
-        assert_eq!(
-            all_tags.len(),
-            0,
-            "total number of tags in the db should've been zero"
-        );
+        assert_yaml_snapshot!(all_tags, @"[]");
     }
 
     #[tokio::test]
     async fn creating_multiple_bookmarks_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uris = [
             ("https://uri-one.com", None, vec!["tag5", "tag2"]),
             ("https://uri-two.com", None, vec!["tag2", "tag3"]),
@@ -928,30 +891,53 @@ mod tests {
             .collect::<Vec<_>>();
 
         // WHEN
-        let result = create_or_update_bookmarks(
-            &fixture.pool,
+        create_or_update_bookmarks(
+            &fx.pool,
             &draft_bookmarks,
             now,
             SaveBookmarkOptions::default(),
         )
-        .await;
+        .await
+        .expect("bookmarks should've been created");
 
         // THEN
-        assert!(result.is_ok());
-        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+        let bookmarks = get_all_bookmarks(&fx.pool)
             .await
-            .expect("number of bookmarks should've been fetched");
-        assert_eq!(num_bookmarks, 5);
-        let num_tags = get_tags(&fixture.pool)
+            .expect("bookmarks should've been fetched");
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://uri-one.com"
+          title: ~
+          tags: "tag2,tag5"
+        - uri: "https://uri-two.com"
+          title: ~
+          tags: "tag2,tag3"
+        - uri: "https://uri-three.com"
+          title: ~
+          tags: "tag2,tag3"
+        - uri: "https://uri-four.com"
+          title: ~
+          tags: "tag1,tag3"
+        - uri: "https://uri-five.com"
+          title: ~
+          tags: "tag3,tag4"
+        "#);
+
+        let tags = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
-        assert_eq!(num_tags.len(), 5);
+        assert_yaml_snapshot!(tags, @r"
+        - tag1
+        - tag2
+        - tag3
+        - tag4
+        - tag5
+        ");
     }
 
     #[tokio::test]
     async fn updating_multiple_bookmarks_without_resetting_original_details_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uris = [
             ("https://uri-one.com", Some("title"), vec!["tag5", "tag2"]),
             ("https://uri-two.com", None, vec!["tag2", "tag3"]),
@@ -973,7 +959,7 @@ mod tests {
             .collect::<Vec<_>>();
 
         create_or_update_bookmarks(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmarks_original,
             now,
             SaveBookmarkOptions::default(),
@@ -1000,39 +986,58 @@ mod tests {
 
         // WHEN
 
-        let result = create_or_update_bookmarks(
-            &fixture.pool,
+        create_or_update_bookmarks(
+            &fx.pool,
             &draft_bookmarks,
             now,
             SaveBookmarkOptions::default(),
         )
-        .await;
+        .await
+        .expect("bookmarks should've been updated");
 
         // THEN
-        assert!(result.is_ok());
-        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+        let bookmarks = get_all_bookmarks(&fx.pool)
             .await
-            .expect("number of bookmarks should've been fetched");
-        assert_eq!(num_bookmarks, 6);
-        let num_tags = get_tags(&fixture.pool)
+            .expect("bookmarks should've been fetched");
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://uri-one.com"
+          title: title
+          tags: "tag2,tag5"
+        - uri: "https://uri-two.com"
+          title: ~
+          tags: "tag2,tag3"
+        - uri: "https://uri-three.com"
+          title: ~
+          tags: "tag2,tag3"
+        - uri: "https://uri-four.com"
+          title: ~
+          tags: "tag1,tag3"
+        - uri: "https://uri-five.com"
+          title: ~
+          tags: "tag3,tag4"
+        - uri: "https://uri-six.com"
+          title: ~
+          tags: "tag6,tag7"
+        "#);
+
+        let tags = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
-        assert_eq!(num_tags.len(), 7);
-        let bookmark_one = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-one.com")
-            .await
-            .expect("bookmark one should've been fetched")
-            .expect("result should've contained a bookmark");
-        assert_yaml_snapshot!(bookmark_one, @r#"
-        uri: "https://uri-one.com"
-        title: title
-        tags: "tag2,tag5"
-        "#);
+        assert_yaml_snapshot!(tags, @r"
+        - tag1
+        - tag2
+        - tag3
+        - tag4
+        - tag5
+        - tag6
+        - tag7
+        ");
     }
 
     #[tokio::test]
     async fn resetting_attributes_for_multiple_bookmarks_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uris = [
             ("https://uri-one.com", Some("title"), vec!["tag5", "tag2"]),
             ("https://uri-two.com", None, vec!["tag2", "tag3"]),
@@ -1054,7 +1059,7 @@ mod tests {
             .collect::<Vec<_>>();
 
         create_or_update_bookmarks(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmarks_original,
             now,
             SaveBookmarkOptions::default(),
@@ -1084,34 +1089,51 @@ mod tests {
             reset_missing_attributes: true,
             reset_tags: false,
         };
-        let result =
-            create_or_update_bookmarks(&fixture.pool, &draft_bookmarks, now, save_options).await;
+        create_or_update_bookmarks(&fx.pool, &draft_bookmarks, now, save_options)
+            .await
+            .expect("bookmarks should've been updated");
 
         // THEN
-        assert!(result.is_ok());
-        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+        let bookmarks = get_all_bookmarks(&fx.pool)
             .await
-            .expect("number of bookmarks should've been fetched");
-        assert_eq!(num_bookmarks, 6);
-        let num_tags = get_tags(&fixture.pool)
+            .expect("bookmarks should've been fetched");
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://uri-one.com"
+          title: ~
+          tags: "tag2,tag5"
+        - uri: "https://uri-two.com"
+          title: ~
+          tags: "tag2,tag3"
+        - uri: "https://uri-three.com"
+          title: ~
+          tags: "tag2,tag3"
+        - uri: "https://uri-four.com"
+          title: ~
+          tags: "tag1,tag3"
+        - uri: "https://uri-five.com"
+          title: ~
+          tags: "tag3,tag4"
+        - uri: "https://uri-six.com"
+          title: ~
+          tags: ~
+        "#);
+
+        let tags = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
-        assert_eq!(num_tags.len(), 5, "tags shouldn't have been deleted");
-        let bookmark_one = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-one.com")
-            .await
-            .expect("bookmark one should've been fetched")
-            .expect("result should've contained a bookmark");
-        assert_yaml_snapshot!(bookmark_one, @r#"
-        uri: "https://uri-one.com"
-        title: ~
-        tags: "tag2,tag5"
-        "#);
+        assert_yaml_snapshot!(tags, @r"
+        - tag1
+        - tag2
+        - tag3
+        - tag4
+        - tag5
+        ");
     }
 
     #[tokio::test]
     async fn resetting_tags_for_multiple_bookmarks_works() {
         // GIVEN
-        let fixture = DBPoolFixture::new().await;
+        let fx = DBPoolFixture::new().await;
         let uris = [
             ("https://uri-one.com", Some("title"), vec!["tag5", "tag2"]),
             ("https://uri-two.com", None, vec!["tag2", "tag3"]),
@@ -1133,7 +1155,7 @@ mod tests {
             .collect::<Vec<_>>();
 
         create_or_update_bookmarks(
-            &fixture.pool,
+            &fx.pool,
             &draft_bookmarks_original,
             now,
             SaveBookmarkOptions::default(),
@@ -1163,27 +1185,38 @@ mod tests {
             reset_missing_attributes: false,
             reset_tags: true,
         };
-        let result =
-            create_or_update_bookmarks(&fixture.pool, &draft_bookmarks, now, save_options).await;
+        create_or_update_bookmarks(&fx.pool, &draft_bookmarks, now, save_options)
+            .await
+            .expect("bookmarks should've been updated");
 
         // THEN
-        assert!(result.is_ok());
-        let num_bookmarks = get_num_bookmarks(&fixture.pool)
+        let bookmarks = get_all_bookmarks(&fx.pool)
             .await
-            .expect("number of bookmarks should've been fetched");
-        assert_eq!(num_bookmarks, 6);
-        let num_tags = get_tags(&fixture.pool)
+            .expect("bookmarks should've been fetched");
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://uri-one.com"
+          title: title
+          tags: ~
+        - uri: "https://uri-two.com"
+          title: ~
+          tags: ~
+        - uri: "https://uri-three.com"
+          title: ~
+          tags: ~
+        - uri: "https://uri-four.com"
+          title: ~
+          tags: ~
+        - uri: "https://uri-five.com"
+          title: ~
+          tags: ~
+        - uri: "https://uri-six.com"
+          title: ~
+          tags: ~
+        "#);
+
+        let tags = get_tags(&fx.pool)
             .await
             .expect("tags should've been fetched");
-        assert_eq!(num_tags.len(), 0, "tags should've have been deleted");
-        let bookmark_one = get_bookmark_with_exact_uri(&fixture.pool, "https://uri-one.com")
-            .await
-            .expect("bookmark one should've been fetched")
-            .expect("result should've contained a bookmark");
-        assert_yaml_snapshot!(bookmark_one, @r#"
-        uri: "https://uri-one.com"
-        title: title
-        tags: ~
-        "#);
+        assert_yaml_snapshot!(tags, @"[]");
     }
 }

@@ -38,7 +38,7 @@ sqlx = { version = "0.8.6", default-features = false,  features = ["json", "macr
 tempfile = "3.20.0"
 thiserror = "2.0.12"
 tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
-tui-input = "0.11.1"
+tui-input = "0.14.0"
 url = { version= "2.5.4", features = ["serde"] }
 which = "8.0.0"
 

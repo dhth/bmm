@@ -19,12 +19,12 @@ jobs:
           repo: sharkdp/hyperfine
       - name: Install uv
         uses: astral-sh/setup-uv@v6
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: main
       - name: Build main
         run: cargo build --release --target-dir /var/tmp/main
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build head
         run: cargo build --release --target-dir /var/tmp/head
       - name: Run benchmarks

@@ -82,11 +82,10 @@ pub fn update(model: &mut Model, msg: Message) -> Vec<Command> {
                 !(width >= MIN_TERMINAL_WIDTH && height >= MIN_TERMINAL_HEIGHT);
         }
         Message::ShowBookmarksForTag => {
-            if let Some(current_tag_index) = model.tag_items.state.selected() {
-                if let Some(selected_tag) = model.tag_items.items.get(current_tag_index) {
+            if let Some(current_tag_index) = model.tag_items.state.selected()
+                && let Some(selected_tag) = model.tag_items.items.get(current_tag_index) {
                     cmds.push(Command::FetchBookmarksForTag(selected_tag.name.to_string()));
                 }
-            }
         }
         Message::BookmarksForTagFetched(result) => match result {
             Ok(bookmarks) => {

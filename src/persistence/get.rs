@@ -16,7 +16,7 @@ pub enum SearchTermsError {
 pub struct SearchTerms(Vec<String>);
 
 impl SearchTerms {
-    pub fn iter(&self) -> std::slice::Iter<String> {
+    pub fn iter(&self) -> std::slice::Iter<'_, String> {
         self.0.iter()
     }
 }

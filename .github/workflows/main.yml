@@ -124,17 +124,19 @@ jobs:
     env:
       SQLX_OFFLINE: true
     steps:
-      - name: Install rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
       - run: git checkout HEAD~1
+      - name: Install rust toolchain for previous version
+        uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build last commit
         run: cargo build --target-dir /var/tmp/last
       - name: Save bookmarks with bmm on last commit
         run: /var/tmp/last/debug/bmm save https://github.com/dhth/bmm
       - run: git checkout main
+      - name: Install rust toolchain for new version
+        uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build head
         run: cargo build --target-dir /var/tmp/head
       - name: Run bmm on head

@@ -3,13 +3,13 @@ updates:
   - package-ecosystem: cargo
     directory: "/"
     schedule:
-      interval: weekly
+      interval: "monthly"
     commit-message:
       prefix: "build"
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: weekly
+      interval: "monthly"
     exclude-paths:
       - ".github/workflows/release.yml"
     commit-message:

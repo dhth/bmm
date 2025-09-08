@@ -43,7 +43,7 @@ url = { version= "2.5.4", features = ["serde"] }
 which = "8.0.0"
 
 [dev-dependencies]
-insta = { version = "1.43.1", features = ["yaml"] }
+insta = { version = "1.43.2", features = ["yaml"] }
 insta-cmd = "0.6.0"
 
 [profile.dev.package]

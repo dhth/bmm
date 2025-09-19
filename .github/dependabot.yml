@@ -11,6 +11,7 @@ updates:
     schedule:
       interval: "monthly"
     exclude-paths:
-      - ".github/workflows/release.yml"
+      - .github/workflows/release.yml
+      - .github/workflows/scan.yml
     commit-message:
       prefix: "ci"

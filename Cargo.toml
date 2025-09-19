@@ -35,7 +35,7 @@ select = "0.6.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.143"
 sqlx = { version = "0.8.6", default-features = false,  features = ["json", "macros", "migrate", "runtime-tokio", "sqlite"] }
-tempfile = "3.21.0"
+tempfile = "3.22.0"
 thiserror = "2.0.16"
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
 tui-input = "0.14.0"

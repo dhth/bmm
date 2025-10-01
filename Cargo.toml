@@ -32,7 +32,7 @@ open = "5.3.2"
 ratatui = "0.29.0"
 regex = "1.11.3"
 select = "0.6.1"
-serde = { version = "1.0.219", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 sqlx = { version = "0.8.6", default-features = false,  features = ["json", "macros", "migrate", "runtime-tokio", "sqlite"] }
 tempfile = "3.22.0"

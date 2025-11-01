@@ -18,7 +18,7 @@ jobs:
         with:
           repo: sharkdp/hyperfine
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
       - uses: actions/checkout@v5
         with:
           ref: main

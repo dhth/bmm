@@ -17,7 +17,7 @@ jobs:
       - name: Install bmm
         run: cargo install --path .
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
       - name: Install buku
         run: uv tool install buku
       - name: Install hyperfine

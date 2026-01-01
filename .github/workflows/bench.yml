@@ -11,7 +11,7 @@ jobs:
   bench:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Install bmm

@@ -20,7 +20,7 @@ jobs:
       yml: ${{ steps.filter.outputs.yml }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -60,7 +60,7 @@ jobs:
     env:
       SQLX_OFFLINE: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -80,7 +80,7 @@ jobs:
     env:
       SQLX_OFFLINE: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build
@@ -98,7 +98,7 @@ jobs:
       DATABASE_URL: sqlite://testdb/db.db
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Install sqlx-cli
@@ -127,7 +127,7 @@ jobs:
     env:
       SQLX_OFFLINE: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: main
       - name: Install rust toolchain for previous version
@@ -136,7 +136,7 @@ jobs:
         run: cargo build --target-dir /var/tmp/main
       - name: Save bookmarks with bmm on main
         run: /var/tmp/main/debug/bmm save https://github.com/dhth/bmm
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install rust toolchain for new version
         uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Build head
@@ -150,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - uses: dhth/composite-actions/.github/actions/lint-sh@main
 
   lint-workflows:
@@ -159,7 +159,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - uses: dhth/composite-actions/.github/actions/lint-actions@main
 
   lint-yaml:
@@ -168,7 +168,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - uses: dhth/composite-actions/.github/actions/lint-yaml@main
 
   dstlled-diff:
@@ -179,7 +179,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - id: get-dstlled-diff
@@ -196,5 +196,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - uses: dhth/composite-actions/.github/actions/cargo-deny@main

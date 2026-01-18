@@ -219,7 +219,7 @@ fn parse_json_content(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use insta::assert_yaml_snapshot;
+    use insta::{assert_debug_snapshot, assert_yaml_snapshot};
 
     //-------------//
     //  SUCCESSES  //
@@ -618,10 +618,11 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes(), false);
+        let error = parse_json_content(content.as_bytes(), false)
+            .expect_err("result should've been an error");
 
         // THEN
-        assert!(result.is_err());
+        assert_debug_snapshot!(error, @r#"Error("expected `,` or `]`", line: 8, column: 3)"#);
     }
 
     #[test]
@@ -641,10 +642,11 @@ Do Not Edit! -->
 "#;
 
         // WHEN
-        let result = parse_json_content(content.as_bytes(), false);
+        let error = parse_json_content(content.as_bytes(), false)
+            .expect_err("result should've been an error");
 
         // THEN
-        assert!(result.is_err());
+        assert_debug_snapshot!(error, @r#"Error("missing field `uri`", line: 6, column: 3)"#);
     }
 
     #[test]

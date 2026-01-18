@@ -348,7 +348,7 @@ fn parse_new_bookmark_temp_file_content(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use insta::assert_yaml_snapshot;
+    use insta::{assert_debug_snapshot, assert_yaml_snapshot};
 
     //-------------//
     //  SUCCESSES  //
@@ -595,10 +595,11 @@ Comma separate tags:
 "#;
 
         // WHEN
-        let result = parse_bookmark_update_temp_file_content(temp_file_content);
+        let error = parse_bookmark_update_temp_file_content(temp_file_content)
+            .expect_err("result should've been an error");
 
         // THEN
-        assert!(result.is_err());
+        assert_debug_snapshot!(error, @"InputMissing");
     }
 
     #[test]
@@ -619,9 +620,10 @@ Comma separate tags:
 "#;
 
         // WHEN
-        let result = parse_bookmark_update_temp_file_content(temp_file_content);
+        let error = parse_bookmark_update_temp_file_content(temp_file_content)
+            .expect_err("result should've been an error");
 
         // THEN
-        assert!(result.is_err());
+        assert_debug_snapshot!(error, @"InputMissing");
     }
 }

@@ -41,6 +41,7 @@ pub(super) async fn get_in_memory_db_pool() -> Result<Pool<Sqlite>, DBError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use insta::assert_debug_snapshot;
 
     #[tokio::test]
     async fn migrating_db_works() {
@@ -58,9 +59,20 @@ mod tests {
         let path = "nonexistent/nonexistent/nonexistent.db";
 
         // WHEN
-        let result = get_db_pool(path).await;
+        let error = get_db_pool(path)
+            .await
+            .expect_err("result should've been an error");
 
         // THEN
-        assert!(result.is_err());
+        assert_debug_snapshot!(error, @r#"
+        CouldntCreateDatabase(
+            Database(
+                SqliteError {
+                    code: 14,
+                    message: "unable to open database file",
+                },
+            ),
+        )
+        "#);
     }
 }

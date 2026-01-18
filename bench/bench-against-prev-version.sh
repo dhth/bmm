@@ -37,7 +37,7 @@ echo "100 tags"
 
 data_file="${temp_dir}/bookmarks.html"
 
-./generate-data 8000 "${tags}" "${data_file}"
+./generate-data.py 8000 "${tags}" "${data_file}"
 
 ${prev_bin} --db-path "${temp_dir}/bmm.db" import "${data_file}" >/dev/null
 

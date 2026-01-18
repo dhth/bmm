@@ -29,7 +29,7 @@ echo "100 tags"
 
 data_file="${temp_dir}/bookmarks.html"
 
-./generate-data 8000 "${tags}" "${data_file}"
+./generate-data.py 8000 "${tags}" "${data_file}"
 XDG_DATA_HOME="${temp_dir}" buku --nostdin --offline --import "${data_file}" >/dev/null <<EOF
 n
 n

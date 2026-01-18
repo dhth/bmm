@@ -46,7 +46,7 @@ def generate_entries(num_entries, tags, output_file):
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: ./generate-data <num_entries> <tags> <output_file>")
+        print("Usage: ./generate-data.py <num_entries> <tags> <output_file>")
         sys.exit(1)
 
     num_entries = int(sys.argv[1])

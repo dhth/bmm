@@ -61,6 +61,7 @@ impl std::fmt::Display for TagStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use insta::assert_yaml_snapshot;
 
     //-------------//
     //  SUCCESSES  //
@@ -68,15 +69,29 @@ mod tests {
 
     #[test]
     fn parsing_valid_tag_works() {
-        let valid_tags = vec!["tag", "tAg", "tag1", "t1ag2", "tag-1", "tag_1"];
-        for tag in valid_tags {
-            // GIVEN
-            // WHEN
-            let result = Tag::try_from(tag);
+        // GIVEN
+        let tags = ["tag", "tAg", "tag1", "t1ag2", "tag-1", "tag_1"];
 
-            // THEN
-            assert!(result.is_ok())
-        }
+        // WHEN
+        let results: Vec<String> = tags
+            .iter()
+            .map(|s| {
+                Tag::try_from(*s)
+                    .expect("should've parsed tag")
+                    .name()
+                    .to_string()
+            })
+            .collect();
+
+        // THEN
+        assert_yaml_snapshot!(results, @"
+        - tag
+        - tag
+        - tag1
+        - t1ag2
+        - tag-1
+        - tag_1
+        ");
     }
 
     #[test]

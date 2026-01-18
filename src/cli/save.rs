@@ -348,6 +348,7 @@ fn parse_new_bookmark_temp_file_content(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use insta::{assert_debug_snapshot, assert_yaml_snapshot};
 
     //-------------//
     //  SUCCESSES  //
@@ -381,12 +382,14 @@ tag1,tag2,tag3
 "#;
 
         // WHEN
-        let (title, tags) = parse_bookmark_update_temp_file_content(temp_file_content)
+        let result = parse_bookmark_update_temp_file_content(temp_file_content)
             .expect("parsing should've succeeded");
 
         // THEN
-        assert_eq!(title.as_deref(), Some("Uri title goes here"));
-        assert_eq!(tags.as_deref(), Some("tag1,tag2,tag3"));
+        assert_yaml_snapshot!(result, @r#"
+        - Uri title goes here
+        - "tag1,tag2,tag3"
+        "#);
     }
 
     #[test]
@@ -408,11 +411,14 @@ tag1,tag2,tag3
 "#;
 
         // WHEN
-        let (title, _) = parse_bookmark_update_temp_file_content(temp_file_content)
+        let result = parse_bookmark_update_temp_file_content(temp_file_content)
             .expect("parsing should've succeeded");
 
         // THEN
-        assert!(title.is_none());
+        assert_yaml_snapshot!(result, @r#"
+        - ~
+        - "tag1,tag2,tag3"
+        "#);
     }
 
     #[test]
@@ -434,11 +440,14 @@ Comma separate tags:
 "#;
 
         // WHEN
-        let (_, tags) = parse_bookmark_update_temp_file_content(temp_file_content)
+        let result = parse_bookmark_update_temp_file_content(temp_file_content)
             .expect("parsing should've succeeded");
 
         // THEN
-        assert!(tags.is_none());
+        assert_yaml_snapshot!(result, @"
+        - Uri title goes here
+        - ~
+        ");
     }
 
     #[test]
@@ -471,13 +480,15 @@ tag1,tag2,tag3
 "#;
 
         // WHEN
-        let (uri, title, tags) = parse_new_bookmark_temp_file_content(temp_file_content)
+        let result = parse_new_bookmark_temp_file_content(temp_file_content)
             .expect("parsing should've succeeded");
 
         // THEN
-        assert_eq!(uri.as_str(), "https://someuri.com");
-        assert_eq!(title.as_deref(), Some("Title goes here"));
-        assert_eq!(tags.as_deref(), Some("tag1,tag2,tag3"));
+        assert_yaml_snapshot!(result, @r#"
+        - "https://someuri.com"
+        - Title goes here
+        - "tag1,tag2,tag3"
+        "#);
     }
 
     #[test]
@@ -510,13 +521,15 @@ tag1,tag2,tag3
 "#;
 
         // WHEN
-        let (uri, title, tags) = parse_new_bookmark_temp_file_content(temp_file_content)
+        let result = parse_new_bookmark_temp_file_content(temp_file_content)
             .expect("parsing should've succeeded");
 
         // THEN
-        assert_eq!(uri.as_str(), "https://someuri.com");
-        assert!(title.is_none());
-        assert_eq!(tags.as_deref(), Some("tag1,tag2,tag3"));
+        assert_yaml_snapshot!(result, @r#"
+        - "https://someuri.com"
+        - ~
+        - "tag1,tag2,tag3"
+        "#);
     }
 
     #[test]
@@ -549,13 +562,15 @@ Comma separated tags:
 "#;
 
         // WHEN
-        let (uri, title, tags) = parse_new_bookmark_temp_file_content(temp_file_content)
+        let result = parse_new_bookmark_temp_file_content(temp_file_content)
             .expect("parsing should've succeeded");
 
         // THEN
-        assert_eq!(uri.as_str(), "https://someuri.com");
-        assert_eq!(title.as_deref(), Some("Title goes here"));
-        assert!(tags.is_none());
+        assert_yaml_snapshot!(result, @r#"
+        - "https://someuri.com"
+        - Title goes here
+        - ~
+        "#);
     }
 
     //------------//
@@ -580,10 +595,11 @@ Comma separate tags:
 "#;
 
         // WHEN
-        let result = parse_bookmark_update_temp_file_content(temp_file_content);
+        let error = parse_bookmark_update_temp_file_content(temp_file_content)
+            .expect_err("result should've been an error");
 
         // THEN
-        assert!(result.is_err());
+        assert_debug_snapshot!(error, @"InputMissing");
     }
 
     #[test]
@@ -604,9 +620,10 @@ Comma separate tags:
 "#;
 
         // WHEN
-        let result = parse_bookmark_update_temp_file_content(temp_file_content);
+        let error = parse_bookmark_update_temp_file_content(temp_file_content)
+            .expect_err("result should've been an error");
 
         // THEN
-        assert!(result.is_err());
+        assert_debug_snapshot!(error, @"InputMissing");
     }
 }

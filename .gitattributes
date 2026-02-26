@@ -1,3 +1,2 @@
-*.html linguist-vendored
-*.sh linguist-vendored
-*.py linguist-vendored
+* linguist-detectable=false
+*.rs linguist-detectable=true

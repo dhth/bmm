@@ -1,8 +1,3 @@
-[advisories]
-ignore = [
-    "RUSTSEC-2024-0436",
-]
-
 [licenses]
 allow = [
     "Apache-2.0",
@@ -25,7 +20,6 @@ skip = [
     "rustix",
     "siphasher",
     "syn",
-    "unicode-width",
     "wasi",
     "windows_aarch64_gnullvm",
     "windows_aarch64_msvc",

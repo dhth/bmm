@@ -5,8 +5,7 @@ updates:
     directory: "/"
     schedule:
       interval: "cron"
-      cronjob: "0 0,2,4,6 * * 3"
-    open-pull-requests-limit: 1
+      cronjob: "0 2 4,18 * *"
     cooldown:
       semver-patch-days: 5
       semver-minor-days: 7
@@ -25,17 +24,12 @@ updates:
     directory: "/"
     schedule:
       interval: "cron"
-      cronjob: "0 0,2,4,6 * * 3"
-    open-pull-requests-limit: 1
+      cronjob: "0 5 4,18 * *"
     cooldown:
       default-days: 7
     exclude-paths:
       - ".github/workflows/release.yml"
       - ".github/workflows/scan.yml"
-    groups:
-      github-actions:
-        patterns:
-          - "*"
     labels:
       - "dependencies"
     commit-message:

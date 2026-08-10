@@ -12,14 +12,13 @@ shellcheck = "0.11.0"
 yamlfmt = "0.21.0"
 
 [env]
-DATABASE_URL = "sqlite://testdb/db.db"
+SQLX_OFFLINE = "true"
 
 [tasks.all]
 alias = "a"
-description = "Format, prepare the test database, lint, and test"
+description = "Format, lint, and test"
 run = [
 	{ task = "fmt" },
-	{ task = "test:setup" },
 	{ task = "lint" },
 	{ task = "test" },
 ]
@@ -82,40 +81,21 @@ description = "Run the application"
 raw_args = true
 run = "cargo run --"
 
-[tasks."sqlx:check"]
-alias = "sqlx-check"
-description = "Check SQLx query metadata"
-run = "cargo sqlx prepare --check"
-
-[tasks."sqlx:create"]
-alias = "sqlx-create"
-description = "Create the configured database"
-run = "cargo sqlx database create"
-
-[tasks."sqlx:migrate"]
-alias = "sqlx-migrate"
-description = "Run database migrations"
-run = "cargo sqlx migrate run"
-
-[tasks."sqlx:prepare"]
-alias = "sqlx-prepare"
-description = "Generate SQLx query metadata"
-run = "cargo sqlx prepare"
+[tasks."sqlx:online-checks"]
+description = "Validate SQLx query metadata against the migrated test database"
+env = { DATABASE_URL = "sqlite://testdb/db.db", SQLX_OFFLINE = "false" }
+run = [
+	"mkdir -p testdb",
+	"cargo sqlx database create",
+	"cargo sqlx migrate run",
+	"cargo sqlx prepare --check",
+]
 
 [tasks.test]
 alias = "t"
 description = "Run all tests"
 raw_args = true
 run = "cargo test"
-
-[tasks."test:setup"]
-description = "Create and validate the test database"
-run = [
-	"mkdir -p testdb",
-	{ task = "sqlx:create" },
-	{ task = "sqlx:migrate" },
-	{ task = "sqlx:check" },
-]
 
 [tasks."test:review"]
 alias = "test-review"

@@ -1113,7 +1113,7 @@ mod tests {
                 bookmarks.len(),
                 expected_num_bookmarks,
                 "failed for query: {:?}",
-                &query
+                query
             );
         }
     }

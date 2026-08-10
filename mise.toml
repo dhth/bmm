@@ -81,7 +81,17 @@ description = "Run the application"
 raw_args = true
 run = "cargo run --"
 
-[tasks."sqlx:online-checks"]
+[tasks."sqlx:prepare"]
+description = "Generate SQLx query metadata against the migrated test database"
+env = { DATABASE_URL = "sqlite://testdb/db.db", SQLX_OFFLINE = "false" }
+run = [
+	"mkdir -p testdb",
+	"cargo sqlx database create",
+	"cargo sqlx migrate run",
+	"cargo sqlx prepare",
+]
+
+[tasks."sqlx:prepare-check"]
 description = "Validate SQLx query metadata against the migrated test database"
 env = { DATABASE_URL = "sqlite://testdb/db.db", SQLX_OFFLINE = "false" }
 run = [

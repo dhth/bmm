@@ -113,8 +113,8 @@ jobs:
         uses: jdx/mise-action@v4
         with:
           install_args: rust cargo:sqlx-cli
-      - name: Run SQLx online checks
-        run: mise run sqlx:online-checks
+      - name: Check SQLx query metadata
+        run: mise run sqlx:prepare-check
       - name: Run tests
         env:
           RUST_BACKTRACE: 0

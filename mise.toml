@@ -1,0 +1,151 @@
+[settings]
+idiomatic_version_file_enable_tools = ["rust"]
+task.run_auto_install = false
+
+[tools]
+actionlint = "1.7.12"
+"cargo:cargo-deny" = "0.20.2"
+cargo-dist = "0.31.0"
+cargo-insta = "1.47.2"
+"cargo:sqlx-cli" = { version = "0.8.6", features = ["sqlite"], default-features = false }
+shellcheck = "0.11.0"
+yamlfmt = "0.21.0"
+
+[env]
+DATABASE_URL = "sqlite://testdb/db.db"
+
+[tasks.all]
+alias = "a"
+description = "Format, prepare the test database, lint, and test"
+run = [
+	{ task = "fmt" },
+	{ task = "test:setup" },
+	{ task = "lint" },
+	{ task = "test" },
+]
+
+[tasks.build]
+alias = "b"
+description = "Build the application"
+run = "cargo build"
+
+[tasks.check]
+alias = "c"
+description = "Check all targets"
+run = "cargo check --all-targets"
+
+[tasks.deny]
+alias = "d"
+description = "Check dependencies and licenses"
+run = "cargo deny check --hide-inclusion-graph"
+
+[tasks.fmt]
+alias = "f"
+description = "Format Rust source files"
+run = "cargo fmt --all"
+
+[tasks."fmt:check"]
+alias = ["fc", "fmt-check"]
+description = "Check Rust source formatting"
+run = "cargo fmt --all -- --check"
+
+[tasks.install]
+alias = "i"
+description = "Install the application"
+run = "cargo install --path ."
+
+[tasks.lint]
+alias = "l"
+description = "Lint all targets"
+run = "cargo clippy --all-targets"
+
+[tasks."lint:fix"]
+alias = ["lf", "lint-fix"]
+description = "Apply Clippy fixes"
+run = "cargo clippy --fix --allow-dirty --allow-staged"
+
+[tasks."publish:dry"]
+alias = ["jp", "publish-dry"]
+description = "Validate the crate package without publishing"
+run = "cargo publish --dry-run --allow-dirty"
+
+[tasks.review]
+alias = "re"
+description = "Review snapshot changes"
+raw_args = true
+interactive = true
+run = "cargo insta review"
+
+[tasks.run]
+alias = "r"
+description = "Run the application"
+raw_args = true
+run = "cargo run --"
+
+[tasks."sqlx:check"]
+alias = "sqlx-check"
+description = "Check SQLx query metadata"
+run = "cargo sqlx prepare --check"
+
+[tasks."sqlx:create"]
+alias = "sqlx-create"
+description = "Create the configured database"
+run = "cargo sqlx database create"
+
+[tasks."sqlx:migrate"]
+alias = "sqlx-migrate"
+description = "Run database migrations"
+run = "cargo sqlx migrate run"
+
+[tasks."sqlx:prepare"]
+alias = "sqlx-prepare"
+description = "Generate SQLx query metadata"
+run = "cargo sqlx prepare"
+
+[tasks.test]
+alias = "t"
+description = "Run all tests"
+raw_args = true
+run = "cargo test"
+
+[tasks."test:setup"]
+description = "Create and validate the test database"
+run = [
+	"mkdir -p testdb",
+	{ task = "sqlx:create" },
+	{ task = "sqlx:migrate" },
+	{ task = "sqlx:check" },
+]
+
+[tasks."test:review"]
+alias = "test-review"
+description = "Run tests and review snapshot changes"
+raw_args = true
+interactive = true
+run = "cargo insta test --review"
+
+[tasks."lint:actions"]
+description = "Lint GitHub Actions workflows"
+run = "actionlint"
+
+[tasks."lint:shell"]
+description = "Lint shell scripts"
+run = "shellcheck $(git ls-files '*.sh')"
+
+[tasks."lint:yaml"]
+description = "Lint YAML files"
+run = '''
+yamlfmt \
+	-lint \
+	-quiet \
+	-formatter 'retain_line_breaks_single=true' \
+	$(git ls-files '*.yml' '*.yaml')
+'''
+
+[tasks."dist:check"]
+description = "Check generated cargo-dist configuration"
+run = "dist generate --check"
+
+[tasks."dist:generate"]
+description = "Regenerate cargo-dist configuration"
+run = "dist generate"

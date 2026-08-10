@@ -30,6 +30,8 @@ jobs:
               - "Cargo.toml"
               - "Cargo.lock"
               - "deny.toml"
+              - "mise.toml"
+              - "mise.lock"
               - ".github/workflows/main.yml"
             code:
               - ".sqlx/**"
@@ -41,16 +43,24 @@ jobs:
               - clippy.toml
               - dist-workspace.toml
               - rust-toolchain.toml
+              - mise.toml
+              - mise.lock
               - ".github/actions/**/*.yml"
               - ".github/workflows/main.yml"
             shell:
               - "**.sh"
+              - "mise.toml"
+              - "mise.lock"
               - ".github/workflows/main.yml"
             workflows:
               - ".github/**/*.yml"
+              - "mise.toml"
+              - "mise.lock"
             yml:
               - "**.yml"
               - "**.yaml"
+              - "mise.toml"
+              - "mise.lock"
 
   lint:
     needs: changes
@@ -60,14 +70,14 @@ jobs:
       SQLX_OFFLINE: true
     steps:
       - uses: actions/checkout@v6
-      - name: Install toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Set up mise
+        uses: jdx/mise-action@v4
         with:
-          components: clippy, rustfmt
+          install_args: rust
       - name: Check formatting
-        run: cargo fmt --all -- --check
+        run: mise run fmt:check
       - name: Lint
-        run: cargo clippy
+        run: mise run lint
 
   build:
     needs: changes
@@ -80,10 +90,12 @@ jobs:
       SQLX_OFFLINE: true
     steps:
       - uses: actions/checkout@v6
-      - name: Install toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Set up mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: rust
       - name: Build
-        run: cargo build
+        run: mise run build
 
   test:
     needs: changes
@@ -92,34 +104,25 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     env:
-      SQLX_VERSION: 0.8.3
-      SQLX_FEATURES: sqlite
       DATABASE_URL: sqlite://testdb/db.db
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-      - name: Install toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-      - name: Install sqlx-cli
-        run: cargo install sqlx-cli --version=${{ env.SQLX_VERSION }} --features ${{ env.SQLX_FEATURES }} --no-default-features --locked
-      - name: Install nextest
-        uses: taiki-e/install-action@873c7452cadb7c034694a1282227095d93fbdf92 # v2.79.14
+      - name: Set up mise
+        uses: jdx/mise-action@v4
         with:
-          tool: cargo-nextest
-      - name: Create test database
-        run: |
-          mkdir testdb
-          cargo sqlx database create
-          cargo sqlx migrate run
-          cargo sqlx prepare --check
+          install_args: rust cargo:sqlx-cli
+      - name: Set up test database
+        run: mise run test:setup
       - name: Run tests
         env:
           RUST_BACKTRACE: 0
-        run: cargo nextest run
+        run: mise run test
 
   back-compat:
     needs: changes
-    if: ${{ needs.changes.outputs.code == 'true' }}
+    # Re-enable after mise is available in both compared revisions.
+    if: ${{ false && needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     env:
       SQLX_OFFLINE: true
@@ -128,15 +131,19 @@ jobs:
         with:
           fetch-depth: 2
       - run: git checkout HEAD~1
-      - name: Install rust toolchain for previous version
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Set up mise for previous version
+        uses: jdx/mise-action@v4
+        with:
+          install_args: rust
       - name: Build last commit
         run: cargo build --target-dir /var/tmp/last
       - name: Save bookmarks with bmm on last commit
         run: /var/tmp/last/debug/bmm save https://github.com/dhth/bmm
       - run: git checkout main
-      - name: Install rust toolchain for new version
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Set up mise for new version
+        uses: jdx/mise-action@v4
+        with:
+          install_args: rust
       - name: Build head
         run: cargo build --target-dir /var/tmp/head
       - name: Run bmm on head
@@ -149,7 +156,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - uses: dhth/composite-actions/.github/actions/lint-sh@main
+      - name: Set up mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: shellcheck
+      - name: Lint shell scripts
+        run: mise run lint:shell
 
   lint-workflows:
     needs: changes
@@ -158,7 +170,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - uses: dhth/composite-actions/.github/actions/lint-actions@main
+      - name: Set up mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: actionlint
+      - name: Lint workflows
+        run: mise run lint:actions
 
   lint-yaml:
     needs: changes
@@ -167,7 +184,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - uses: dhth/composite-actions/.github/actions/lint-yaml@main
+      - name: Set up mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: yamlfmt
+      - name: Lint YAML
+        run: mise run lint:yaml
 
   audit:
     needs: changes
@@ -176,4 +198,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - uses: dhth/composite-actions/.github/actions/cargo-deny@main
+      - name: Set up mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: rust cargo:cargo-deny
+      - name: Check dependencies and licenses
+        run: mise run deny

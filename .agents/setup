@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+curl -fsSL https://mise.run/bash | sh
+
+"$HOME/.local/bin/mise" trust
+"$HOME/.local/bin/mise" install --locked \
+	actionlint \
+	"cargo:cargo-deny" \
+	cargo-dist \
+	cargo-insta \
+	"cargo:sqlx-cli" \
+	rust \
+	shellcheck \
+	yamlfmt

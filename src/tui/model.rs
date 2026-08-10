@@ -291,12 +291,10 @@ impl Model {
     }
 
     pub(super) fn get_cmd_to_open_selection_in_browser(&self) -> Option<Command> {
-        let url = match self.bookmark_items.state.selected() {
-            Some(i) => match self.bookmark_items.items.get(i) {
-                Some(bi) => bi.bookmark.uri.clone(),
-                None => return None,
-            },
-            None => return None,
+        let url = {
+            let i = self.bookmark_items.state.selected()?;
+            let bi = self.bookmark_items.items.get(i)?;
+            bi.bookmark.uri.clone()
         };
 
         Some(Command::OpenInBrowser(url))

@@ -4,7 +4,7 @@ task.run_auto_install = false
 
 [tools]
 actionlint = "1.7.12"
-"cargo:cargo-deny" = "0.20.2"
+"aqua:EmbarkStudios/cargo-deny" = "0.20.2"
 cargo-dist = "0.31.0"
 cargo-insta = "1.47.2"
 "cargo:sqlx-cli" = { version = "0.8.6", features = ["sqlite"], default-features = false }

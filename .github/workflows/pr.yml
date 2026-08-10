@@ -221,6 +221,6 @@ jobs:
       - name: Set up mise
         uses: jdx/mise-action@v4
         with:
-          install_args: rust cargo:cargo-deny
+          install_args: rust aqua:EmbarkStudios/cargo-deny
       - name: Check dependencies and licenses
         run: mise run deny

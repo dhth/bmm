@@ -429,23 +429,18 @@ Do Not Edit! -->
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
-
-        assert_eq!(draft_bookmarks.len(), 2);
-        assert_eq!(draft_bookmarks[0].uri(), "https://github.com/junegunn/fzf");
-        assert_eq!(draft_bookmarks[0].tags(), vec!["cli", "search"]);
-        assert_eq!(
-            draft_bookmarks[0].title(),
-            Some("junegunn/fzf: :cherry_blossom: A command-line fuzzy finder")
-        );
-        assert_eq!(
-            draft_bookmarks[1].uri(),
-            "https://github.com/serde-rs/serde"
-        );
-        assert_eq!(draft_bookmarks[1].tags(), vec!["github", "rust"]);
-        assert_eq!(
-            draft_bookmarks[1].title(),
-            Some("serde-rs/serde: Serialization framework for Rust")
-        );
+        assert_yaml_snapshot!(draft_bookmarks, @r#"
+        - uri: "https://github.com/junegunn/fzf"
+          title: "junegunn/fzf: :cherry_blossom: A command-line fuzzy finder"
+          tags:
+            - cli
+            - search
+        - uri: "https://github.com/serde-rs/serde"
+          title: "serde-rs/serde: Serialization framework for Rust"
+          tags:
+            - github
+            - rust
+        "#);
     }
 
     #[test]
@@ -471,17 +466,18 @@ Do Not Edit! -->
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
-
-        assert_eq!(draft_bookmarks.len(), 2);
-        assert_eq!(draft_bookmarks[0].uri(), "https://github.com/junegunn/fzf");
-        assert_eq!(draft_bookmarks[0].tags(), vec!["cli", "search"]);
-        assert!(draft_bookmarks[0].title().is_none());
-        assert_eq!(
-            draft_bookmarks[1].uri(),
-            "https://github.com/serde-rs/serde"
-        );
-        assert_eq!(draft_bookmarks[1].tags(), vec!["github", "rust"]);
-        assert!(draft_bookmarks[1].title().is_none());
+        assert_yaml_snapshot!(draft_bookmarks, @r#"
+        - uri: "https://github.com/junegunn/fzf"
+          title: ~
+          tags:
+            - cli
+            - search
+        - uri: "https://github.com/serde-rs/serde"
+          title: ~
+          tags:
+            - github
+            - rust
+        "#);
     }
 
     #[test]
@@ -507,23 +503,14 @@ Do Not Edit! -->
         let draft_bookmarks = result.expect("should've returned draft bookmarks");
 
         // THEN
-
-        assert_eq!(draft_bookmarks.len(), 2);
-        assert_eq!(draft_bookmarks[0].uri(), "https://github.com/junegunn/fzf");
-        assert_eq!(draft_bookmarks[0].tags().len(), 0);
-        assert_eq!(
-            draft_bookmarks[0].title(),
-            Some("junegunn/fzf: :cherry_blossom: A command-line fuzzy finder")
-        );
-        assert_eq!(
-            draft_bookmarks[1].uri(),
-            "https://github.com/serde-rs/serde"
-        );
-        assert_eq!(draft_bookmarks[1].tags().len(), 0);
-        assert_eq!(
-            draft_bookmarks[1].title(),
-            Some("serde-rs/serde: Serialization framework for Rust")
-        );
+        assert_yaml_snapshot!(draft_bookmarks, @r#"
+        - uri: "https://github.com/junegunn/fzf"
+          title: "junegunn/fzf: :cherry_blossom: A command-line fuzzy finder"
+          tags: []
+        - uri: "https://github.com/serde-rs/serde"
+          title: "serde-rs/serde: Serialization framework for Rust"
+          tags: []
+        "#);
     }
 
     //------------//
@@ -554,7 +541,16 @@ Do Not Edit! -->
         let validation_errors = result.expect_err("should've returned validation errors");
 
         // THEN
-        assert_eq!(validation_errors.len(), 1);
+        assert_debug_snapshot!(validation_errors, @"
+        [
+            (
+                0,
+                CouldntParseUri(
+                    RelativeUrlWithoutBase,
+                ),
+            ),
+        ]
+        ");
     }
 
     #[test]
@@ -581,7 +577,18 @@ Do Not Edit! -->
         let validation_errors = result.expect_err("should've returned validation errors");
 
         // THEN
-        assert_eq!(validation_errors.len(), 1);
+        assert_debug_snapshot!(validation_errors, @r#"
+        [
+            (
+                0,
+                TagIsInvalid(
+                    [
+                        "invalid!!!tag",
+                    ],
+                ),
+            ),
+        ]
+        "#);
     }
 
     #[test]
@@ -597,7 +604,16 @@ Do Not Edit! -->
             .expect_err("should've returned validation errors");
 
         // THEN
-        assert_eq!(validation_errors.len(), 1);
+        assert_debug_snapshot!(validation_errors, @"
+        [
+            (
+                0,
+                CouldntParseUri(
+                    RelativeUrlWithoutBase,
+                ),
+            ),
+        ]
+        ");
     }
 
     #[test]
@@ -672,7 +688,16 @@ Do Not Edit! -->
         let validation_errors = result.expect_err("should've returned validation errors");
 
         // THEN
-        assert_eq!(validation_errors.len(), 1);
+        assert_debug_snapshot!(validation_errors, @"
+        [
+            (
+                0,
+                CouldntParseUri(
+                    RelativeUrlWithoutBase,
+                ),
+            ),
+        ]
+        ");
     }
 
     #[test]
@@ -698,6 +723,17 @@ Do Not Edit! -->
         let validation_errors = result.expect_err("should've returned validation errors");
 
         // THEN
-        assert_eq!(validation_errors.len(), 1);
+        assert_debug_snapshot!(validation_errors, @r#"
+        [
+            (
+                0,
+                TagIsInvalid(
+                    [
+                        "invalid tag",
+                    ],
+                ),
+            ),
+        ]
+        "#);
     }
 }

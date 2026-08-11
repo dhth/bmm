@@ -1177,11 +1177,13 @@ mod tests {
             .expect("tags should've been fetched");
 
         // THEN
-        assert_eq!(tags.len(), 5);
-        assert_eq!(
-            tags.iter().map(|t| t.as_str()).collect::<Vec<_>>(),
-            vec!["tag1", "tag2", "tag3", "tag4", "tag5",]
-        );
+        assert_yaml_snapshot!(tags, @"
+        - tag1
+        - tag2
+        - tag3
+        - tag4
+        - tag5
+        ");
     }
 
     #[tokio::test]
@@ -1220,14 +1222,17 @@ mod tests {
             .expect("tags should've been fetched");
 
         // THEN
-        assert_eq!(tags.len(), 5);
-        assert_eq!(
-            tags.iter().map(|t| t.name.as_str()).collect::<Vec<_>>(),
-            vec!["tag1", "tag2", "tag3", "tag4", "tag5",]
-        );
-        assert_eq!(
-            tags.iter().map(|t| t.num_bookmarks).collect::<Vec<_>>(),
-            vec![1, 3, 4, 1, 1]
-        );
+        assert_yaml_snapshot!(tags, @"
+        - name: tag1
+          num_bookmarks: 1
+        - name: tag2
+          num_bookmarks: 3
+        - name: tag3
+          num_bookmarks: 4
+        - name: tag4
+          num_bookmarks: 1
+        - name: tag5
+          num_bookmarks: 1
+        ");
     }
 }

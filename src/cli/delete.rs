@@ -16,14 +16,14 @@ pub enum DeleteBookmarksError {
 pub async fn delete_bookmarks(
     pool: &Pool<Sqlite>,
     uris: Vec<String>,
-    pattern: bool,
+    match_pattern: bool,
     skip_confirmation: bool,
 ) -> Result<(), DeleteBookmarksError> {
     if uris.is_empty() {
         return Ok(());
     }
 
-    let match_mode = if pattern {
+    let match_mode = if match_pattern {
         UriMatchMode::Pattern
     } else {
         UriMatchMode::Exact
@@ -31,20 +31,20 @@ pub async fn delete_bookmarks(
     let uris = get_matching_bookmark_uris(pool, &uris, match_mode).await?;
 
     if uris.is_empty() {
-        println!("nothing got deleted");
+        println!("no bookmarks matched");
         return Ok(());
     }
 
     if !skip_confirmation {
         if uris.len() == 1 {
-            println!("Deleting 1 bookmark:");
+            println!("Will delete 1 bookmark:");
         } else {
-            println!("Deleting {} bookmarks:", uris.len());
+            println!("Will delete {} bookmarks:", uris.len());
         }
         for uri in &uris {
-            println!("{uri}");
+            println!("  - {uri}");
         }
-        println!("Enter \"y\" to confirm.");
+        println!("\nType \"y\" to confirm.");
 
         std::io::stdout()
             .flush()
@@ -56,6 +56,7 @@ pub async fn delete_bookmarks(
             .map_err(DeleteBookmarksError::CouldntReadUserInput)?;
 
         if input.trim() != "y" {
+            println!("cancelled");
             return Ok(());
         }
     }

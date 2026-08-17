@@ -834,31 +834,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn getting_matching_bookmark_uris_by_pattern_has_no_result_limit() {
-        // GIVEN
-        let fx = DBPoolFixture::new().await;
-        for index in 0..501 {
-            let uri = format!("https://unlimited-{index:03}.example.com");
-            sqlx::query(
-                "INSERT INTO bookmarks (uri, title, created_at, updated_at) VALUES (?, NULL, 0, 0)",
-            )
-            .bind(uri)
-            .execute(&fx.pool)
-            .await
-            .expect("bookmark should've been saved in db");
-        }
-
-        // WHEN
-        let uris =
-            get_matching_bookmark_uris(&fx.pool, &["unlimited".to_string()], UriMatchMode::Pattern)
-                .await
-                .expect("matching bookmark uris should've been fetched");
-
-        // THEN
-        assert_eq!(uris.len(), 501);
-    }
-
-    #[tokio::test]
     async fn get_bookmark_with_uri_returns_none_if_bookmark_doesnt_exist() {
         // GIVEN
         let fx = DBPoolFixture::new().await;

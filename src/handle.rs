@@ -38,10 +38,10 @@ pub async fn handle(args: Args) -> Result<(), AppError> {
     match args.command {
         BmmCommand::Delete {
             uris,
-            pattern,
+            match_pattern,
             skip_confirmation,
         } => {
-            delete_bookmarks(&pool, uris, pattern, skip_confirmation).await?;
+            delete_bookmarks(&pool, uris, match_pattern, skip_confirmation).await?;
         }
 
         BmmCommand::Import {

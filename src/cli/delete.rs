@@ -1,5 +1,5 @@
 use crate::persistence::DBError;
-use crate::persistence::delete_bookmarks_with_uris;
+use crate::persistence::{UriMatchMode, delete_bookmarks_with_uris, get_matching_bookmark_uris};
 use sqlx::{Pool, Sqlite};
 use std::io::{Error as IOError, Write};
 
@@ -16,18 +16,35 @@ pub enum DeleteBookmarksError {
 pub async fn delete_bookmarks(
     pool: &Pool<Sqlite>,
     uris: Vec<String>,
+    match_pattern: bool,
     skip_confirmation: bool,
 ) -> Result<(), DeleteBookmarksError> {
     if uris.is_empty() {
         return Ok(());
     }
 
+    let match_mode = if match_pattern {
+        UriMatchMode::Pattern
+    } else {
+        UriMatchMode::Exact
+    };
+    let uris = get_matching_bookmark_uris(pool, &uris, match_mode).await?;
+
+    if uris.is_empty() {
+        println!("no bookmarks matched");
+        return Ok(());
+    }
+
     if !skip_confirmation {
         if uris.len() == 1 {
-            println!("Deleting 1 bookmark; enter \"y\" to confirm.");
+            println!("Will delete 1 bookmark:");
         } else {
-            println!("Deleting {} bookmarks; enter \"y\" to confirm.", uris.len());
+            println!("Will delete {} bookmarks:", uris.len());
         }
+        for uri in &uris {
+            println!("  - {uri}");
+        }
+        println!("\nType \"y\" to confirm.");
 
         std::io::stdout()
             .flush()
@@ -39,6 +56,7 @@ pub async fn delete_bookmarks(
             .map_err(DeleteBookmarksError::CouldntReadUserInput)?;
 
         if input.trim() != "y" {
+            println!("cancelled");
             return Ok(());
         }
     }

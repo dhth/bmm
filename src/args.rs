@@ -40,9 +40,12 @@ pub enum BmmCommand {
     },
     /// Delete bookmarks
     Delete {
-        /// URIs to delete (will be matched exactly)
+        /// URIs to delete (matched exactly unless --pattern is used)
         #[arg(value_name = "URI")]
         uris: Vec<String>,
+        /// Treat provided values as URI patterns (same matching behavior as list --uri)
+        #[arg(long = "pattern")]
+        pattern: bool,
         /// Whether to skip confirmation
         #[arg(short = 'y', long = "yes")]
         skip_confirmation: bool,
@@ -240,14 +243,17 @@ impl std::fmt::Display for Args {
         let output = match &self.command {
             BmmCommand::Delete {
                 uris,
+                pattern,
                 skip_confirmation,
             } => format!(
                 r#"
 command           : Delete bookmark(s)
 URIs              : {}
+pattern matching  : {}
 skip confirmation : {}
 "#,
                 uris.join(", "),
+                pattern,
                 skip_confirmation,
             ),
             BmmCommand::List {

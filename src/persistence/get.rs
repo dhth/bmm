@@ -1,6 +1,6 @@
 use super::DBError;
 use crate::domain::{SavedBookmark, TagStats};
-use sqlx::{Pool, Sqlite};
+use sqlx::{Pool, QueryBuilder, Sqlite};
 
 const SEARCH_TERMS_UPPER_LIMIT: usize = 10;
 
@@ -72,6 +72,59 @@ impl TryFrom<&Vec<String>> for SearchTerms {
             terms.into_iter().map(|t| t.to_string()).collect::<Vec<_>>(),
         ))
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum UriMatchMode {
+    Exact,
+    Pattern,
+}
+
+pub async fn get_matching_bookmark_uris(
+    pool: &Pool<Sqlite>,
+    values: &[String],
+    mode: UriMatchMode,
+) -> Result<Vec<String>, DBError> {
+    if values.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut query_builder = QueryBuilder::<Sqlite>::new(
+        r#"
+SELECT
+    uri
+FROM
+    bookmarks
+WHERE
+    "#,
+    );
+
+    match mode {
+        UriMatchMode::Exact => {
+            query_builder.push("uri IN (");
+            let mut values_builder = query_builder.separated(", ");
+            for value in values {
+                values_builder.push_bind(value);
+            }
+            values_builder.push_unseparated(")");
+        }
+        UriMatchMode::Pattern => {
+            let mut patterns_builder = query_builder.separated(" OR ");
+            for value in values {
+                patterns_builder
+                    .push("uri LIKE ")
+                    .push_bind_unseparated(format!("%{value}%"));
+            }
+        }
+    }
+
+    query_builder.push(" ORDER BY uri");
+
+    query_builder
+        .build_query_scalar::<String>()
+        .fetch_all(pool)
+        .await
+        .map_err(|e| DBError::CouldntExecuteQuery("fetch matching bookmark uris".into(), e))
 }
 
 pub async fn get_bookmark_with_exact_uri(
@@ -695,6 +748,114 @@ mod tests {
                 .await
                 .expect("bookmark should be saved in db");
         }
+    }
+
+    #[tokio::test]
+    async fn getting_matching_bookmark_uris_exactly_returns_existing_values() {
+        // GIVEN
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
+        let values = vec![
+            "https://github.com/serde-rs/serde".to_string(),
+            "https://does-not-exist.com".to_string(),
+            "https://github.com/launchbadge/sqlx".to_string(),
+            "https://github.com/serde-rs/serde".to_string(),
+        ];
+
+        // WHEN
+        let uris = get_matching_bookmark_uris(&fx.pool, &values, UriMatchMode::Exact)
+            .await
+            .expect("matching bookmark uris should've been fetched");
+
+        // THEN
+        assert_yaml_snapshot!(uris, @r#"
+        - "https://github.com/launchbadge/sqlx"
+        - "https://github.com/serde-rs/serde"
+        "#);
+    }
+
+    #[tokio::test]
+    async fn getting_matching_bookmark_uris_by_pattern_uses_union_semantics() {
+        // GIVEN
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
+        let values = vec!["github.com".to_string(), "serde".to_string()];
+
+        // WHEN
+        let uris = get_matching_bookmark_uris(&fx.pool, &values, UriMatchMode::Pattern)
+            .await
+            .expect("matching bookmark uris should've been fetched");
+
+        // THEN
+        assert_yaml_snapshot!(uris, @r#"
+        - "https://github.com/clap-rs/clap"
+        - "https://github.com/launchbadge/sqlx"
+        - "https://github.com/serde-rs/serde"
+        "#);
+    }
+
+    #[tokio::test]
+    async fn getting_matching_bookmark_uris_returns_nothing_when_no_values_match() {
+        // GIVEN
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
+        let values = vec!["does-not-exist".to_string()];
+
+        // WHEN
+        let exact_uris = get_matching_bookmark_uris(&fx.pool, &values, UriMatchMode::Exact)
+            .await
+            .expect("matching bookmark uris should've been fetched");
+        let pattern_uris = get_matching_bookmark_uris(&fx.pool, &values, UriMatchMode::Pattern)
+            .await
+            .expect("matching bookmark uris should've been fetched");
+
+        // THEN
+        assert!(exact_uris.is_empty());
+        assert!(pattern_uris.is_empty());
+    }
+
+    #[tokio::test]
+    async fn getting_matching_bookmark_uris_returns_nothing_for_empty_values() {
+        // GIVEN
+        let fx = DBPoolFixture::new().await;
+        save_test_bookmarks(&fx.pool).await;
+
+        // WHEN
+        let exact_uris = get_matching_bookmark_uris(&fx.pool, &[], UriMatchMode::Exact)
+            .await
+            .expect("matching bookmark uris should've been fetched");
+        let pattern_uris = get_matching_bookmark_uris(&fx.pool, &[], UriMatchMode::Pattern)
+            .await
+            .expect("matching bookmark uris should've been fetched");
+
+        // THEN
+        assert!(exact_uris.is_empty());
+        assert!(pattern_uris.is_empty());
+    }
+
+    #[tokio::test]
+    async fn getting_matching_bookmark_uris_by_pattern_has_no_result_limit() {
+        // GIVEN
+        let fx = DBPoolFixture::new().await;
+        for index in 0..501 {
+            let uri = format!("https://unlimited-{index:03}.example.com");
+            sqlx::query(
+                "INSERT INTO bookmarks (uri, title, created_at, updated_at) VALUES (?, NULL, 0, 0)",
+            )
+            .bind(uri)
+            .execute(&fx.pool)
+            .await
+            .expect("bookmark should've been saved in db");
+        }
+
+        // WHEN
+        let uris =
+            get_matching_bookmark_uris(&fx.pool, &["unlimited".to_string()], UriMatchMode::Pattern)
+                .await
+                .expect("matching bookmark uris should've been fetched");
+
+        // THEN
+        assert_eq!(uris.len(), 501);
     }
 
     #[tokio::test]

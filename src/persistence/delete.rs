@@ -3,7 +3,7 @@ use sqlx::{Pool, Sqlite};
 
 pub async fn delete_bookmarks_with_uris(
     pool: &Pool<Sqlite>,
-    uris: &Vec<String>,
+    uris: &[String],
 ) -> Result<u64, DBError> {
     let mut tx = pool
         .begin()

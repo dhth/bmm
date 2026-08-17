@@ -173,7 +173,7 @@ fn deleting_bookmarks_by_exact_match_works() {
 
     // WHEN
     // THEN
-    assert_cmd_snapshot!(cmd.pass_stdin("y\n"), @"
+    assert_cmd_snapshot!(cmd, @"
     success: true
     exit_code: 0
     ----- stdout -----

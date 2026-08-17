@@ -1,6 +1,8 @@
 use super::DBError;
 use sqlx::{Pool, Sqlite};
 
+const DELETE_BATCH_SIZE: usize = 999;
+
 pub async fn delete_bookmarks_with_uris(
     pool: &Pool<Sqlite>,
     uris: &[String],
@@ -10,7 +12,9 @@ pub async fn delete_bookmarks_with_uris(
         .await
         .map_err(DBError::CouldntBeginTransaction)?;
 
-    let rows_affected = {
+    let mut rows_affected = 0;
+
+    for uri_chunk in uris.chunks(DELETE_BATCH_SIZE) {
         let query = format!(
             r#"
 DELETE FROM
@@ -25,11 +29,15 @@ WHERE
             uri IN ({})
     )
 "#,
-            uris.iter().map(|_| "?").collect::<Vec<&str>>().join(", ")
+            uri_chunk
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<&str>>()
+                .join(", ")
         );
 
         let mut query_builder = sqlx::query::<_>(&query);
-        for uri in uris {
+        for uri in uri_chunk {
             query_builder = query_builder.bind(uri.as_str());
         }
 
@@ -38,8 +46,11 @@ WHERE
             .await
             .map_err(|e| DBError::CouldntExecuteQuery("delete bookmarks with uris".into(), e))?;
 
-        sqlx::query!(
-            "
+        rows_affected += result.rows_affected();
+    }
+
+    sqlx::query!(
+        "
 DELETE FROM
     tags
 WHERE
@@ -50,13 +61,10 @@ WHERE
             bookmark_tags
     )
 ",
-        )
-        .execute(&mut *tx)
-        .await
-        .map_err(|e| DBError::CouldntExecuteQuery("clean up unused tags".into(), e))?;
-
-        result.rows_affected()
-    };
+    )
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| DBError::CouldntExecuteQuery("clean up unused tags".into(), e))?;
 
     tx.commit()
         .await
@@ -91,7 +99,10 @@ WHERE
 #[cfg(test)]
 mod tests {
     use super::super::test_fixtures::DBPoolFixture;
-    use super::super::{create_or_update_bookmark, get_num_bookmarks, get_tags};
+    use super::super::{
+        create_or_update_bookmark, create_or_update_bookmarks, get_all_bookmarks,
+        get_num_bookmarks, get_tags,
+    };
     use super::*;
     use crate::domain::{DraftBookmark, PotentialBookmark};
     use crate::persistence::SaveBookmarkOptions;
@@ -217,6 +228,86 @@ mod tests {
             .await
             .expect("tags should've been fetched");
         assert_yaml_snapshot!(tags_in_db, @"[]");
+    }
+
+    #[tokio::test]
+    async fn deleting_more_uris_than_the_batch_size_works() {
+        // GIVEN
+        let fx = DBPoolFixture::new().await;
+        let start = SystemTime::now();
+        let since_the_epoch = start
+            .duration_since(UNIX_EPOCH)
+            .expect("system time should've been after the Unix epoch");
+        let now = since_the_epoch.as_secs() as i64;
+        let num_bookmarks_to_delete = DELETE_BATCH_SIZE * 2 + 1;
+        let mut uris_to_delete = Vec::with_capacity(num_bookmarks_to_delete);
+        let mut draft_bookmarks = Vec::with_capacity(num_bookmarks_to_delete + 2);
+
+        for i in 0..num_bookmarks_to_delete {
+            let uri = format!("https://uri-{i}.com");
+            let tags = if i % DELETE_BATCH_SIZE == 0 {
+                vec!["deleted-only", "shared"]
+            } else {
+                vec![]
+            };
+            let draft_bookmark =
+                DraftBookmark::try_from(PotentialBookmark::from((uri.as_str(), None, &tags)))
+                    .expect("draft bookmark should've been created");
+            draft_bookmarks.push(draft_bookmark);
+            uris_to_delete.push(uri);
+        }
+
+        for (uri, title, tags) in [
+            (
+                "https://retained-one.com",
+                Some("retained bookmark"),
+                vec!["retained-only", "shared"],
+            ),
+            ("https://retained-two.com", None, vec![]),
+        ] {
+            let draft_bookmark =
+                DraftBookmark::try_from(PotentialBookmark::from((uri, title, &tags)))
+                    .expect("draft bookmark should've been created");
+            draft_bookmarks.push(draft_bookmark);
+        }
+
+        create_or_update_bookmarks(
+            &fx.pool,
+            &draft_bookmarks,
+            now,
+            SaveBookmarkOptions::default(),
+        )
+        .await
+        .expect("bookmarks should've been saved in db");
+
+        // WHEN
+        let rows_affected = delete_bookmarks_with_uris(&fx.pool, &uris_to_delete)
+            .await
+            .expect("bookmarks should've been deleted");
+
+        // THEN
+        assert_eq!(rows_affected, num_bookmarks_to_delete as u64);
+
+        let mut bookmarks = get_all_bookmarks(&fx.pool)
+            .await
+            .expect("bookmarks should've been fetched");
+        bookmarks.sort_by(|a, b| a.uri.cmp(&b.uri));
+        assert_yaml_snapshot!(bookmarks, @r#"
+        - uri: "https://retained-one.com"
+          title: retained bookmark
+          tags: "retained-only,shared"
+        - uri: "https://retained-two.com"
+          title: ~
+          tags: ~
+        "#);
+
+        let tags_in_db = get_tags(&fx.pool)
+            .await
+            .expect("tags should've been fetched");
+        assert_yaml_snapshot!(tags_in_db, @r"
+        - retained-only
+        - shared
+        ");
     }
 
     #[tokio::test]

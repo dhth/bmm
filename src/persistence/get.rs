@@ -113,7 +113,8 @@ WHERE
             for value in values {
                 patterns_builder
                     .push("uri LIKE ")
-                    .push_bind_unseparated(format!("%{value}%"));
+                    .push_bind_unseparated(literal_like_substring_pattern(value))
+                    .push_unseparated(" ESCAPE '\\'");
             }
         }
     }
@@ -201,7 +202,7 @@ LIMIT
         .await
         .map_err(|e| DBError::CouldntExecuteQuery("query bookmarks".into(), e)),
         (Some(u), None, []) => {
-            let uri_query = format!("%{u}%");
+            let uri_query = literal_like_substring_pattern(&u);
 
             sqlx::query_as!(
                 SavedBookmark,
@@ -226,7 +227,7 @@ SELECT
 FROM
     bookmarks b
 WHERE
-    b.uri LIKE ?
+    b.uri LIKE ? ESCAPE '\'
 ORDER BY
     b.updated_at DESC
 LIMIT
@@ -240,7 +241,7 @@ LIMIT
             .map_err(|e| DBError::CouldntExecuteQuery("query bookmarks by uri".into(), e))
         }
         (None, Some(d), []) => {
-            let title_query = format!("%{d}%");
+            let title_query = literal_like_substring_pattern(&d);
 
             sqlx::query_as!(
                 SavedBookmark,
@@ -265,7 +266,7 @@ SELECT
 FROM
     bookmarks b
 WHERE
-    title LIKE ?
+    title LIKE ? ESCAPE '\'
 ORDER BY
     updated_at DESC
 LIMIT
@@ -334,8 +335,8 @@ LIMIT
             Ok(bookmarks)
         }
         (Some(u), Some(d), []) => {
-            let uri_query = format!("%{u}%");
-            let title_query = format!("%{d}%");
+            let uri_query = literal_like_substring_pattern(&u);
+            let title_query = literal_like_substring_pattern(&d);
 
             sqlx::query_as!(
                 SavedBookmark,
@@ -360,8 +361,8 @@ SELECT
 FROM
     bookmarks b
 WHERE
-    uri LIKE ?
-    AND title LIKE ?
+    uri LIKE ? ESCAPE '\'
+    AND title LIKE ? ESCAPE '\'
 ORDER BY
     updated_at DESC
 LIMIT
@@ -400,7 +401,7 @@ FROM
     JOIN bookmark_tags bt ON b.id = bt.bookmark_id
     JOIN tags t ON bt.tag_id = t.id
 WHERE
-    b.uri LIKE ?
+    b.uri LIKE ? ESCAPE '\'
     AND t.name IN ({})
 GROUP BY
     b.id,
@@ -417,7 +418,7 @@ LIMIT
                 tags.iter().map(|_| "?").collect::<Vec<&str>>().join(", ")
             );
             let mut query_builder = sqlx::query_as::<_, SavedBookmark>(&query);
-            query_builder = query_builder.bind(format!("%{u}%"));
+            query_builder = query_builder.bind(literal_like_substring_pattern(&u));
             for tag in tags {
                 query_builder = query_builder.bind(tag);
             }
@@ -456,7 +457,7 @@ FROM
     JOIN bookmark_tags bt ON b.id = bt.bookmark_id
     JOIN tags t ON bt.tag_id = t.id
 WHERE
-    b.title LIKE ?
+    b.title LIKE ? ESCAPE '\'
     AND t.name IN ({})
 GROUP BY
     b.id,
@@ -473,7 +474,7 @@ LIMIT
                 tags.iter().map(|_| "?").collect::<Vec<&str>>().join(", ")
             );
             let mut query_builder = sqlx::query_as::<_, SavedBookmark>(&query);
-            query_builder = query_builder.bind(format!("%{d}%"));
+            query_builder = query_builder.bind(literal_like_substring_pattern(&d));
             for tag in tags {
                 query_builder = query_builder.bind(tag);
             }
@@ -512,8 +513,8 @@ FROM
     JOIN bookmark_tags bt ON b.id = bt.bookmark_id
     JOIN tags t ON bt.tag_id = t.id
 WHERE
-    b.uri LIKE ?
-    AND b.title LIKE ?
+    b.uri LIKE ? ESCAPE '\'
+    AND b.title LIKE ? ESCAPE '\'
     AND t.name IN ({})
 GROUP BY
     b.id,
@@ -530,8 +531,8 @@ LIMIT
                 tags.iter().map(|_| "?").collect::<Vec<&str>>().join(", ")
             );
             let mut query_builder = sqlx::query_as::<_, SavedBookmark>(&query);
-            query_builder = query_builder.bind(format!("%{u}%"));
-            query_builder = query_builder.bind(format!("%{d}%"));
+            query_builder = query_builder.bind(literal_like_substring_pattern(&u));
+            query_builder = query_builder.bind(literal_like_substring_pattern(&d));
             for tag in tags {
                 query_builder = query_builder.bind(tag);
             }
@@ -582,7 +583,7 @@ LIMIT
 "#,
         search_terms
             .iter()
-        .map(|_| "(b.uri LIKE ? OR b.title LIKE ? OR EXISTS (SELECT 1 FROM tags t JOIN bookmark_tags bt ON t.id = bt.tag_id WHERE bt.bookmark_id = b.id AND t.name LIKE ?))")
+        .map(|_| "(b.uri LIKE ? ESCAPE '\\' OR b.title LIKE ? ESCAPE '\\' OR EXISTS (SELECT 1 FROM tags t JOIN bookmark_tags bt ON t.id = bt.tag_id WHERE bt.bookmark_id = b.id AND t.name LIKE ? ESCAPE '\\'))")
             .collect::<Vec<&str>>()
             .join(" AND ")
     );
@@ -591,7 +592,7 @@ LIMIT
 
     let search_terms_with_like_markers = search_terms
         .iter()
-        .map(|t| format!("%{t}%"))
+        .map(|t| literal_like_substring_pattern(t))
         .collect::<Vec<_>>();
 
     for term in search_terms_with_like_markers.iter() {
@@ -687,6 +688,19 @@ ORDER BY name
 #[cfg(test)]
 pub async fn get_all_bookmarks(pool: &Pool<Sqlite>) -> Result<Vec<SavedBookmark>, DBError> {
     get_bookmarks(pool, None, None, vec![], 1000).await
+}
+
+fn literal_like_substring_pattern(value: &str) -> String {
+    let mut pattern = String::with_capacity(value.len() + 2);
+    pattern.push('%');
+    for character in value.chars() {
+        if matches!(character, '\\' | '%' | '_') {
+            pattern.push('\\');
+        }
+        pattern.push(character);
+    }
+    pattern.push('%');
+    pattern
 }
 
 #[cfg(test)]
@@ -791,6 +805,36 @@ mod tests {
         - "https://github.com/clap-rs/clap"
         - "https://github.com/launchbadge/sqlx"
         - "https://github.com/serde-rs/serde"
+        "#);
+    }
+
+    #[tokio::test]
+    async fn get_matching_bookmark_uris_treats_like_metacharacters_literally() {
+        // GIVEN
+        let fx = DBPoolFixture::new().await;
+        for uri in [
+            "https://example.com/under_score",
+            "https://example.com/underXscore",
+            "https://example.com/percent%20value",
+            "https://example.com/percentZZ20value",
+        ] {
+            let bookmark = DraftBookmark::try_from(PotentialBookmark::from((uri, None, None)))
+                .expect("draft bookmark should've been initialized");
+            create_or_update_bookmark(&fx.pool, &bookmark, 0, SaveBookmarkOptions::default())
+                .await
+                .expect("bookmark should be saved in db");
+        }
+
+        // WHEN
+        let values = vec!["under_score".to_string(), "%20".to_string()];
+        let uris = get_matching_bookmark_uris(&fx.pool, &values, UriMatchMode::Pattern)
+            .await
+            .expect("matching bookmark uris should've been fetched");
+
+        // THEN
+        assert_yaml_snapshot!(uris, @r#"
+        - "https://example.com/percent%20value"
+        - "https://example.com/under_score"
         "#);
     }
 
@@ -905,6 +949,69 @@ mod tests {
         - uri: "https://github.com/clap-rs/clap"
           title: clap repository on github
           tags: "clap,cli"
+        "#);
+    }
+
+    #[tokio::test]
+    async fn bookmark_filters_treat_like_metacharacters_literally() {
+        // GIVEN
+        let fx = DBPoolFixture::new().await;
+        for (uri, title) in [
+            (
+                "https://example.com/under_score",
+                r"100% literal back\slash",
+            ),
+            (
+                "https://example.com/underXscore",
+                "100 percent literal backXslash",
+            ),
+            ("https://example.com/percent%20value", "encoded value"),
+            ("https://example.com/percentZZ20value", "plain value"),
+        ] {
+            let bookmark =
+                DraftBookmark::try_from(PotentialBookmark::from((uri, Some(title), None)))
+                    .expect("draft bookmark should've been initialized");
+            create_or_update_bookmark(&fx.pool, &bookmark, 0, SaveBookmarkOptions::default())
+                .await
+                .expect("bookmark should be saved in db");
+        }
+
+        // WHEN
+        let by_uri = get_bookmarks(&fx.pool, Some("under_score".into()), None, vec![], 10)
+            .await
+            .expect("bookmarks should've been fetched");
+        let by_title = get_bookmarks(&fx.pool, None, Some("100%".into()), vec![], 10)
+            .await
+            .expect("bookmarks should've been fetched");
+        let by_escape_character =
+            get_bookmarks(&fx.pool, None, Some(r"back\slash".into()), vec![], 10)
+                .await
+                .expect("bookmarks should've been fetched");
+        let search_terms = SearchTerms::try_from("%20").expect("search terms should be valid");
+        let by_search = get_bookmarks_by_query(&fx.pool, &search_terms, 10)
+            .await
+            .expect("bookmarks should've been fetched");
+
+        // THEN
+        assert_yaml_snapshot!(by_uri, @r#"
+        - uri: "https://example.com/under_score"
+          title: "100% literal back\\slash"
+          tags: ~
+        "#);
+        assert_yaml_snapshot!(by_title, @r#"
+        - uri: "https://example.com/under_score"
+          title: "100% literal back\\slash"
+          tags: ~
+        "#);
+        assert_yaml_snapshot!(by_escape_character, @r#"
+        - uri: "https://example.com/under_score"
+          title: "100% literal back\\slash"
+          tags: ~
+        "#);
+        assert_yaml_snapshot!(by_search, @r#"
+        - uri: "https://example.com/percent%20value"
+          title: encoded value
+          tags: ~
         "#);
     }
 
@@ -1370,5 +1477,13 @@ mod tests {
         - name: tag5
           num_bookmarks: 1
         ");
+    }
+
+    #[test]
+    fn literal_like_substring_pattern_escapes_like_metacharacters() {
+        assert_eq!(
+            literal_like_substring_pattern(r"100%_literal\value"),
+            r"%100\%\_literal\\value%"
+        );
     }
 }

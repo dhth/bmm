@@ -156,6 +156,51 @@ fn deleting_bookmarks_by_multiple_patterns_works() {
 }
 
 #[test]
+fn deleting_by_pattern_treats_like_metacharacters_literally() {
+    // GIVEN
+    let fx = Fixture::new();
+    let mut save_cmd = fx.cmd([
+        "save-all",
+        "https://example.com/under_score",
+        "https://example.com/underXscore",
+        "https://example.com/percent%20value",
+        "https://example.com/percentZZ20value",
+    ]);
+    assert_cmd_snapshot!(save_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    saved 4 bookmarks
+
+    ----- stderr -----
+    ");
+
+    let mut cmd = fx.cmd(["delete", "--yes", "--pattern", "under_score", "%20"]);
+
+    // WHEN
+    // THEN
+    assert_cmd_snapshot!(cmd, @"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    deleted 2 bookmarks
+
+    ----- stderr -----
+    ");
+
+    let mut list_cmd = fx.cmd(["list"]);
+    assert_cmd_snapshot!(list_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://example.com/underXscore
+    https://example.com/percentZZ20value
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn deleting_bookmarks_by_exact_match_works() {
     // GIVEN
     let fx = Fixture::new();

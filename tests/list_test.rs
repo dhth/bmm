@@ -78,6 +78,49 @@ fn listing_bookmarks_with_queries_works() {
 }
 
 #[test]
+fn listing_by_uri_treats_like_metacharacters_literally() {
+    // GIVEN
+    let fx = Fixture::new();
+    let mut save_cmd = fx.cmd([
+        "save-all",
+        "https://example.com/under_score",
+        "https://example.com/underXscore",
+        "https://example.com/percent%20value",
+        "https://example.com/percentZZ20value",
+    ]);
+    assert_cmd_snapshot!(save_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    saved 4 bookmarks
+
+    ----- stderr -----
+    ");
+
+    // WHEN
+    // THEN
+    let mut underscore_cmd = fx.cmd(["list", "--uri", "under_score"]);
+    assert_cmd_snapshot!(underscore_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://example.com/under_score
+
+    ----- stderr -----
+    ");
+
+    let mut percent_cmd = fx.cmd(["list", "--uri", "%20"]);
+    assert_cmd_snapshot!(percent_cmd, @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    https://example.com/percent%20value
+
+    ----- stderr -----
+    ");
+}
+
+#[test]
 fn listing_bookmarks_fetches_all_data_for_each_bookmark() {
     // GIVEN
     let fx = Fixture::new();

@@ -8,7 +8,6 @@ use ratatui::{
     text::Line,
     widgets::{ListItem, ListState},
 };
-use sqlx::{Pool, Sqlite};
 use tui_input::Input;
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -159,7 +158,6 @@ impl From<&TagStats> for ListItem<'_> {
 }
 
 pub(super) struct Model {
-    pub(super) pool: Pool<Sqlite>,
     pub(super) active_pane: ActivePane,
     pub(super) bookmark_items: BookmarkItems,
     pub(super) tag_items: TagItems,
@@ -175,11 +173,7 @@ pub(super) struct Model {
 }
 
 impl Model {
-    pub(crate) fn default(
-        pool: &Pool<Sqlite>,
-        context: TuiContext,
-        terminal_dimensions: TerminalDimensions,
-    ) -> Self {
+    pub(crate) fn default(context: TuiContext, terminal_dimensions: TerminalDimensions) -> Self {
         let debug = std::env::var("BMM_DEBUG").unwrap_or_default().trim() == "1";
 
         let active_pane = match context {
@@ -194,7 +188,6 @@ impl Model {
             || terminal_dimensions.height < MIN_TERMINAL_HEIGHT;
 
         Self {
-            pool: pool.clone(),
             active_pane,
             running_state: RunningState::Running,
             bookmark_items: BookmarkItems::default(),

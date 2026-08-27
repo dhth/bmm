@@ -59,6 +59,7 @@ struct AppTui {
     pub(super) terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     pub(super) event_tx: Sender<Message>,
     pub(super) event_rx: Receiver<Message>,
+    pub(super) pool: Pool<Sqlite>,
     pub(super) model: Model,
     pub(super) initial_commands: Vec<Command>,
 }
@@ -84,12 +85,13 @@ impl AppTui {
             }
         }
 
-        let model = Model::default(pool, context, terminal_dimensions);
+        let model = Model::default(context, terminal_dimensions);
 
         Ok(Self {
             terminal,
             event_tx,
             event_rx,
+            pool: pool.clone(),
             model,
             initial_commands,
         })
@@ -99,7 +101,7 @@ impl AppTui {
         let _ = self.terminal.clear();
 
         for cmd in &self.initial_commands {
-            handle_command(&self.model.pool, cmd.clone(), self.event_tx.clone()).await;
+            handle_command(&self.pool, cmd.clone(), self.event_tx.clone()).await;
         }
 
         // first render
@@ -122,7 +124,7 @@ impl AppTui {
                         self.terminal.draw(|f| view(&mut self.model, f)).map_err(AppTuiError::DrawFrame)?;
 
                     for cmd in cmds {
-                        handle_command(&self.model.pool, cmd, self.event_tx.clone()).await;
+                        handle_command(&self.pool, cmd, self.event_tx.clone()).await;
                     }
                 }
 

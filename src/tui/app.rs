@@ -85,7 +85,8 @@ impl AppTui {
             }
         }
 
-        let model = Model::default(context, terminal_dimensions);
+        let debug = std::env::var("BMM_DEBUG").unwrap_or_default().trim() == "1";
+        let model = Model::default(context, terminal_dimensions, debug);
 
         Ok(Self {
             terminal,

@@ -78,8 +78,6 @@ pub fn update(model: &mut Model, msg: Message) -> Vec<Command> {
         }
         Message::TerminalResize(width, height) => {
             model.terminal_dimensions = TerminalDimensions { width, height };
-            model.terminal_too_small =
-                !(width >= MIN_TERMINAL_WIDTH && height >= MIN_TERMINAL_HEIGHT);
         }
         Message::ShowBookmarksForTag => {
             if let Some(current_tag_index) = model.tag_items.state.selected()

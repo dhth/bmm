@@ -1,0 +1,28 @@
+---
+source: src/tui/tests/search.rs
+expression: terminal.backend()
+---
+"                                                                                                "
+"   no bookmarks                                                                                 "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+" bmm  no bookmarks found for query                                                              "

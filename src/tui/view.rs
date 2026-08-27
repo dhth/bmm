@@ -1,17 +1,15 @@
 use super::common::*;
 use super::model::{MessageKind, Model};
-use ratatui::{
-    Frame,
-    layout::{Alignment, Constraint, Layout, Rect},
-    style::Style,
-    text::{Line, Span},
-    widgets::{Block, List, ListDirection, ListItem, Padding, Paragraph},
-};
+use ratatui::Frame;
+use ratatui::layout::{Alignment, Constraint, Layout, Rect};
+use ratatui::style::Style;
+use ratatui::text::{Line, Span};
+use ratatui::widgets::{Block, List, ListDirection, ListItem, Padding, Paragraph};
 
 const HELP_CONTENTS: &str = include_str!("static/help.txt");
 
 pub(crate) fn view(model: &mut Model, frame: &mut Frame) {
-    if model.terminal_too_small {
+    if model.terminal_too_small() {
         render_terminal_too_small_view(&model.terminal_dimensions, frame);
         return;
     }

@@ -1,13 +1,10 @@
-use super::{commands::Command, common::*};
-use crate::{
-    domain::{SavedBookmark, TagStats},
-    persistence::SearchTerms,
-};
-use ratatui::{
-    style::Style,
-    text::Line,
-    widgets::{ListItem, ListState},
-};
+use super::commands::Command;
+use super::common::*;
+use crate::domain::{SavedBookmark, TagStats};
+use crate::persistence::SearchTerms;
+use ratatui::style::Style;
+use ratatui::text::Line;
+use ratatui::widgets::{ListItem, ListState};
 use tui_input::Input;
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -168,14 +165,15 @@ pub(super) struct Model {
     pub(super) search_input: Input,
     pub(super) initial: bool,
     pub(super) terminal_dimensions: TerminalDimensions,
-    pub(super) terminal_too_small: bool,
     pub(super) debug: bool,
 }
 
 impl Model {
-    pub(crate) fn default(context: TuiContext, terminal_dimensions: TerminalDimensions) -> Self {
-        let debug = std::env::var("BMM_DEBUG").unwrap_or_default().trim() == "1";
-
+    pub(crate) fn default(
+        context: TuiContext,
+        terminal_dimensions: TerminalDimensions,
+        debug: bool,
+    ) -> Self {
         let active_pane = match context {
             TuiContext::Search(_) => ActivePane::List,
             TuiContext::Tags => ActivePane::TagsList,
@@ -183,9 +181,6 @@ impl Model {
         };
 
         let initial = matches!(context, TuiContext::Initial);
-
-        let terminal_too_small = terminal_dimensions.width < MIN_TERMINAL_WIDTH
-            || terminal_dimensions.height < MIN_TERMINAL_HEIGHT;
 
         Self {
             active_pane,
@@ -198,9 +193,13 @@ impl Model {
             search_input: Input::default(),
             initial,
             terminal_dimensions,
-            terminal_too_small,
             debug,
         }
+    }
+
+    pub(super) fn terminal_too_small(&self) -> bool {
+        self.terminal_dimensions.width < MIN_TERMINAL_WIDTH
+            || self.terminal_dimensions.height < MIN_TERMINAL_HEIGHT
     }
 
     pub(super) fn select_next_list_item(&mut self) {
@@ -261,7 +260,7 @@ impl Model {
     }
 
     pub(super) fn go_back_or_quit(&mut self) {
-        if self.terminal_too_small {
+        if self.terminal_too_small() {
             self.running_state = RunningState::Done;
             return;
         }

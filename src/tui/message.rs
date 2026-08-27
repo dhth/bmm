@@ -33,7 +33,7 @@ pub enum UrlsOpenedResult {
 
 pub fn get_event_handling_msg(model: &Model, event: Event) -> Option<Message> {
     match event {
-        Event::Key(key_event) => match model.terminal_too_small {
+        Event::Key(key_event) => match model.terminal_too_small() {
             true => match key_event.kind {
                 KeyEventKind::Press => match key_event.code {
                     KeyCode::Esc | KeyCode::Char('q') => Some(Message::GoBackOrQuit),

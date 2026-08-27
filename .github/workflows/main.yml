@@ -6,6 +6,7 @@ on:
       - 'main'
 
 env:
+  CARGO_PROFILE_DEV_DEBUG: "0"
   CARGO_TERM_COLOR: always
 
 jobs:
@@ -74,6 +75,10 @@ jobs:
         uses: jdx/mise-action@v4
         with:
           install_args: rust
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Check formatting
         run: mise run fmt:check
       - name: Lint
@@ -94,6 +99,10 @@ jobs:
         uses: jdx/mise-action@v4
         with:
           install_args: rust
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Build
         run: mise run build
 
@@ -112,6 +121,10 @@ jobs:
         uses: jdx/mise-action@v4
         with:
           install_args: rust cargo:sqlx-cli
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Check SQLx query metadata
         run: mise run sqlx:prepare-check
       - name: Run tests
@@ -130,23 +143,27 @@ jobs:
         with:
           fetch-depth: 2
       - run: git checkout HEAD~1
-      - name: Set up mise for previous version
+      - name: Set up mise
         uses: jdx/mise-action@v4
         with:
           install_args: rust
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Build last commit
-        run: cargo build --target-dir /var/tmp/last
+        run: cargo build
       - name: Save bookmarks with bmm on last commit
-        run: /var/tmp/last/debug/bmm save https://github.com/dhth/bmm
+        run: target/debug/bmm save https://github.com/dhth/bmm
       - run: git checkout main
-      - name: Set up mise for new version
+      - name: Set up mise
         uses: jdx/mise-action@v4
         with:
           install_args: rust
       - name: Build head
-        run: cargo build --target-dir /var/tmp/head
+        run: cargo build
       - name: Run bmm on head
-        run: /var/tmp/head/debug/bmm list -f json
+        run: target/debug/bmm list -f json
 
   lint-sh:
     needs: changes

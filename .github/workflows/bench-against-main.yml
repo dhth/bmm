@@ -11,23 +11,36 @@ jobs:
   bench:
     runs-on: ubuntu-latest
     steps:
-      - name: Install rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - run: git checkout main
+      - name: Set up mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: rust
+      - name: Set up Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Install hyperfine
         uses: jaxxstorm/action-install-gh-release@25e24d2d23ae098373794ef1d6faecb48ee52da8 # v3.0.0
         with:
           repo: sharkdp/hyperfine
       - name: Install uv
         uses: astral-sh/setup-uv@v8.1.0
-      - uses: actions/checkout@v6
-        with:
-          ref: main
       - name: Build main
-        run: cargo build --release --target-dir /var/tmp/main
-      - uses: actions/checkout@v6
+        run: |
+          cargo build --release
+          cp target/release/bmm /var/tmp/bmm-main
+      - run: git checkout ${{ github.sha }}
+      - name: Set up mise
+        uses: jdx/mise-action@v4
+        with:
+          install_args: rust
       - name: Build head
-        run: cargo build --release --target-dir /var/tmp/head
+        run: cargo build --release
       - name: Run benchmarks
         run: |
           cd bench
-          ./bench-against-prev-version.sh /var/tmp/main/release/bmm /var/tmp/head/release/bmm
+          ./bench-against-prev-version.sh /var/tmp/bmm-main ../target/release/bmm

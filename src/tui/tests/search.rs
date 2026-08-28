@@ -1,6 +1,7 @@
 use super::super::commands::Command;
+use super::super::common::ActivePane;
 use super::super::message::Message;
-use super::super::model::Model;
+use super::super::model::{Model, RunningState};
 use super::super::update::update;
 use super::super::view::view;
 use super::helpers::{press_key, setup_test_tui};
@@ -98,6 +99,42 @@ fn empty_search_results_show_a_message() {
 
     // THEN
     assert_snapshot!(terminal.backend());
+}
+
+#[test]
+fn escape_cancels_search_input() {
+    // GIVEN
+    let (_, mut model) = setup_test_tui(96, 24);
+    type_search_query(&mut model, "rust");
+    let _ = press_key(&mut model, KeyCode::Enter).expect("enter should be handled");
+    update(
+        &mut model,
+        Message::SearchFinished(Ok(matching_bookmarks())),
+    );
+    let _ = press_key(&mut model, KeyCode::Char('s')).expect("s should be handled");
+    type_search_query(&mut model, "book");
+
+    // WHEN
+    let _ = press_key(&mut model, KeyCode::Esc).expect("escape should be handled");
+
+    // THEN
+    assert_eq!(model.active_pane, ActivePane::List);
+    assert!(model.search_input.value().is_empty());
+    assert_eq!(model.bookmark_items.items.len(), 2);
+}
+
+#[test]
+fn q_is_entered_as_search_input() {
+    // GIVEN
+    let (_, mut model) = setup_test_tui(96, 24);
+
+    // WHEN
+    let _ = press_key(&mut model, KeyCode::Char('q')).expect("q should be handled");
+
+    // THEN
+    assert_eq!(model.search_input.value(), "q");
+    assert_eq!(model.active_pane, ActivePane::SearchInput);
+    assert_eq!(model.running_state, RunningState::Running);
 }
 
 fn matching_bookmarks() -> Vec<SavedBookmark> {

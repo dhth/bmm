@@ -22,6 +22,7 @@ pub fn update(model: &mut Model, msg: Message) -> Vec<Command> {
             }
         }
         Message::GoBackOrQuit => model.go_back_or_quit(),
+        Message::QuitImmediately => model.running_state = RunningState::Done,
         Message::ShowView(view) => {
             if let Some(c) = model.show_view(view) {
                 cmds.push(c);

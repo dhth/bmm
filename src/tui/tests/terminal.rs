@@ -1,8 +1,8 @@
 use super::super::model::RunningState;
 use super::super::view::view;
-use super::helpers::{press_key, setup_test_tui};
+use super::helpers::{press_key, press_key_with_modifiers, setup_test_tui};
 use insta::assert_snapshot;
-use ratatui::crossterm::event::KeyCode;
+use ratatui::crossterm::event::{KeyCode, KeyModifiers};
 
 #[test]
 fn terminal_too_small_view_is_shown_when_width_is_too_small() {
@@ -45,13 +45,22 @@ fn non_exit_keypresses_are_ignored_when_terminal_is_too_small() {
 }
 
 #[test]
-fn pressing_q_quits_when_terminal_is_too_small() {
-    // GIVEN
-    let (_, mut model) = setup_test_tui(80, 20);
+fn tui_can_quit_when_terminal_is_too_small() {
+    let exit_keys = [
+        (KeyCode::Char('q'), KeyModifiers::NONE),
+        (KeyCode::Esc, KeyModifiers::NONE),
+        (KeyCode::Char('c'), KeyModifiers::CONTROL),
+    ];
 
-    // WHEN
-    let _ = press_key(&mut model, KeyCode::Char('q')).expect("q should be handled");
+    for (key, modifiers) in exit_keys {
+        // GIVEN
+        let (_, mut model) = setup_test_tui(80, 20);
 
-    // THEN
-    assert_eq!(model.running_state, RunningState::Done);
+        // WHEN
+        let _ = press_key_with_modifiers(&mut model, key, modifiers)
+            .expect("exit key should be handled");
+
+        // THEN
+        assert_eq!(model.running_state, RunningState::Done);
+    }
 }

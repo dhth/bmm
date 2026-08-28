@@ -20,7 +20,15 @@ pub(super) fn setup_test_tui(width: u16, height: u16) -> (Terminal<TestBackend>,
 }
 
 pub(super) fn press_key(model: &mut Model, key: KeyCode) -> Option<Vec<Command>> {
-    let event = Event::Key(KeyEvent::new(key, KeyModifiers::NONE));
+    press_key_with_modifiers(model, key, KeyModifiers::NONE)
+}
+
+pub(super) fn press_key_with_modifiers(
+    model: &mut Model,
+    key: KeyCode,
+    modifiers: KeyModifiers,
+) -> Option<Vec<Command>> {
+    let event = Event::Key(KeyEvent::new(key, modifiers));
     let message = get_event_handling_msg(model, event)?;
 
     Some(update(model, message))

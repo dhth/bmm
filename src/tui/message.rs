@@ -2,7 +2,7 @@ use super::common::ActivePane;
 use super::model::Model;
 use crate::domain::{SavedBookmark, TagStats};
 use crate::persistence::DBError;
-use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind};
+use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use std::io::Error as IOError;
 
 pub enum Message {
@@ -37,6 +37,9 @@ pub fn get_event_handling_msg(model: &Model, event: Event) -> Option<Message> {
             true => match key_event.kind {
                 KeyEventKind::Press => match key_event.code {
                     KeyCode::Esc | KeyCode::Char('q') => Some(Message::GoBackOrQuit),
+                    KeyCode::Char('c') if key_event.modifiers.contains(KeyModifiers::CONTROL) => {
+                        Some(Message::GoBackOrQuit)
+                    }
                     _ => None,
                 },
                 _ => None,

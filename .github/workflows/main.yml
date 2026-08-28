@@ -120,7 +120,7 @@ jobs:
       - name: Set up mise
         uses: jdx/mise-action@v4
         with:
-          install_args: rust cargo:sqlx-cli
+          install_args: rust bmm-sqlx
       - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         with:

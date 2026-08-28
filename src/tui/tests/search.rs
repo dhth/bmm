@@ -87,6 +87,52 @@ fn moving_to_the_next_search_result_updates_the_selection() {
 }
 
 #[test]
+fn new_search_results_preserve_the_selected_index() {
+    // GIVEN
+    let search_terms = SearchTerms::try_from("rust").expect("search terms should be valid");
+    let (_, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Search(search_terms));
+    update(
+        &mut model,
+        Message::SearchFinished(Ok(matching_bookmarks())),
+    );
+    let _ = press_key(&mut model, KeyCode::Char('j')).expect("j should be handled");
+    let _ = press_key(&mut model, KeyCode::Char('s')).expect("s should be handled");
+    type_search_query(&mut model, "book");
+    let _ = press_key(&mut model, KeyCode::Enter).expect("enter should be handled");
+
+    // WHEN
+    update(
+        &mut model,
+        Message::SearchFinished(Ok(matching_bookmarks())),
+    );
+
+    // THEN
+    assert_eq!(model.bookmark_items.state.selected(), Some(1));
+}
+
+#[test]
+fn new_search_results_clamp_the_selected_index() {
+    // GIVEN
+    let search_terms = SearchTerms::try_from("rust").expect("search terms should be valid");
+    let (_, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Search(search_terms));
+    update(
+        &mut model,
+        Message::SearchFinished(Ok(matching_bookmarks())),
+    );
+    let _ = press_key(&mut model, KeyCode::Char('j')).expect("j should be handled");
+    let _ = press_key(&mut model, KeyCode::Char('s')).expect("s should be handled");
+    type_search_query(&mut model, "book");
+    let _ = press_key(&mut model, KeyCode::Enter).expect("enter should be handled");
+
+    // WHEN
+    let one_bookmark = matching_bookmarks().into_iter().take(1).collect();
+    update(&mut model, Message::SearchFinished(Ok(one_bookmark)));
+
+    // THEN
+    assert_eq!(model.bookmark_items.state.selected(), Some(0));
+}
+
+#[test]
 fn empty_search_results_show_a_message() {
     // GIVEN
     let (mut terminal, mut model) = setup_test_tui(96, 24);

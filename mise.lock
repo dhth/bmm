@@ -89,6 +89,15 @@ checksum = "sha256:975a22143262fd27476d19ee00c7af67978426e40e1dee94eed6bbade1cf8
 url = "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-pc-windows-msvc.tar.gz"
 url_api = "https://api.github.com/repos/EmbarkStudios/cargo-deny/releases/assets/471599057"
 
+[[tools.bmm-sqlx]]
+version = "0.8.6"
+backend = "cargo:sqlx-cli"
+specifiers = ["0.8.6"]
+
+[tools.bmm-sqlx.options]
+default-features = "false"
+features = "sqlite"
+
 [[tools.cargo-dist]]
 version = "0.31.0"
 backend = "aqua:axodotdev/cargo-dist"
@@ -165,15 +174,6 @@ url_api = "https://api.github.com/repos/mitsuhiko/insta/releases/assets/38503686
 checksum = "sha256:2f2ffcdda5608f78de53509bdd6a5feba185dad9490b5aad951c35bf8c37fa9e"
 url = "https://github.com/mitsuhiko/insta/releases/download/1.47.2/cargo-insta-x86_64-pc-windows-msvc.zip"
 url_api = "https://api.github.com/repos/mitsuhiko/insta/releases/assets/385036871"
-
-[[tools."cargo:sqlx-cli"]]
-version = "0.8.6"
-backend = "cargo:sqlx-cli"
-specifiers = ["0.8.6"]
-
-[tools."cargo:sqlx-cli".options]
-default-features = "false"
-features = "sqlite"
 
 [[tools.rust]]
 version = "1.98.0"

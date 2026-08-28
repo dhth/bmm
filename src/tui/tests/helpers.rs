@@ -8,13 +8,17 @@ use ratatui::backend::TestBackend;
 use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
 
 pub(super) fn setup_test_tui(width: u16, height: u16) -> (Terminal<TestBackend>, Model) {
+    setup_test_tui_with_context(width, height, TuiContext::Initial)
+}
+
+pub(super) fn setup_test_tui_with_context(
+    width: u16,
+    height: u16,
+    context: TuiContext,
+) -> (Terminal<TestBackend>, Model) {
     let terminal =
         Terminal::new(TestBackend::new(width, height)).expect("terminal should've been created");
-    let model = Model::default(
-        TuiContext::Initial,
-        TerminalDimensions { width, height },
-        false,
-    );
+    let model = Model::default(context, TerminalDimensions { width, height }, false);
 
     (terminal, model)
 }

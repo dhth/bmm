@@ -1,13 +1,15 @@
 use super::super::commands::Command;
 use super::super::common::ActivePane;
 use super::super::message::Message;
-use super::super::model::{Model, RunningState};
+use super::super::model::{Model, RunningState, TuiContext};
 use super::super::update::update;
 use super::super::view::view;
-use super::helpers::{press_key, setup_test_tui};
+use super::helpers::{press_key, setup_test_tui, setup_test_tui_with_context};
 use crate::domain::SavedBookmark;
+use crate::persistence::{DBError, SearchTerms};
 use insta::assert_snapshot;
 use ratatui::crossterm::event::KeyCode;
+use sqlx::Error as SqlxError;
 
 #[test]
 fn initial_view_shows_search_input() {
@@ -152,6 +154,34 @@ fn submitting_an_empty_search_shows_an_error() {
     assert!(commands.is_empty());
     assert_eq!(model.active_pane, ActivePane::SearchInput);
     assert_eq!(model.running_state, RunningState::Running);
+    assert_snapshot!(terminal.backend());
+}
+
+#[test]
+fn failed_search_preserves_existing_results_and_shows_an_error() {
+    // GIVEN
+    let search_terms = SearchTerms::try_from("rust").expect("search terms should be valid");
+    let (mut terminal, mut model) =
+        setup_test_tui_with_context(120, 24, TuiContext::Search(search_terms));
+    update(
+        &mut model,
+        Message::SearchFinished(Ok(matching_bookmarks())),
+    );
+
+    // WHEN
+    update(
+        &mut model,
+        Message::SearchFinished(Err(DBError::CouldntExecuteQuery(
+            "search bookmarks".to_string(),
+            SqlxError::Protocol("database unavailable".to_string()),
+        ))),
+    );
+    terminal
+        .draw(|frame| view(&mut model, frame))
+        .expect("frame should've been drawn");
+
+    // THEN
+    assert_eq!(model.bookmark_items.items.len(), 2);
     assert_snapshot!(terminal.backend());
 }
 

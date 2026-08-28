@@ -174,6 +174,21 @@ fn selecting_a_tag_is_ignored_when_list_is_empty() {
     assert!(commands.is_empty());
 }
 
+#[test]
+fn empty_tag_list_shows_no_tags() {
+    // GIVEN
+    let (mut terminal, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Tags);
+
+    // WHEN
+    update(&mut model, Message::TagsFetched(Ok(vec![])));
+    terminal
+        .draw(|frame| view(&mut model, frame))
+        .expect("frame should've been drawn");
+
+    // THEN
+    assert_snapshot!(terminal.backend());
+}
+
 fn available_tags() -> Vec<TagStats> {
     vec![
         TagStats {

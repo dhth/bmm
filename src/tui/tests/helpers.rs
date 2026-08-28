@@ -33,6 +33,10 @@ pub(super) fn press_key_with_modifiers(
     modifiers: KeyModifiers,
 ) -> Option<Vec<Command>> {
     let event = Event::Key(KeyEvent::new(key, modifiers));
+    handle_event(model, event)
+}
+
+pub(super) fn handle_event(model: &mut Model, event: Event) -> Option<Vec<Command>> {
     let message = get_event_handling_msg(model, event)?;
 
     Some(update(model, message))

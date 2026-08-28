@@ -1,8 +1,9 @@
+use super::super::common::ActivePane;
 use super::super::model::RunningState;
 use super::super::view::view;
-use super::helpers::{press_key, press_key_with_modifiers, setup_test_tui};
+use super::helpers::{handle_event, press_key, press_key_with_modifiers, setup_test_tui};
 use insta::assert_snapshot;
-use ratatui::crossterm::event::{KeyCode, KeyModifiers};
+use ratatui::crossterm::event::{Event, KeyCode, KeyModifiers};
 
 #[test]
 fn terminal_too_small_view_is_shown_when_width_is_too_small() {
@@ -63,4 +64,28 @@ fn tui_can_quit_when_terminal_is_too_small() {
         // THEN
         assert_eq!(model.running_state, RunningState::Done);
     }
+}
+
+#[test]
+fn tui_recovers_after_terminal_is_resized_back_to_minimum() {
+    // GIVEN
+    let (_, mut model) = setup_test_tui(96, 24);
+    for character in "rust".chars() {
+        let _ =
+            press_key(&mut model, KeyCode::Char(character)).expect("character should be handled");
+    }
+
+    // WHEN
+    let _ = handle_event(&mut model, Event::Resize(80, 24)).expect("resize should be handled");
+
+    // THEN
+    assert!(model.terminal_too_small());
+
+    // WHEN
+    let _ = handle_event(&mut model, Event::Resize(96, 24)).expect("resize should be handled");
+
+    // THEN
+    assert!(!model.terminal_too_small());
+    assert_eq!(model.active_pane, ActivePane::SearchInput);
+    assert_eq!(model.search_input.value(), "rust");
 }

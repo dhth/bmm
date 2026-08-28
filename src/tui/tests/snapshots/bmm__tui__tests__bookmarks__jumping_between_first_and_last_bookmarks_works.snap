@@ -1,0 +1,28 @@
+---
+source: src/tui/tests/bookmarks.rs
+expression: terminal.backend()
+---
+"                                                                                                "
+"   bookmarks  (20)                                                                              "
+"                                                                                                "
+"  https://example.com/09                                                                        "
+"  https://example.com/10                                                                        "
+"  https://example.com/11                                                                        "
+"  https://example.com/12                                                                        "
+"  https://example.com/13                                                                        "
+"  https://example.com/14                                                                        "
+"  https://example.com/15                                                                        "
+"  https://example.com/16                                                                        "
+"  https://example.com/17                                                                        "
+"  https://example.com/18                                                                        "
+"  https://example.com/19                                                                        "
+"> https://example.com/20                                                                        "
+"                                                                                                "
+"┌ details ─────────────────────────────────────────────────────────────────────────────────────┐"
+"│                                                                                              │"
+"│ URI   : https://example.com/20                                                               │"
+"│ Title : Bookmark 20                                                                          │"
+"│ Tags  : example                                                                              │"
+"│                                                                                              │"
+"└──────────────────────────────────────────────────────────────────────────────────────────────┘"
+" bmm                                                                                            "

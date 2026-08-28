@@ -66,27 +66,6 @@ fn submitting_a_search_displays_matching_bookmarks() {
 }
 
 #[test]
-fn moving_to_the_next_search_result_updates_the_selection() {
-    // GIVEN
-    let (mut terminal, mut model) = setup_test_tui(96, 24);
-    type_search_query(&mut model, "rust");
-    let _ = press_key(&mut model, KeyCode::Enter).expect("enter should be handled");
-    update(
-        &mut model,
-        Message::SearchFinished(Ok(matching_bookmarks())),
-    );
-
-    // WHEN
-    let _ = press_key(&mut model, KeyCode::Char('j')).expect("j should be handled");
-    terminal
-        .draw(|frame| view(&mut model, frame))
-        .expect("frame should've been drawn");
-
-    // THEN
-    assert_snapshot!(terminal.backend());
-}
-
-#[test]
 fn new_search_results_preserve_the_selected_index() {
     // GIVEN
     let search_terms = SearchTerms::try_from("rust").expect("search terms should be valid");

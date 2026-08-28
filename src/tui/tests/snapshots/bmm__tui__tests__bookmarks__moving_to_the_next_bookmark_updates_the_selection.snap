@@ -1,12 +1,12 @@
 ---
-source: src/tui/tests/search.rs
+source: src/tui/tests/bookmarks.rs
 expression: terminal.backend()
 ---
 "                                                                                                "
 "   bookmarks  (2)                                                                               "
 "                                                                                                "
-"  https://www.rust-lang.org/                                                                    "
-"> https://doc.rust-lang.org/book/                                                               "
+"  https://example.com/01                                                                        "
+"> https://example.com/02                                                                        "
 "                                                                                                "
 "                                                                                                "
 "                                                                                                "
@@ -20,9 +20,9 @@ expression: terminal.backend()
 "                                                                                                "
 "┌ details ─────────────────────────────────────────────────────────────────────────────────────┐"
 "│                                                                                              │"
-"│ URI   : https://doc.rust-lang.org/book/                                                      │"
-"│ Title : The Rust Programming Language                                                        │"
-"│ Tags  : rust,book                                                                            │"
+"│ URI   : https://example.com/02                                                               │"
+"│ Title : Bookmark 02                                                                          │"
+"│ Tags  : example                                                                              │"
 "│                                                                                              │"
 "└──────────────────────────────────────────────────────────────────────────────────────────────┘"
 " bmm                                                                                            "

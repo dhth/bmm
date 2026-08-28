@@ -161,6 +161,19 @@ fn failed_bookmark_fetch_for_tag_preserves_tags_and_shows_an_error() {
     assert_snapshot!(terminal.backend());
 }
 
+#[test]
+fn selecting_a_tag_is_ignored_when_list_is_empty() {
+    // GIVEN
+    let (_, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Tags);
+    update(&mut model, Message::TagsFetched(Ok(vec![])));
+
+    // WHEN
+    let commands = press_key(&mut model, KeyCode::Enter).expect("enter should be handled");
+
+    // THEN
+    assert!(commands.is_empty());
+}
+
 fn available_tags() -> Vec<TagStats> {
     vec![
         TagStats {

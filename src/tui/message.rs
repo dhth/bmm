@@ -2,7 +2,7 @@ use super::common::ActivePane;
 use super::model::Model;
 use crate::domain::{SavedBookmark, TagStats};
 use crate::persistence::DBError;
-use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind};
+use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use std::io::Error as IOError;
 
 pub enum Message {
@@ -24,6 +24,7 @@ pub enum Message {
     BookmarksForTagFetched(Result<Vec<SavedBookmark>, DBError>),
     ContentCopiedToClipboard(Result<(), String>),
     GoBackOrQuit,
+    QuitImmediately,
 }
 
 pub enum UrlsOpenedResult {
@@ -33,7 +34,14 @@ pub enum UrlsOpenedResult {
 
 pub fn get_event_handling_msg(model: &Model, event: Event) -> Option<Message> {
     match event {
-        Event::Key(key_event) => match model.terminal_too_small {
+        Event::Key(key_event)
+            if key_event.kind == KeyEventKind::Press
+                && key_event.code == KeyCode::Char('c')
+                && key_event.modifiers == KeyModifiers::CONTROL =>
+        {
+            Some(Message::QuitImmediately)
+        }
+        Event::Key(key_event) => match model.terminal_too_small() {
             true => match key_event.kind {
                 KeyEventKind::Press => match key_event.code {
                     KeyCode::Esc | KeyCode::Char('q') => Some(Message::GoBackOrQuit),

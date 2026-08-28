@@ -22,6 +22,7 @@ pub fn update(model: &mut Model, msg: Message) -> Vec<Command> {
             }
         }
         Message::GoBackOrQuit => model.go_back_or_quit(),
+        Message::QuitImmediately => model.running_state = RunningState::Done,
         Message::ShowView(view) => {
             if let Some(c) = model.show_view(view) {
                 cmds.push(c);
@@ -78,8 +79,6 @@ pub fn update(model: &mut Model, msg: Message) -> Vec<Command> {
         }
         Message::TerminalResize(width, height) => {
             model.terminal_dimensions = TerminalDimensions { width, height };
-            model.terminal_too_small =
-                !(width >= MIN_TERMINAL_WIDTH && height >= MIN_TERMINAL_HEIGHT);
         }
         Message::ShowBookmarksForTag => {
             if let Some(current_tag_index) = model.tag_items.state.selected()
@@ -90,6 +89,7 @@ pub fn update(model: &mut Model, msg: Message) -> Vec<Command> {
         }
         Message::BookmarksForTagFetched(result) => match result {
             Ok(bookmarks) => {
+                model.initial = false;
                 model.bookmark_items = BookmarkItems::from(bookmarks);
                 model.active_pane = ActivePane::List;
             }

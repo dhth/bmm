@@ -1,0 +1,28 @@
+---
+source: src/tui/tests/actions.rs
+expression: terminal.backend()
+---
+"                                                                                                "
+"   bookmarks  (2)                                                                               "
+"                                                                                                "
+"  https://www.rust-lang.org/                                                                    "
+"> https://gleam.run/                                                                            "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"┌ details ─────────────────────────────────────────────────────────────────────────────────────┐"
+"│                                                                                              │"
+"│ URI   : https://gleam.run/                                                                   │"
+"│ Title : Gleam                                                                                │"
+"│ Tags  : gleam,programming                                                                    │"
+"│                                                                                              │"
+"└──────────────────────────────────────────────────────────────────────────────────────────────┘"
+" bmm  copied!                                                                                   "

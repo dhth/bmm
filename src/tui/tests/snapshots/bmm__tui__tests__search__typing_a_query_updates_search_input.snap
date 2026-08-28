@@ -1,0 +1,28 @@
+---
+source: src/tui/tests/search.rs
+expression: terminal.backend()
+---
+"                                                                                                "
+"             bbbbbbb                                                                            "
+"             b:::::b                                                                            "
+"             b:::::b                                                                            "
+"             b:::::b                                                                            "
+"             b:::::b                                                                            "
+"             b:::::bbbbbbbbb         mmmmmmm    mmmmmmm        mmmmmmm    mmmmmmm               "
+"             b::::::::::::::bb     mm:::::::m  m:::::::mm    mm:::::::m  m:::::::mm             "
+"             b::::::::::::::::b   m::::::::::mm::::::::::m  m::::::::::mm::::::::::m            "
+"             b:::::bbbbb:::::::b  m::::::::::::::::::::::m  m::::::::::::::::::::::m            "
+"             b:::::b    b::::::b  m:::::mmm::::::mmm:::::m  m:::::mmm::::::mmm:::::m            "
+"             b:::::b     b:::::b  m::::m   m::::m   m::::m  m::::m   m::::m   m::::m            "
+"             b:::::b     b:::::b  m::::m   m::::m   m::::m  m::::m   m::::m   m::::m            "
+"             b:::::b     b:::::b  m::::m   m::::m   m::::m  m::::m   m::::m   m::::m            "
+"             b:::::bbbbbb::::::b  m::::m   m::::m   m::::m  m::::m   m::::m   m::::m            "
+"             b::::::::::::::::b   m::::m   m::::m   m::::m  m::::m   m::::m   m::::m            "
+"             b:::::::::::::::b    m::::m   m::::m   m::::m  m::::m   m::::m   m::::m            "
+"             bbbbbbbbbbbbbbbb     mmmmmm   mmmmmm   mmmmmm  mmmmmm   mmmmmm   mmmmmm            "
+"                                                                                                "
+"                                                                                                "
+"┌ search query? ───────────────────────────────────────────────────────────────────────────────┐"
+"│rust                                                                                          │"
+"└──────────────────────────────────────────────────────────────────────────────────────────────┘"
+" bmm                                                                                            "

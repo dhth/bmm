@@ -1,0 +1,28 @@
+---
+source: src/tui/tests/tags.rs
+expression: terminal.backend()
+---
+"                                                                                                                        "
+"   no tags                                                                                                              "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+"                                                                                                                        "
+" bmm  couldn't execute query (fetch tags): encountered unexpected or invalid data: database unavailable                 "

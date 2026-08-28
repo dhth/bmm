@@ -1,0 +1,43 @@
+use super::super::commands::Command;
+use super::super::common::TerminalDimensions;
+use super::super::message::get_event_handling_msg;
+use super::super::model::{Model, TuiContext};
+use super::super::update::update;
+use ratatui::Terminal;
+use ratatui::backend::TestBackend;
+use ratatui::crossterm::event::{Event, KeyCode, KeyEvent, KeyModifiers};
+
+pub(super) fn setup_test_tui(width: u16, height: u16) -> (Terminal<TestBackend>, Model) {
+    setup_test_tui_with_context(width, height, TuiContext::Initial)
+}
+
+pub(super) fn setup_test_tui_with_context(
+    width: u16,
+    height: u16,
+    context: TuiContext,
+) -> (Terminal<TestBackend>, Model) {
+    let terminal =
+        Terminal::new(TestBackend::new(width, height)).expect("terminal should've been created");
+    let model = Model::default(context, TerminalDimensions { width, height }, false);
+
+    (terminal, model)
+}
+
+pub(super) fn press_key(model: &mut Model, key: KeyCode) -> Option<Vec<Command>> {
+    press_key_with_modifiers(model, key, KeyModifiers::NONE)
+}
+
+pub(super) fn press_key_with_modifiers(
+    model: &mut Model,
+    key: KeyCode,
+    modifiers: KeyModifiers,
+) -> Option<Vec<Command>> {
+    let event = Event::Key(KeyEvent::new(key, modifiers));
+    handle_event(model, event)
+}
+
+pub(super) fn handle_event(model: &mut Model, event: Event) -> Option<Vec<Command>> {
+    let message = get_event_handling_msg(model, event)?;
+
+    Some(update(model, message))
+}

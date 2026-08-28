@@ -1,0 +1,28 @@
+---
+source: src/tui/tests/tags.rs
+expression: terminal.backend()
+---
+"                                                                                                "
+"   bookmarks  (3)                                                                               "
+"                                                                                                "
+"> https://www.rust-lang.org/                                                                    "
+"  https://doc.rust-lang.org/book/                                                               "
+"  https://gleam.run/                                                                            "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"                                                                                                "
+"┌ details ─────────────────────────────────────────────────────────────────────────────────────┐"
+"│                                                                                              │"
+"│ URI   : https://www.rust-lang.org/                                                           │"
+"│ Title : Rust                                                                                 │"
+"│ Tags  : rust,programming                                                                     │"
+"│                                                                                              │"
+"└──────────────────────────────────────────────────────────────────────────────────────────────┘"
+" bmm                                                                                            "

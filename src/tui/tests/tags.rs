@@ -5,7 +5,7 @@ use super::super::model::TuiContext;
 use super::super::update::update;
 use super::super::view::view;
 use super::helpers::{press_key, setup_test_tui_with_context};
-use crate::domain::TagStats;
+use crate::domain::{SavedBookmark, TagStats};
 use crate::persistence::SearchTerms;
 use insta::assert_snapshot;
 use ratatui::crossterm::event::KeyCode;
@@ -58,6 +58,32 @@ fn moving_to_the_next_tag_updates_the_selection() {
     assert_snapshot!(terminal.backend());
 }
 
+#[test]
+fn selecting_a_tag_displays_its_bookmarks() {
+    // GIVEN
+    let (mut terminal, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Tags);
+    update(&mut model, Message::TagsFetched(Ok(available_tags())));
+    let _ = press_key(&mut model, KeyCode::Char('j')).expect("j should be handled");
+
+    // WHEN
+    let commands = press_key(&mut model, KeyCode::Enter).expect("enter should be handled");
+    update(
+        &mut model,
+        Message::BookmarksForTagFetched(Ok(programming_bookmarks())),
+    );
+    terminal
+        .draw(|frame| view(&mut model, frame))
+        .expect("frame should've been drawn");
+
+    // THEN
+    let [Command::FetchBookmarksForTag(tag)] = commands.as_slice() else {
+        panic!("selecting a tag should emit one fetch bookmarks command");
+    };
+    assert_eq!(tag, "programming");
+    assert_eq!(model.active_pane, ActivePane::List);
+    assert_snapshot!(terminal.backend());
+}
+
 fn available_tags() -> Vec<TagStats> {
     vec![
         TagStats {
@@ -79,6 +105,26 @@ fn available_tags() -> Vec<TagStats> {
         TagStats {
             name: "tools".to_string(),
             num_bookmarks: 1,
+        },
+    ]
+}
+
+fn programming_bookmarks() -> Vec<SavedBookmark> {
+    vec![
+        SavedBookmark {
+            uri: "https://www.rust-lang.org/".to_string(),
+            title: Some("Rust".to_string()),
+            tags: Some("rust,programming".to_string()),
+        },
+        SavedBookmark {
+            uri: "https://doc.rust-lang.org/book/".to_string(),
+            title: Some("The Rust Programming Language".to_string()),
+            tags: Some("rust,programming,books".to_string()),
+        },
+        SavedBookmark {
+            uri: "https://gleam.run/".to_string(),
+            title: Some("Gleam".to_string()),
+            tags: Some("gleam,programming".to_string()),
         },
     ]
 }

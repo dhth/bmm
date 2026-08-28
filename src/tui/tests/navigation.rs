@@ -47,14 +47,7 @@ fn q_and_escape_go_back_from_tags_to_bookmarks() {
         // GIVEN
         let search_terms = SearchTerms::try_from("rust").expect("search terms should be valid");
         let (_, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Search(search_terms));
-        update(
-            &mut model,
-            Message::SearchFinished(Ok(vec![SavedBookmark {
-                uri: "https://www.rust-lang.org/".to_string(),
-                title: Some("Rust".to_string()),
-                tags: Some("rust,programming".to_string()),
-            }])),
-        );
+        update(&mut model, Message::SearchFinished(Ok(bookmarks())));
         let _ = press_key(&mut model, KeyCode::Char('t')).expect("t should be handled");
         update(
             &mut model,
@@ -93,4 +86,28 @@ fn q_and_escape_quit_when_tui_was_opened_with_tags() {
         // THEN
         assert_eq!(model.running_state, RunningState::Done);
     }
+}
+
+#[test]
+fn q_and_escape_quit_from_bookmarks() {
+    for key in [KeyCode::Char('q'), KeyCode::Esc] {
+        // GIVEN
+        let search_terms = SearchTerms::try_from("rust").expect("search terms should be valid");
+        let (_, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Search(search_terms));
+        update(&mut model, Message::SearchFinished(Ok(bookmarks())));
+
+        // WHEN
+        let _ = press_key(&mut model, key).expect("quit key should be handled");
+
+        // THEN
+        assert_eq!(model.running_state, RunningState::Done);
+    }
+}
+
+fn bookmarks() -> Vec<SavedBookmark> {
+    vec![SavedBookmark {
+        uri: "https://www.rust-lang.org/".to_string(),
+        title: Some("Rust".to_string()),
+        tags: Some("rust,programming".to_string()),
+    }]
 }

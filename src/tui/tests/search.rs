@@ -137,6 +137,24 @@ fn q_is_entered_as_search_input() {
     assert_eq!(model.running_state, RunningState::Running);
 }
 
+#[test]
+fn submitting_an_empty_search_shows_an_error() {
+    // GIVEN
+    let (mut terminal, mut model) = setup_test_tui(96, 24);
+
+    // WHEN
+    let commands = press_key(&mut model, KeyCode::Enter).expect("enter should be handled");
+    terminal
+        .draw(|frame| view(&mut model, frame))
+        .expect("frame should've been drawn");
+
+    // THEN
+    assert!(commands.is_empty());
+    assert_eq!(model.active_pane, ActivePane::SearchInput);
+    assert_eq!(model.running_state, RunningState::Running);
+    assert_snapshot!(terminal.backend());
+}
+
 fn matching_bookmarks() -> Vec<SavedBookmark> {
     vec![
         SavedBookmark {

@@ -67,6 +67,22 @@ fn tui_can_quit_when_terminal_is_too_small() {
 }
 
 #[test]
+fn ctrl_c_with_additional_modifiers_does_not_quit() {
+    // GIVEN
+    let (_, mut model) = setup_test_tui(96, 24);
+
+    // WHEN
+    let _ = press_key_with_modifiers(
+        &mut model,
+        KeyCode::Char('c'),
+        KeyModifiers::CONTROL | KeyModifiers::ALT,
+    );
+
+    // THEN
+    assert_eq!(model.running_state, RunningState::Running);
+}
+
+#[test]
 fn tui_recovers_after_terminal_is_resized_back_to_minimum() {
     // GIVEN
     let (_, mut model) = setup_test_tui(96, 24);

@@ -37,7 +37,7 @@ pub fn get_event_handling_msg(model: &Model, event: Event) -> Option<Message> {
         Event::Key(key_event)
             if key_event.kind == KeyEventKind::Press
                 && key_event.code == KeyCode::Char('c')
-                && key_event.modifiers.contains(KeyModifiers::CONTROL) =>
+                && key_event.modifiers == KeyModifiers::CONTROL =>
         {
             Some(Message::QuitImmediately)
         }

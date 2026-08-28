@@ -89,6 +89,7 @@ pub fn update(model: &mut Model, msg: Message) -> Vec<Command> {
         }
         Message::BookmarksForTagFetched(result) => match result {
             Ok(bookmarks) => {
+                model.initial = false;
                 model.bookmark_items = BookmarkItems::from(bookmarks);
                 model.active_pane = ActivePane::List;
             }

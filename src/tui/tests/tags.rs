@@ -4,7 +4,7 @@ use super::super::message::Message;
 use super::super::model::TuiContext;
 use super::super::update::update;
 use super::super::view::view;
-use super::helpers::{press_key, setup_test_tui_with_context};
+use super::helpers::{press_key, setup_test_tui, setup_test_tui_with_context};
 use crate::domain::{SavedBookmark, TagStats};
 use crate::persistence::{DBError, SearchTerms};
 use insta::assert_snapshot;
@@ -189,6 +189,30 @@ fn empty_tag_list_shows_no_tags() {
     assert_snapshot!(terminal.backend());
 }
 
+#[test]
+fn selecting_a_tag_after_closing_initial_search_displays_its_bookmarks() {
+    // GIVEN
+    let (mut terminal, mut model) = setup_test_tui(96, 24);
+    let _ = press_key(&mut model, KeyCode::Esc).expect("escape should be handled");
+    let _ = press_key(&mut model, KeyCode::Char('t')).expect("t should be handled");
+    update(&mut model, Message::TagsFetched(Ok(available_tags())));
+
+    // WHEN
+    let _ = press_key(&mut model, KeyCode::Enter).expect("enter should be handled");
+    update(
+        &mut model,
+        Message::BookmarksForTagFetched(Ok(rust_bookmarks())),
+    );
+    terminal
+        .draw(|frame| view(&mut model, frame))
+        .expect("frame should've been drawn");
+
+    // THEN
+    assert_eq!(model.active_pane, ActivePane::List);
+    assert_eq!(model.bookmark_items.items.len(), 2);
+    assert_snapshot!(terminal.backend());
+}
+
 fn available_tags() -> Vec<TagStats> {
     vec![
         TagStats {
@@ -232,4 +256,8 @@ fn programming_bookmarks() -> Vec<SavedBookmark> {
             tags: Some("gleam,programming".to_string()),
         },
     ]
+}
+
+fn rust_bookmarks() -> Vec<SavedBookmark> {
+    programming_bookmarks().into_iter().take(2).collect()
 }

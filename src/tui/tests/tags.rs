@@ -6,9 +6,10 @@ use super::super::update::update;
 use super::super::view::view;
 use super::helpers::{press_key, setup_test_tui_with_context};
 use crate::domain::{SavedBookmark, TagStats};
-use crate::persistence::SearchTerms;
+use crate::persistence::{DBError, SearchTerms};
 use insta::assert_snapshot;
 use ratatui::crossterm::event::KeyCode;
+use sqlx::Error as SqlxError;
 
 #[test]
 fn opening_tui_with_tags_displays_available_tags() {
@@ -81,6 +82,56 @@ fn selecting_a_tag_displays_its_bookmarks() {
     };
     assert_eq!(tag, "programming");
     assert_eq!(model.active_pane, ActivePane::List);
+    assert_snapshot!(terminal.backend());
+}
+
+#[test]
+fn reopening_tags_does_not_fetch_them_again() {
+    // GIVEN
+    let search_terms = SearchTerms::try_from("rust").expect("search terms should be valid");
+    let (_, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Search(search_terms));
+    update(
+        &mut model,
+        Message::SearchFinished(Ok(programming_bookmarks())),
+    );
+    let initial_commands = press_key(&mut model, KeyCode::Char('t')).expect("t should be handled");
+    update(&mut model, Message::TagsFetched(Ok(available_tags())));
+    let _ = press_key(&mut model, KeyCode::Esc).expect("escape should be handled");
+    assert_eq!(model.active_pane, ActivePane::List);
+
+    // WHEN
+    let reopening_commands =
+        press_key(&mut model, KeyCode::Char('t')).expect("t should be handled");
+
+    // THEN
+    let [Command::FetchTags] = initial_commands.as_slice() else {
+        panic!("opening tags for the first time should emit one fetch tags command");
+    };
+    assert!(reopening_commands.is_empty());
+    assert_eq!(model.active_pane, ActivePane::TagsList);
+    assert_eq!(model.tag_items.items.len(), 5);
+}
+
+#[test]
+fn failed_tag_fetch_shows_an_error() {
+    // GIVEN
+    let (mut terminal, mut model) = setup_test_tui_with_context(120, 24, TuiContext::Tags);
+
+    // WHEN
+    update(
+        &mut model,
+        Message::TagsFetched(Err(DBError::CouldntExecuteQuery(
+            "fetch tags".to_string(),
+            SqlxError::Protocol("database unavailable".to_string()),
+        ))),
+    );
+    terminal
+        .draw(|frame| view(&mut model, frame))
+        .expect("frame should've been drawn");
+
+    // THEN
+    assert_eq!(model.active_pane, ActivePane::TagsList);
+    assert!(model.tag_items.items.is_empty());
     assert_snapshot!(terminal.backend());
 }
 

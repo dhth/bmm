@@ -1,3 +1,4 @@
+mod actions;
 mod help;
 mod helpers;
 mod navigation;

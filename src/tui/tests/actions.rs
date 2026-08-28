@@ -113,6 +113,22 @@ fn failed_copy_shows_an_error() {
     assert_snapshot!(terminal.backend());
 }
 
+#[test]
+fn bookmark_actions_are_ignored_when_list_is_empty() {
+    // GIVEN
+    let search_terms = SearchTerms::try_from("missing").expect("search terms should be valid");
+    let (_, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Search(search_terms));
+    update(&mut model, Message::SearchFinished(Ok(vec![])));
+
+    for key in [KeyCode::Char('o'), KeyCode::Char('y'), KeyCode::Char('Y')] {
+        // WHEN
+        let commands = press_key(&mut model, key).expect("bookmark action should be handled");
+
+        // THEN
+        assert!(commands.is_empty());
+    }
+}
+
 fn bookmarks() -> Vec<SavedBookmark> {
     vec![
         SavedBookmark {

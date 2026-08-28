@@ -42,6 +42,22 @@ fn pressing_t_from_bookmarks_fetches_tags() {
     assert_eq!(model.active_pane, ActivePane::TagsList);
 }
 
+#[test]
+fn moving_to_the_next_tag_updates_the_selection() {
+    // GIVEN
+    let (mut terminal, mut model) = setup_test_tui_with_context(96, 24, TuiContext::Tags);
+    update(&mut model, Message::TagsFetched(Ok(available_tags())));
+
+    // WHEN
+    let _ = press_key(&mut model, KeyCode::Char('j')).expect("j should be handled");
+    terminal
+        .draw(|frame| view(&mut model, frame))
+        .expect("frame should've been drawn");
+
+    // THEN
+    assert_snapshot!(terminal.backend());
+}
+
 fn available_tags() -> Vec<TagStats> {
     vec![
         TagStats {

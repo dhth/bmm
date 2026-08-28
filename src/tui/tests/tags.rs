@@ -135,6 +135,32 @@ fn failed_tag_fetch_shows_an_error() {
     assert_snapshot!(terminal.backend());
 }
 
+#[test]
+fn failed_bookmark_fetch_for_tag_preserves_tags_and_shows_an_error() {
+    // GIVEN
+    let (mut terminal, mut model) = setup_test_tui_with_context(120, 24, TuiContext::Tags);
+    update(&mut model, Message::TagsFetched(Ok(available_tags())));
+    let _ = press_key(&mut model, KeyCode::Char('j')).expect("j should be handled");
+
+    // WHEN
+    update(
+        &mut model,
+        Message::BookmarksForTagFetched(Err(DBError::CouldntExecuteQuery(
+            "fetch bookmarks for tag".to_string(),
+            SqlxError::Protocol("database unavailable".to_string()),
+        ))),
+    );
+    terminal
+        .draw(|frame| view(&mut model, frame))
+        .expect("frame should've been drawn");
+
+    // THEN
+    assert_eq!(model.active_pane, ActivePane::TagsList);
+    assert_eq!(model.tag_items.items.len(), 5);
+    assert_eq!(model.tag_items.state.selected(), Some(1));
+    assert_snapshot!(terminal.backend());
+}
+
 fn available_tags() -> Vec<TagStats> {
     vec![
         TagStats {

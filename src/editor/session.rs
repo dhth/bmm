@@ -4,14 +4,8 @@ use std::process::{Command, ExitStatus};
 use tempfile::tempdir;
 use which::{Error as WhichError, which};
 
-#[derive(Debug, PartialEq, Eq)]
-pub(super) enum EditorOutcome {
-    Unchanged,
-    Changed(String),
-}
-
 #[derive(Debug, thiserror::Error)]
-pub(super) enum EditorError {
+pub(crate) enum EditorError {
     #[error("couldn't create temporary directory for editor file: {0}")]
     CreateTempDir(std::io::Error),
     #[error("couldn't write temporary editor file: {0}")]
@@ -28,6 +22,12 @@ pub(super) enum EditorError {
     EditorFailed(ExitStatus),
     #[error("couldn't read temporary editor file: {0}")]
     ReadTempFile(std::io::Error),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(super) enum EditorOutcome {
+    Unchanged,
+    Changed(String),
 }
 
 pub(super) fn edit_text(initial_contents: &str) -> Result<EditorOutcome, EditorError> {

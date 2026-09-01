@@ -1,6 +1,40 @@
 use super::BMM_BANNER;
+use super::session::{EditorError, EditorOutcome, edit_text};
 use crate::domain::PotentialBookmark;
 use serde::Deserialize;
+
+#[derive(Debug)]
+pub(crate) enum SaveBookmarkEditorOutcome {
+    Unchanged,
+    Submitted(PotentialBookmark),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub(crate) enum SaveBookmarkEditorError {
+    #[error(transparent)]
+    Editor(#[from] EditorError),
+    #[error("couldn't parse editor document: {0}")]
+    Parse(#[from] toml::de::Error),
+}
+
+pub(crate) fn get_save_bookmark_input(
+    uri: &str,
+    initial_title: Option<&str>,
+    initial_tags: Option<&str>,
+) -> Result<SaveBookmarkEditorOutcome, SaveBookmarkEditorError> {
+    let document = SaveBookmarkDocument::new(initial_title, initial_tags);
+    let initial_contents = render_save_bookmark_document(uri, &document);
+
+    match edit_text(&initial_contents)? {
+        EditorOutcome::Unchanged => Ok(SaveBookmarkEditorOutcome::Unchanged),
+        EditorOutcome::Changed(edited_contents) => {
+            let document = parse_save_bookmark_document(&edited_contents)?;
+            Ok(SaveBookmarkEditorOutcome::Submitted(
+                document.into_potential_bookmark(uri),
+            ))
+        }
+    }
+}
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]

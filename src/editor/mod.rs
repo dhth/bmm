@@ -6,8 +6,4 @@ pub(crate) use save::{
 };
 pub(crate) use session::EditorError;
 
-const BMM_BANNER: &str = r#"#        __
-#       / /  __ _  __ _
-#      / _ \/  ' \/  ' \
-#     /_.__/_/_/_/_/_/_/
-#"#;
+const BMM_BANNER: &str = include_str!("assets/banner.txt");

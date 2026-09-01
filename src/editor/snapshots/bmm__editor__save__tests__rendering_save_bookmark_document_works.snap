@@ -2,12 +2,12 @@
 source: src/editor/save.rs
 expression: rendered
 ---
-#        __
-#       / /  __ _  __ _
-#      / _ \/  ' \/  ' \
-#     /_.__/_/_/_/_/_/_/
+#      __
+#     / /  __ _  __ _
+#    / _ \/  ' \/  ' \
+#   /_.__/_/_/_/_/_/_/
 #
-# This bookmark will be saved for:
+
 # https://example.com/rust
 
 # Set this to an empty string to remove the title.

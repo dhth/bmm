@@ -63,7 +63,6 @@ fn render_save_bookmark_document(uri: &str, document: &SaveBookmarkDocument) -> 
 
     format!(
         r#"{BMM_BANNER}
-# This bookmark will be saved for:
 # {uri}
 
 # Set this to an empty string to remove the title.

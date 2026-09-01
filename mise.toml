@@ -113,7 +113,7 @@ raw_args = true
 run = "cargo test"
 
 [tasks."test:review"]
-alias = "test-review"
+alias = "tr"
 description = "Run tests and review snapshot changes"
 raw_args = true
 interactive = true

@@ -44,6 +44,7 @@ url = { version= "2.5.8", features = ["serde"] }
 which = "8.0.2"
 
 [dev-dependencies]
+anyhow = "1.0.104"
 insta = { version = "1.47.2", features = ["yaml"] }
 insta-cmd = "0.6.0"
 

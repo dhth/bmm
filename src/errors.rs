@@ -93,7 +93,7 @@ impl AppError {
                         EditorError::WriteTempFile(_) => Some(552),
                         EditorError::CouldntFindEditorExe(..) => None,
                         EditorError::OpenTextEditor(_, _) => Some(553),
-                        EditorError::EditorFailed(_) => Some(555),
+                        EditorError::EditorFailed(_) => None,
                         EditorError::ReadTempFile(_) => Some(554),
                         EditorError::InvalidEditorEnvVar(_) => None,
                         EditorError::NoEditorConfigured => None,

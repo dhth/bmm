@@ -124,7 +124,7 @@ alias = "test-update-snapshots"
 description = "Run tests and update snapshots"
 raw_args = true
 env = { INSTA_UPDATE = "always" }
-run = "cargo test"
+run = "cargo insta test"
 
 [tasks."lint:actions"]
 description = "Lint GitHub Actions workflows"

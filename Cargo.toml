@@ -38,11 +38,13 @@ sqlx = { version = "0.8.6", default-features = false,  features = ["json", "macr
 tempfile = "3.27.0"
 thiserror = "2.0.18"
 tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread"] }
+toml = "1.1.4"
 tui-input = "0.15.3"
 url = { version= "2.5.8", features = ["serde"] }
 which = "8.0.2"
 
 [dev-dependencies]
+anyhow = "1.0.104"
 insta = { version = "1.47.2", features = ["yaml"] }
 insta-cmd = "0.6.0"
 

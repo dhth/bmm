@@ -113,11 +113,18 @@ raw_args = true
 run = "cargo test"
 
 [tasks."test:review"]
-alias = "test-review"
+alias = "tr"
 description = "Run tests and review snapshot changes"
 raw_args = true
 interactive = true
 run = "cargo insta test --review"
+
+[tasks."test:update-snapshots"]
+alias = "test-update-snapshots"
+description = "Run tests and update snapshots"
+raw_args = true
+env = { INSTA_UPDATE = "always" }
+run = "cargo insta test"
 
 [tasks."lint:actions"]
 description = "Lint GitHub Actions workflows"

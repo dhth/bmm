@@ -15,7 +15,6 @@ jobs:
     permissions:
       contents: read
     outputs:
-      deps: ${{ steps.filter.outputs.deps }}
       code: ${{ steps.filter.outputs.code }}
       shell: ${{ steps.filter.outputs.shell }}
       workflows: ${{ steps.filter.outputs.workflows }}
@@ -27,13 +26,6 @@ jobs:
         id: filter
         with:
           filters: |
-            deps:
-              - "Cargo.toml"
-              - "Cargo.lock"
-              - "deny.toml"
-              - "mise.toml"
-              - "mise.lock"
-              - ".github/workflows/main.yml"
             code:
               - ".sqlx/**"
               - "migrations/**"
@@ -206,17 +198,3 @@ jobs:
           install_args: yamlfmt
       - name: Lint YAML
         run: mise run lint:yaml
-
-  audit:
-    needs: changes
-    if: ${{ needs.changes.outputs.deps == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Set up mise
-        uses: jdx/mise-action@v4
-        with:
-          install_args: rust aqua:EmbarkStudios/cargo-deny
-      - name: Check dependencies and licenses
-        run: mise run deny

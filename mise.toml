@@ -5,16 +5,17 @@ idiomatic_version_file_enable_tools = ["rust"]
 task.run_auto_install = false
 
 [tool_alias]
+cargo-deny = "aqua:EmbarkStudios/cargo-deny"
 # This project-specific alias exists so mise does not share cargo:sqlx-cli@version
 # with repositories that require a different SQLx feature set.
 bmm-sqlx = "cargo:sqlx-cli"
 
 [tools]
 actionlint = "1.7.12"
-"aqua:EmbarkStudios/cargo-deny" = "0.20.2"
+bmm-sqlx = { version = "0.8.6", features = ["sqlite"], default-features = false }
+cargo-deny = "0.20.2"
 cargo-dist = "0.31.0"
 cargo-insta = "1.47.2"
-bmm-sqlx = { version = "0.8.6", features = ["sqlite"], default-features = false }
 shellcheck = "0.11.0"
 yamlfmt = "0.21.0"
 

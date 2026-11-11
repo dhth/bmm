@@ -11,13 +11,13 @@ cargo-deny = "aqua:EmbarkStudios/cargo-deny"
 bmm-sqlx = "cargo:sqlx-cli"
 
 [tools]
-actionlint = "1.7.12"
+actionlint = "latest"
 bmm-sqlx = { version = "0.8.6", features = ["sqlite"], default-features = false }
-cargo-deny = "0.20.2"
+cargo-deny = "latest"
 cargo-dist = "0.31.0"
 cargo-insta = "1.47.2"
-shellcheck = "0.11.0"
-yamlfmt = "0.21.0"
+shellcheck = "latest"
+yamlfmt = "latest"
 
 [env]
 SQLX_OFFLINE = "true"

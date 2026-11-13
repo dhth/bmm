@@ -175,7 +175,6 @@ dependencies = [
  "dirs",
  "insta",
  "insta-cmd",
- "lazy_static",
  "once_cell",
  "open",
  "ratatui",

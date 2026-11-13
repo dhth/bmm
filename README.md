@@ -360,7 +360,6 @@ want):
 - [clap](https://crates.io/crates/clap)
 - [csv](https://crates.io/crates/csv)
 - [dirs](https://crates.io/crates/dirs)
-- [lazy_static](https://crates.io/crates/lazy_static)
 - [once_cell](https://crates.io/crates/once_cell)
 - [open](https://crates.io/crates/open)
 - [ratatui](https://crates.io/crates/ratatui)

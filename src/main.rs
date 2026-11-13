@@ -2,6 +2,7 @@ mod args;
 mod cli;
 mod common;
 mod domain;
+mod editor;
 mod errors;
 mod handle;
 mod persistence;

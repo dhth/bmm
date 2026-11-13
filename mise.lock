@@ -176,9 +176,9 @@ url = "https://github.com/mitsuhiko/insta/releases/download/1.47.2/cargo-insta-x
 url_api = "https://api.github.com/repos/mitsuhiko/insta/releases/assets/385036871"
 
 [[tools.rust]]
-version = "1.99.1"
+version = "1.100.0"
 backend = "core:rust"
-specifiers = ["1.99.1"]
+specifiers = ["1.100.0"]
 
 [tools.rust.options]
 components = "clippy,rustfmt"
